@@ -1,0 +1,150 @@
+﻿@{
+    ViewData["Title"] = "Koleksiyon";
+    var varsayilanlar = ViewBag.Varsayilanlar as List<Kartist.Models.Sablon>;
+    var kullaniciTasarimlari = ViewBag.KullaniciTasarimlari as List<Kartist.Models.Sablon>;
+}
+
+<style>
+    /* --- KOLEKSİYON ÖZEL STİLİ --- */
+    .collection-header { text-align: center; padding: 50px 0; background: radial-gradient(circle, #222 0%, #0a0a0f 100%); margin-bottom: 30px; border-bottom: 1px solid #333; }
+    .collection-title { font-family: 'Space Grotesk', sans-serif; font-size: 3rem; font-weight: 800; color: white; }
+    .collection-title span { color: #c6ff00; }
+
+    /* SEKMELER */
+    .tab-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; }
+    .tab-btn {
+        background: transparent; border: 2px solid #333; color: #888;
+        padding: 15px 40px; font-size: 1.1rem; font-weight: bold; border-radius: 50px;
+        cursor: pointer; transition: 0.3s;
+    }
+    .tab-btn:hover { border-color: #c6ff00; color: white; }
+    .tab-btn.active { background: #c6ff00; color: black; border-color: #c6ff00; box-shadow: 0 0 20px rgba(198, 255, 0, 0.4); }
+
+    /* GRID & KARTLAR (Ana sayfayla uyumlu) */
+    .art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; padding: 0 20px; }
+    .art-card { background: #161616; border-radius: 16px; overflow: hidden; position: relative; transition: 0.3s; border: 1px solid #222; }
+    .art-card:hover { transform: translateY(-10px); border-color: #c6ff00; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .art-img { width: 100%; height: 350px; object-fit: cover; }
+    .price-badge { position: absolute; top: 15px; right: 15px; background: #c6ff00; color: black; padding: 5px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; z-index: 10; }
+
+    .fav-btn {
+        position: absolute; top: 15px; left: 15px; width: 35px; height: 35px; border-radius: 50%;
+        background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #ccc;
+        display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; transition: 0.3s;
+    }
+    .fav-btn.active { color: #ff0055; border-color: #ff0055; background: rgba(255,0,85,0.1); }
+
+    .card-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, #000 10%, transparent); padding: 20px; }
+    .card-title { font-size: 1.2rem; font-weight: 700; color: white; margin-bottom: 5px; }
+    .card-cat { font-size: 0.8rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-edit-card { background: rgba(255,255,255,0.1); color: white; padding: 10px; border-radius: 8px; margin-top: 10px; display: block; text-align: center; text-decoration: none; font-weight: bold; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; }
+    .btn-edit-card:hover { background: #c6ff00; color: black; border-color: #c6ff00; }
+
+    .hidden-section { display: none; animation: fadeIn 0.5s; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="collection-header">
+    <h1 class="collection-title">TÜM <span>KOLEKSİYON</span></h1>
+    <p style="color:#888; margin-top:10px;">İster bizden seç, ister topluluktan keşfet.</p>
+</div>
+
+<div class="container mb-5">
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchSection('default')">👑 Varsayılan Tasarımlar</button>
+        <button class="tab-btn" onclick="switchSection('user')">👤 Kullanıcı Tasarımları</button>
+    </div>
+
+    <div id="sec-default" class="art-grid">
+        @foreach (var kart in varsayilanlar)
+        {
+                <div class="art-card">
+                    <img src="@kart.ResimUrl" class="art-img">
+                    <div class="price-badge">@kart.Fiyat.ToString("0.##") ₺</div>
+                    <button onclick="toggleFav(this, @kart.Id)" class="fav-btn @(kart.IsFavori ? "active" : "")"><i class="fa-solid fa-heart"></i></button>
+                    <div class="card-overlay">
+                        <h4 class="card-title">@kart.Baslik</h4>
+                        <span class="card-cat">@kart.Kategori</span>
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <a href="/Home/Tasarim/@kart.Id" class="btn-edit-card">TASARLA <i class="fa-solid fa-pen-nib"></i></a>
+                    }
+                    else
+                    {
+                        <button onclick="uyariVer()" class="btn-edit-card" style="width:100%; border:none;">TASARLA <i class="fa-solid fa-lock"></i></button>
+                    }
+                    </div>
+                </div>
+        }
+    </div>
+
+    <div id="sec-user" class="art-grid hidden-section">
+        @if (kullaniciTasarimlari.Count == 0)
+        {
+                <div style="grid-column: 1/-1; text-align:center; padding:50px; color:#666;">
+                    <i class="fa-solid fa-ghost" style="font-size:3rem; margin-bottom:20px;"></i>
+                    <p>Henüz kullanıcılar tarafından yüklenen bir tasarım yok.</p>
+                    <a href="/Account/Profil" class="btn btn-outline-light btn-sm mt-3">İlk Sen Yükle!</a>
+                </div>
+        }
+        else
+        {
+            @foreach (var kart in kullaniciTasarimlari)
+            {
+                        <div class="art-card" style="border-color:#333;">
+                            <img src="@kart.ResimUrl" class="art-img">
+                            <div class="price-badge" style="background:#ff4081; color:white;">@kart.Fiyat.ToString("0.##") ₺</div>
+                            <button onclick="toggleFav(this, @kart.Id)" class="fav-btn @(kart.IsFavori ? "active" : "")"><i class="fa-solid fa-heart"></i></button>
+                            <div class="card-overlay">
+                                <h4 class="card-title">@kart.Baslik</h4>
+                                <span class="card-cat text-warning">⭐ Kullanıcı Tasarımı</span>
+                                <a href="/Home/Tasarim/@kart.Id" class="btn-edit-card">SATIN AL & DÜZENLE</a>
+                            </div>
+                        </div>
+            }
+        }
+    </div>
+
+</div>
+
+<script>
+    function switchSection(sec) {
+        // Butonları ayarla
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // İçerikleri gizle/göster
+        document.getElementById('sec-default').style.display = 'none';
+        document.getElementById('sec-user').style.display = 'none';
+
+        document.getElementById('sec-' + sec).style.display = 'grid';
+        document.getElementById('sec-' + sec).classList.add('hidden-section'); // Animasyonu tetikle
+    }
+
+    // Favori Fonksiyonu (Index'tekiyle aynı mantık)
+    function toggleFav(btn, id) {
+        btn.style.transform = "scale(0.8)"; setTimeout(() => btn.style.transform = "scale(1)", 150);
+        var fd = new FormData();
+        fd.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+        fetch('/Home/Favorile/' + id, { method: 'POST', body: fd }).then(r => r.json()).then(d => {
+            if (d.success) { d.isFav ? btn.classList.add('active') : btn.classList.remove('active'); }
+            else { Swal.fire({ icon: 'info', title: 'Giriş Yap', text: 'Favorilemek için giriş yapmalısın.', background: '#1e1e1e', color: '#fff', confirmButtonColor: '#c6ff00' }); }
+        });
+    }
+    function uyariVer() {
+        Swal.fire({
+            title: 'Giriş Yapmalısın',
+            text: "Tasarım yapmak için lütfen önce hesabına giriş yap.",
+            icon: 'warning',
+            confirmButtonText: 'Giriş Yap',
+            confirmButtonColor: '#c6ff00',
+            background: '#1e1e1e',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "/Account/Giris"; // Giriş linkin neyse onu yaz
+            }
+        });
+    }
+</script>

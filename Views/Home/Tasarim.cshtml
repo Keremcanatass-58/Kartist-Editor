@@ -1,0 +1,4222 @@
+@model Kartist.Models.Sablon
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @Html.AntiForgeryToken()
+    <title>Kartist Editör</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Bangers&family=Cinzel:wght@400;700&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Inter:wght@300;400;700&family=Lato:wght@300;400;700&family=Lobster&family=Merriweather:ital,wght@0,300;0,700;1,300&family=Montserrat:wght@300;400;700&family=Nunito:wght@300;400;700&family=Open+Sans:wght@300;400;700&family=Oswald:wght@300;400;700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;700&family=Raleway:wght@300;400;700&family=Righteous&family=Roboto:wght@300;400;700&family=Space+Grotesk:wght@300;400;700&family=Ubuntu:wght@300;400;700&display=swap&subset=latin,latin-ext" rel="stylesheet">
+
+    <style>
+        /* --- 1. TEMEL AYARLAR --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+        }
+
+        /* ✅ YATAY KAYMAYI KES */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        html {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        body {
+            background-color: #181818;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            width: 100%; /* 100vw'yi kaldırdık */
+            overflow-x: hidden; /* yatay scroll kilit */
+            display: flex;
+            flex-direction: column;
+        }
+
+
+
+        /* HEADER */
+        .header {
+            height: 60px;
+            background: #202020;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: white;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+            .logo span {
+                color: #c6ff00;
+            }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-head {
+            background: #3a3b3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .btn-head:hover {
+                background: #4e4f50;
+            }
+
+            .btn-head.primary {
+                background: #c6ff00;
+                color: black;
+            }
+
+                .btn-head.primary:hover {
+                    filter: brightness(1.1);
+                }
+
+        /* Hamburger Menü Butonu */
+        .hamburger-menu {
+            display: none;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 100;
+        }
+
+        /* Mobil Menü Overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .mobile-menu-overlay.active {
+                display: flex;
+            }
+
+        .mobile-menu-content {
+            background: #1e1e1e;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 15px;
+            border: 1px solid #333;
+            overflow: hidden;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+
+            .mobile-menu-header h3 {
+                margin: 0;
+                color: white;
+                font-size: 1.2rem;
+            }
+
+        .close-mobile-menu {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+            .close-mobile-menu:hover {
+                color: white;
+            }
+
+        .mobile-menu-items {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #333;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+
+            .mobile-menu-item:hover {
+                background: #2a2a2a;
+                color: #c6ff00;
+            }
+
+            .mobile-menu-item.primary {
+                background: #c6ff00;
+                color: black;
+                font-weight: bold;
+            }
+
+                .mobile-menu-item.primary:hover {
+                    background: #b3e600;
+                }
+
+            .mobile-menu-item.danger {
+                color: #ff4444;
+            }
+
+                .mobile-menu-item.danger:hover {
+                    background: rgba(255, 68, 68, 0.1);
+                }
+
+            .mobile-menu-item i {
+                width: 20px;
+                text-align: center;
+            }
+
+        .main-body {
+            /* ESKİ flex + absolute mantığını SİLİYORUZ */
+            display: grid;
+            grid-template-columns: 350px minmax(0, 1fr) 220px;
+            grid-template-areas: "sidebar workspace layers";
+            height: calc(100vh - 60px); /* header hariç */
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+
+        /* SOL MENÜ */
+        .sidebar-container {
+            grid-area: sidebar;
+            display: flex;
+            width: 350px;
+            background: #242526;
+            border-right: 1px solid #333;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .icon-rail {
+            width: 70px;
+            background: #18191a;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 15px;
+        }
+
+        .rail-item {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #b0b3b8;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: 0.2s;
+        }
+
+            .rail-item:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+            }
+
+            .rail-item.active {
+                background: rgba(198, 255, 0, 0.1);
+                color: #c6ff00;
+            }
+
+            .rail-item i {
+                font-size: 1.2rem;
+                margin-bottom: 3px;
+            }
+
+            .rail-item span {
+                font-size: 0.55rem;
+                font-weight: 600;
+            }
+
+        .tools-panel {
+            flex: 1;
+            background: #242526;
+            padding: 20px;
+            max-height: 780px;
+            overflow-y: scroll;
+        }
+
+        .tool-section {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+            .tool-section.active {
+                display: block;
+            }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            color: white;
+        }
+
+        /* ARAÇLAR GENEL */
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .tool-card {
+            background: #3a3b3c;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: #e4e6eb;
+        }
+
+            .tool-card:hover {
+                background: #4e4f50;
+                transform: scale(1.02);
+                color: #c6ff00;
+            }
+
+            .tool-card i {
+                font-size: 1.4rem;
+            }
+
+        .sidebar-input {
+            width: 100%;
+            background: #121212;
+            border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            background: #c6ff00;
+            color: black;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        /* --- YENİ FX (FİLTRE) STİLLERİ --- */
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-item {
+            background: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #ccc;
+            border: 2px solid transparent;
+        }
+
+            .filter-item:hover {
+                border-color: #c6ff00;
+                color: white;
+            }
+
+            .filter-item.active {
+                border-color: #c6ff00;
+                color: #c6ff00;
+            }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .styled-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            outline: none;
+        }
+
+            .styled-slider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #c6ff00;
+                cursor: pointer;
+            }
+
+        /* 1. Kapsayıcı (Workspace) */
+        .workspace {
+            grid-area: workspace; /* PC Grid sistemine sadık kal */
+            position: relative !important;
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            /* PC İÇİN: Flexbox ile otomatik ortala */
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: #121212;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* 2. Tuval Kutusu (Varsayılan / PC Modu) */
+        .canvas-container-shadow {
+            /* PC'de akışa uysun, Flexbox onu zaten ortalar */
+            position: relative !important;
+            margin: auto !important;
+            left: auto !important;
+            top: auto !important;
+            /* Dönüşüm merkezi her zaman orta olsun */
+            transform-origin: center center !important;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            display: block !important;
+            visibility: visible !important;
+        }
+
+        /* --- YÜZEN BAR (FLOATING BAR) - PC İÇİN KİBAR AYAR --- */
+        #floatingBar {
+            position: absolute;
+            top: 25px; /* Yukarıdan mesafe */
+            left: 50%;
+            transform: translateX(-50%);
+            /* PC'de GENİŞLİK AYARI: İçerik kadar olsun, yayılmasın */
+            width: 100%;
+            max-width: 100%; /* Ekranın dışına taşmasın */
+            /* Modern Görünüm (Glassmorphism) */
+            background: rgba(35, 35, 35, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50px; /* Tam yuvarlak kenarlar (Daha kibar durur) */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 5px 20px; /* İç boşluğu kıstık */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+            #floatingBar.active {
+                opacity: 1;
+                pointer-events: auto;
+                top: 35px; /* Açılınca hafif aşağı kaysın */
+            }
+
+        /* Gruplar */
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Buton Grupları (Hizalama vb.) */
+        .btn-group {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px; /* İç gruplar da yuvarlak olsun */
+            padding: 2px 5px;
+            gap: 2px;
+        }
+
+        /* Ayıraç Çizgisi */
+        .divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            margin: 0 5px;
+        }
+
+        /* Buton Standartları */
+        .icon-btn {
+            width: 30px; /* Biraz küçülttük */
+            height: 30px;
+            border-radius: 50%; /* Tam yuvarlak buton */
+            border: none;
+            background: transparent;
+            color: #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: 0.2s;
+        }
+
+            .icon-btn:hover {
+                background: rgba(255,255,255,0.2);
+                color: white;
+            }
+
+            .icon-btn.danger:hover {
+                background: rgba(255, 68, 68, 0.2);
+                color: #ff4444;
+            }
+
+        /* Input ve Selectler */
+        .bar-select, .bar-input {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 0 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            height: 28px;
+            outline: none;
+        }
+
+            .bar-select option {
+                background: #222;
+            }
+
+        .bar-input {
+            width: 40px;
+            text-align: center;
+        }
+
+        .color-wrapper {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid #555;
+            position: relative;
+            cursor: pointer;
+        }
+        /* Kapsayıcı (Ok ikonunu yerleştirmek için) */
+        .custom-select-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 140px; /* Genişliği sabitledik */
+        }
+
+        /* Select Kutusunun Kendisi */
+        .modern-select {
+            appearance: none; /* Standart görünümü kapat */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 100%;
+            height: 32px;
+            background-color: rgba(255, 255, 255, 0.05); /* Çok hafif şeffaf */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            padding: 0 30px 0 10px; /* Sağdan boşluk bırak (ok için) */
+
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+            /* Hover ve Focus Durumları */
+            .modern-select:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+
+            .modern-select:focus {
+                border-color: #c6ff00; /* Neon Sarı */
+                box-shadow: 0 0 10px rgba(198, 255, 0, 0.2);
+                color: #fff;
+            }
+
+        /* Sağdaki Ok İkonu (FontAwesome) */
+        .select-arrow {
+            position: absolute;
+            right: 10px;
+            font-size: 0.7rem;
+            color: #aaa;
+            pointer-events: none; /* Tıklamayı engelleme, arkadaki select'e geçsin */
+            transition: 0.3s;
+        }
+
+        /* Menü açılınca ok dönsün (Focus hack) */
+        .modern-select:focus + .select-arrow {
+            transform: rotate(180deg);
+            color: #c6ff00;
+        }
+
+        /* --- AÇILAN LİSTE (Dropdown Seçenekleri) --- */
+        .modern-select option {
+            background-color: #222; /* Koyu arka plan */
+            color: #eee;
+            padding: 10px;
+        }
+
+        .modern-select optgroup {
+            color: #888;
+            font-style: normal;
+            font-weight: bold;
+            background-color: #1a1a1a;
+        }
+
+        #colorInput {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            cursor: pointer;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #opacitySlider {
+            width: 50px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        /* Select ve Inputlar (Koyu Tema) */
+        .bar-select, .bar-input {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            height: 32px;
+            outline: none;
+        }
+
+            .bar-select option {
+                background: #222;
+            }
+
+        .bar-input {
+            width: 50px;
+            text-align: center;
+        }
+
+        /* SAĞ KATMAN PANELİ (ABSOLUTE DEĞİL ARTIK) */
+        .layers-panel {
+            grid-area: layers;
+            width: 220px;
+            background: #18181a;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .layers-header {
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-bottom: 1px solid #333;
+        }
+
+        .layers-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .layer-item {
+            padding: 8px 10px;
+            background: #222;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+            .layer-item:hover {
+                background: #2a2a2a;
+            }
+
+            .layer-item.active {
+                border-left: 3px solid #c6ff00;
+                background: #2f2f2f;
+            }
+
+        /* MODALLER */
+        #imgLoader, #bgImgLoader, #savedJsonData {
+            display: none;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Buzlu Cam Efekti */
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 5000; /* En üstte dursun */
+            align-items: center;
+            justify-content: center;
+            animation: fadeInModal 0.3s ease-out;
+        }
+
+        .modal-box {
+            background: #1e1e1e;
+            border: 1px solid #333; /* Hafif bir çerçeve */
+            border-radius: 12px;
+            padding: 30px;
+            width: 420px;
+            max-width: 90vw;
+            text-align: center;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+            /* Neon Aksanlı Gölge */
+            box-shadow: 0 15px 50px rgba(0,0,0,0.7), 0 0 25px rgba(198, 255, 0, 0.2);
+            animation: slideUpModal 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+            /* Modal Başlıkları */
+            .modal-box h3 {
+                font-family: 'Poppins', sans-serif;
+                color: #c6ff00; /* Neon Başlık */
+                font-size: 1.6rem;
+                font-weight: 800;
+                margin-bottom: 20px;
+                letter-spacing: -0.5px;
+            }
+
+        /* Kapatma Butonu (X) */
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            color: #888;
+            font-size: 1.5rem;
+            transition: 0.2s;
+        }
+
+            .close-modal:hover {
+                color: white;
+                transform: rotate(90deg);
+            }
+
+        /* Modal İçi Input Alanları */
+        .sidebar-input {
+            width: 100%;
+            background: #282828; /* Koyu input */
+            border: 1px solid #444;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+            .sidebar-input:focus {
+                border-color: #c6ff00;
+                box-shadow: 0 0 5px rgba(198, 255, 0, 0.5);
+            }
+
+        /* Modal İçi Birincil Buton */
+        .sidebar-btn {
+            width: 100%;
+            background: #c6ff00; /* Neon Ana Renk */
+            color: black;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            margin-bottom: 0 !important;
+        }
+
+            .sidebar-btn:hover {
+                filter: brightness(1.1);
+            }
+
+        /* Giriş/Çıkış Animasyonları */
+        @@keyframes fadeInModal {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @@keyframes slideUpModal {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .btn-share {
+            background: #ff7ae6;
+            border: none;
+            padding: 12px 18px;
+            font-size: 15px;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+            .btn-share:hover {
+                background: #ff52d5;
+                transform: translateY(-2px);
+            }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #c6ff00;
+            color: black;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+            z-index: 4000;
+        }
+
+        /* --- SPOTIFY PLAYER STİLLERİ --- */
+        .music-wrapper {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .music-toggle {
+            width: 60px;
+            height: 60px;
+            background: #1db954;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(29,185,84,0.6);
+            transition: 0.3s;
+            animation: pulseMusic 2s infinite;
+            margin-top: 10px;
+        }
+
+            .music-toggle:hover {
+                transform: scale(1.1);
+            }
+
+            .music-toggle i {
+                font-size: 2rem;
+                color: black;
+            }
+
+        .spotify-box {
+            width: 320px;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.9);
+            transition: 0.3s;
+        }
+
+            .spotify-box.active {
+                display: block;
+                animation: slideUp 0.3s ease;
+            }
+
+        /* Link Giriş Alanı */
+        .spotify-input-area {
+            display: flex;
+            padding: 10px;
+            background: #121212;
+            border-bottom: 1px solid #333;
+        }
+
+            .spotify-input-area input {
+                flex: 1;
+                background: #222;
+                border: none;
+                color: white;
+                padding: 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                outline: none;
+            }
+
+                .spotify-input-area input::placeholder {
+                    color: #666;
+                }
+
+            .spotify-input-area button {
+                background: #1db954;
+                border: none;
+                color: black;
+                width: 35px;
+                margin-left: 5px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+                .spotify-input-area button:hover {
+                    background: #1ed760;
+                }
+
+        @@keyframes pulseMusic {
+            0% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(29, 185, 84, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0);
+            }
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ŞABLON GRID */
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .template-item {
+            border: 2px solid transparent;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.2s;
+            aspect-ratio: 4/5;
+            position: relative;
+        }
+
+            .template-item:hover {
+                border-color: #c6ff00;
+                transform: scale(1.02);
+            }
+
+        .template-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .template-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 0.8rem;
+            padding: 5px;
+        }
+
+        input[type="color"] {
+            width: 30px;
+            height: 30px;
+            border: none;
+            padding: 0;
+            background: none;
+            cursor: pointer;
+        }
+
+        select, input[type="number"] {
+            padding: 5px;
+            border: 1px solid #444;
+            background: #121212;
+            color: white;
+            border-radius: 4px;
+        }
+
+        .download-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .dl-btn {
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+            .dl-btn:hover {
+                border-color: #c6ff00;
+                background: #333;
+            }
+
+            .dl-btn i {
+                font-size: 1.5rem;
+                display: block;
+                margin-bottom: 5px;
+                color: #c6ff00;
+            }
+
+        .driver-popover.driverjs-theme {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border: 1px solid #c6ff00;
+            box-shadow: 0 0 20px rgba(198, 255, 0, 0.2);
+            border-radius: 12px;
+        }
+
+            .driver-popover.driverjs-theme .driver-popover-title {
+                font-family: 'Poppins', sans-serif;
+                font-size: 1.2rem;
+                font-weight: 800;
+                color: #c6ff00;
+            }
+
+            .driver-popover.driverjs-theme .driver-popover-description {
+                font-family: 'Poppins', sans-serif;
+                font-size: 0.9rem;
+                color: #ccc;
+                line-height: 1.5;
+            }
+
+            .driver-popover.driverjs-theme button {
+                background-color: #c6ff00;
+                color: #000;
+                border: none;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-weight: bold;
+                text-shadow: none;
+            }
+
+                .driver-popover.driverjs-theme button:hover {
+                    background-color: #b3e600;
+                }
+
+            /* Kapat butonu */
+            .driver-popover.driverjs-theme .driver-popover-close-btn {
+                color: #888;
+            }
+
+                .driver-popover.driverjs-theme .driver-popover-close-btn:hover {
+                    color: white;
+                }
+
+        /* --- EDİTÖR MOBİL MODU (tablet + telefon) --- */
+        /* Floating Action Button (Araçlar) */
+        .fab-tools {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 999px;
+            border: none;
+            background: #c6ff00;
+            color: #000;
+            display: none; /* sadece mobilde açacağız */
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+            cursor: pointer;
+            z-index: 260;
+            font-size: 1.5rem;
+        }
+
+        /* Hamburger Menü Butonu */
+        .hamburger-menu {
+            display: none;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 100;
+        }
+
+        /* ============================================
+           MOBİL RESPONSIVE STİLLER (max-width: 900px)
+           ============================================ */
+        @@media (max-width: 900px) {
+            /* Header mobil düzenlemesi - Logo ortada */
+            .header {
+                height: 50px;
+                padding: 0 15px;
+                justify-content: center;
+                position: relative;
+            }
+
+            .logo {
+                font-size: 1.1rem;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            /* Hamburger menü göster */
+            .hamburger-menu {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: absolute;
+                left: 15px;
+            }
+            /* Header butonlarını gizle */
+            .header-right {
+                display: none;
+            }
+            /* Ana layout - grid'i tek sütun yap */
+            .main-body {
+                grid-template-columns: 1fr;
+                grid-template-areas: "workspace";
+                height: calc(100vh - 50px);
+            }
+            /* Sidebar'ı grid'den çıkar */
+            .sidebar-container {
+                grid-area: unset;
+            }
+            /* Sidebar backdrop overlay - body'ye eklenir */
+            body.sidebar-open::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 199;
+                pointer-events: auto;
+                animation: fadeIn 0.3s ease;
+            }
+            /* Sidebar'ı gizle, mobilde bottom sheet olacak */
+            .sidebar-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: 70vh;
+                max-height: 70vh;
+                background: #242526;
+                border-right: none;
+                border-top: 1px solid #333;
+                z-index: 200;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+                display: flex;
+                flex-direction: column;
+                border-radius: 20px 20px 0 0;
+                box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
+                grid-area: unset;
+            }
+
+                .sidebar-container.mobile-open {
+                    transform: translateY(0);
+                }
+            /* Icon rail'i üste yatay yap */
+            .icon-rail {
+                width: 100%;
+                height: 60px;
+                flex-direction: row;
+                border-right: none;
+                border-bottom: 1px solid #333;
+                padding: 5px;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            .rail-item {
+                min-width: 60px;
+                height: 45px;
+                margin-bottom: 0;
+                margin-right: 5px;
+            }
+
+                .rail-item span {
+                    font-size: 0.5rem;
+                }
+            /* Tools panel scroll */
+            .tools-panel {
+                flex: 1;
+                overflow-y: auto;
+                padding: 15px;
+                max-height: calc(70vh - 60px);
+            }
+
+            .workspace {
+                display: block !important; /* Mobilde Flex'i kapat, Absolute çalışsın */
+            }
+
+            .canvas-container-shadow {
+                /* Mobilde Flexbox yetmez, Absolute ile çivilememiz lazım */
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                margin: 0 !important;
+                /* JS buraya translate(-50%, -50%) ekleyecek ve tam oturacak */
+            }
+            /* Canvas'ın kendisi mobilde responsive */
+            #c {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                display: block !important;
+            }
+            /* Layers panel'i alt kısımda yatay scroll - EN ALTA SABİT */
+            .layers-panel {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                height: 50px !important;
+                border-left: none;
+                border-top: 1px solid #333;
+                flex-direction: row;
+                z-index: 1000 !important;
+                background: #18181a;
+                display: flex !important;
+                grid-area: unset;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .layers-header {
+                display: none;
+            }
+
+            .layers-list {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding: 5px;
+                gap: 5px;
+            }
+
+            .layer-item {
+                min-width: 80px;
+                margin-bottom: 0;
+                font-size: 0.7rem;
+                padding: 5px 8px;
+            }
+
+            #floatingBar {
+                width: 95%; /* Ekrana yayılsın */
+                border-radius: 20px; /* Mobilde biraz daha karemsi olabilir */
+                flex-wrap: wrap; /* Sığmayan aşağı geçsin */
+                justify-content: center;
+                padding: 10px;
+                gap: 8px;
+                height: auto; /* Yükseklik serbest */
+                top: 15px !important;
+            }
+
+            .divider {
+                display: none;
+            }
+            /* Mobilde çizgileri gizle */
+
+            .tool-group {
+                margin-bottom: 2px; /* Satır araları */
+            }
+            /* Mobilde butonlar parmakla basılsın diye bir tık büyük kalsın */
+            .icon-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 0.95rem;
+            }
+            /* FAB göster */
+            .fab-tools {
+                display: flex;
+            }
+            /* Modal mobil düzenlemesi */
+            .modal-box {
+                padding: 20px;
+                border-radius: 10px;
+            }
+
+                .modal-box h3 {
+                    font-size: 1.4rem;
+                }
+
+            .sidebar-input {
+                padding: 10px;
+                font-size: 0.95rem;
+            }
+
+            .sidebar-btn {
+                padding: 12px;
+                font-size: 1rem;
+            }
+            /* Tool grid mobilde tek sütun */
+            .tool-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .download-options {
+                grid-template-columns: 1fr;
+            }
+            /* Music wrapper mobilde küçült - FAB'ın üstünde */
+            .music-wrapper {
+                bottom: 150px; /* FAB (56px) + boşluk (94px) üstünde */
+                right: 10px;
+            }
+
+            .spotify-box {
+                width: calc(100vw - 20px);
+                max-width: 320px;
+            }
+            /* Canvas container mobilde görünür */
+            /* Canvas container mobilde görünür - scale ile küçültülecek */
+            .canvas-container-shadow {
+                display: block !important;
+                position: absolute !important; /* JS ile aynı olsun */
+                left: 50% !important;
+                transform-origin: top center !important;
+                background: white;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+                border: 1px solid #333;
+                /* margin ve transform satırlarını buradan kaldırdık, JS halledecek */
+            }
+            /* Canvas'ın kendisi - Fabric.js için sabit boyutlar */
+            #c {
+                display: block !important;
+            }
+            /* Sidebar input ve button'lar */
+            .sidebar-input,
+            .sidebar-btn {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+            /* Panel title */
+            .panel-title {
+                font-size: 0.85rem;
+                margin-bottom: 12px;
+            }
+        }
+
+        /* Çok küçük ekranlar (max-width: 480px) */
+        @@media (max-width: 480px) {
+            .header {
+                height: 45px;
+            }
+
+            .btn-head {
+                padding: 5px 8px;
+                font-size: 0.7rem;
+            }
+
+            .main-body {
+                height: calc(100vh - 45px);
+            }
+
+            .sidebar-container {
+                height: 75vh;
+                max-height: 75vh;
+            }
+
+            .tools-panel {
+                padding: 12px;
+            }
+
+            .workspace {
+                position: relative !important;
+                width: 100%;
+                height: 100%;
+                overflow: hidden !important; /* Taşmaları gizle */
+                background-color: #121212; /* Arka plan rengi */
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            #floatingBar {
+                padding: 5px 8px;
+                gap: 5px;
+            }
+
+            .icon-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 0.7rem;
+            }
+
+            .modal-box {
+                width: 95%;
+                padding: 15px;
+            }
+
+            .fab-tools {
+                width: 50px;
+                height: 50px;
+                bottom: 70px;
+                right: 20px;
+            }
+
+            .music-wrapper {
+                bottom: 130px; /* FAB (50px) + boşluk (80px) üstünde */
+            }
+
+            .spotify-box {
+                width: calc(100vw - 10px);
+            }
+        }
+
+        /* Yatay mod (landscape) mobil */
+        @@media (max-width: 900px) and (orientation: landscape) {
+            .sidebar-container {
+                height: 85vh;
+                max-height: 85vh;
+            }
+
+            .tools-panel {
+                max-height: calc(85vh - 60px);
+            }
+        }
+        /* --- METİN PANELİ İÇİN ÖZEL STİLLER --- */
+
+        /* Butonları alt alta dizecek kapsayıcı */
+        .text-stack {
+            display: flex;
+            flex-direction: column; /* Alt alta sırala */
+            gap: 12px; /* Butonlar arası boşluk */
+            padding: 10px 0;
+        }
+
+        /* Yeni Metin Butonu Tasarımı */
+        .text-btn {
+            width: 100%; /* Paneli tam kaplasın */
+            background: #3a3b3c; /* Diğer kartlarla aynı renk */
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 18px 15px; /* İç boşluk */
+            color: white;
+            cursor: pointer;
+            text-align: left; /* Yazı solda dursun */
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            display: block;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+            /* Üzerine gelince efekt */
+            .text-btn:hover {
+                background: #4e4f50;
+                border-color: #c6ff00; /* Senin tema rengin (Neon Sarı) */
+                color: #c6ff00;
+                transform: translateX(5px); /* Hafif sağa kayma efekti */
+            }
+
+            /* Tipografi Ayarları (Büyük, Orta, Küçük yazı tipleri) */
+            .text-btn.large {
+                font-size: 1.5rem;
+                font-weight: 800;
+            }
+
+            .text-btn.medium {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #e0e0e0;
+            }
+
+            .text-btn.small {
+                font-size: 0.9rem;
+                font-weight: 400;
+                color: #aaa;
+            }
+        /* --- ŞEKİLLER PANELİ İÇİN ÖZEL STİLLER (GRID) --- */
+
+        .shape-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Yan yana 2 eşit sütun */
+            gap: 10px; /* Kutular arası boşluk */
+            padding-bottom: 20px;
+        }
+
+        .shape-card {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            height: 90px; /* Karemsi olması için sabit yükseklik */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Yatay ortala */
+            justify-content: center; /* Dikey ortala */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #ccc;
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Hover Efekti */
+            .shape-card:hover {
+                background: #3a3a3a;
+                border-color: #c6ff00; /* Neon Sarı */
+                color: #c6ff00;
+                transform: translateY(-3px); /* Hafif yukarı kalksın */
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+
+            /* İkon Boyutu */
+            .shape-card i {
+                font-size: 2rem; /* İkonlar büyük ve net olsun */
+                margin-bottom: 8px;
+            }
+
+            /* Yazı Stili */
+            .shape-card span {
+                font-size: 0.8rem;
+                font-weight: 500;
+            }
+        /* --- SADECE SATIŞ MODALI İÇİN GEREKLİ CSS --- */
+
+        /* Modal Kutusu: 2 Sütunlu Yapı */
+        .sell-split-modal {
+            width: 900px; /* PC'de daha geniş olsun */
+            max-width: 95vw;
+            padding: 0; /* İç padding'i kaldırdık, sütunlara vereceğiz */
+        }
+
+        .modal-content-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr; /* Sol (önizleme) biraz daha geniş */
+            height: auto;
+            max-height: 80vh;
+        }
+
+        /* SOL SÜTUN: ÖNİZLEME ALANI */
+        .modal-preview-area {
+            background: #121212; /* Canvas'ın dışındaki alan */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-right: 1px solid #333;
+        }
+
+        .preview-box {
+            border: 5px solid #000;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 100%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .preview-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(198, 255, 0, 0.9);
+            color: #000;
+            font-weight: 900;
+            padding: 8px 0;
+            text-align: center;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+
+        .preview-note {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 15px;
+        }
+
+        /* SAĞ SÜTUN: FORM ALANI */
+        .modal-form-area {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Bilgi Etiketleri */
+        .input-label {
+            font-size: 0.85rem;
+            color: #c6ff00;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 5px;
+            margin-top: 10px;
+        }
+
+        /* Tasarımcı Bilgileri */
+        .designer-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(198, 255, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(198, 255, 0, 0.3);
+        }
+
+            .designer-info i {
+                font-size: 2rem;
+                color: #c6ff00;
+            }
+
+        .designer-name {
+            font-weight: 700;
+            color: white;
+            margin-bottom: 2px;
+        }
+
+        .design-size {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+
+        /* MOBİL UYUMLULUK (Sütunları Alt Alta Çevir) */
+        @@media (max-width: 950px) { /* Tabletlerde de tek sütuna düşsün */
+            .sell-split-modal {
+                width: 450px;
+                max-width: 95vw;
+            }
+
+            .modal-content-grid {
+                grid-template-columns: 1fr; /* Tek sütun */
+                max-height: 90vh;
+            }
+
+            .modal-preview-area {
+                border-right: none;
+                border-bottom: 1px solid #333;
+                padding-bottom: 30px;
+            }
+        }
+        /* --- SWEETALERT2 TEMASI (SİTEYE UYUM İÇİN) --- */
+        /* SweetAlert2 kütüphanesini koyu temaya ve neon renge uyarla */
+        .swal2-popup {
+            background: #1e1e1e !important;
+            color: #fff !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 15px rgba(198, 255, 0, 0.3) !important;
+            backdrop-filter: blur(5px);
+        }
+
+        .swal2-title {
+            color: #c6ff00 !important;
+            font-weight: 800 !important;
+            font-size: 1.5rem !important;
+        }
+
+        .swal2-content {
+            color: #ccc !important;
+        }
+
+        .swal2-actions button {
+            font-weight: 700 !important;
+            transition: 0.2s !important;
+        }
+
+        /* Başarı butonu */
+        .swal2-success .swal2-confirm {
+            background-color: #c6ff00 !important;
+            color: #000 !important;
+        }
+
+            .swal2-success .swal2-confirm:focus {
+                box-shadow: 0 0 0 3px rgba(198, 255, 0, 0.5) !important;
+            }
+
+        /* Hata butonu */
+        .swal2-error .swal2-confirm {
+            background-color: #ff4444 !important;
+            color: #fff !important;
+        }
+
+        /* Animasyonlar (Daha şık giriş/çıkış) */
+        .swal2-popup.animate__animated {
+            animation-duration: 0.4s !important;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+    <div class="header">
+        <button class="hamburger-menu" id="hamburgerBtn" onclick="toggleMobileMenu()" title="Menü">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="/" class="logo">KART<span>IST</span></a>
+        <div class="header-right">
+            <button class="btn-head" onclick="undo()" title="Geri Al">
+                <i class="fa-solid fa-rotate-left"></i> <span>Geri</span>
+            </button>
+            <button class="btn-head" onclick="manualSave()">
+                <i class="fa-solid fa-cloud"></i> <span>Kaydet</span>
+            </button>
+            <button class="btn-head" onclick="openModal('downloadModal')">
+                <i class="fa-solid fa-download"></i> <span>İndir</span>
+            </button>
+
+            <button class="btn-head" onclick="shareDesign()">
+                <i class="fa-solid fa-share-nodes"></i> <span>Paylaş</span>
+            </button>
+
+            <button class="btn-head primary" onclick="openModal('sellModal')">SAT 💰</button>
+            <a href="/Account/Profil" class="btn-head" style="color:#ff4444; text-decoration:none;">Çıkış</a>
+            <button class="btn-head" onclick="startTour()">
+                <i class="fa-solid fa-circle-question"></i> <span>Nasıl Çalışır?</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobil Menü Overlay -->
+    <div id="mobileMenuOverlay" class="mobile-menu-overlay">
+        <div class="mobile-menu-content">
+            <div class="mobile-menu-header">
+                <h3>Menü</h3>
+                <button class="close-mobile-menu" onclick="toggleMobileMenu()">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="mobile-menu-items">
+                <button class="mobile-menu-item" onclick="undo(); toggleMobileMenu();">
+                    <i class="fa-solid fa-rotate-left"></i> Geri Al
+                </button>
+                <button class="mobile-menu-item" onclick="saveToCloud(); toggleMobileMenu();">
+                    <i class="fa-solid fa-cloud"></i> Kaydet
+                </button>
+                <button class="mobile-menu-item" onclick="openModal('downloadModal'); toggleMobileMenu();">
+                    <i class="fa-solid fa-download"></i> İndir
+                </button>
+                <button class="mobile-menu-item" onclick="shareDesign(); toggleMobileMenu();">
+                    <i class="fa-solid fa-share-nodes"></i> Paylaş
+                </button>
+                <button class="mobile-menu-item primary" onclick="openModal('sellModal'); toggleMobileMenu();">
+                    <i class="fa-solid fa-dollar-sign"></i> Sat
+                </button>
+                <a href="/Account/Profil" class="mobile-menu-item danger" onclick="toggleMobileMenu();">
+                    <i class="fa-solid fa-sign-out-alt"></i> Çıkış
+                </a>
+                <button class="mobile-menu-item" onclick="startTour(); toggleMobileMenu();">
+                    <i class="fa-solid fa-circle-question"></i> Nasıl Çalışır?
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-body">
+        <div class="sidebar-container">
+            <div class="icon-rail">
+                <div class="rail-item active" onclick="switchTab('tabTemplates', this)">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Şablon</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabText', this)">
+                    <i class="fa-solid fa-font"></i>
+                    <span>Metin</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabShapes', this)">
+                    <i class="fa-solid fa-shapes"></i>
+                    <span>Şekil</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabAI', this)">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>AI</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabQR', this)">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>QR</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabUpload', this)">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Yükle</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabBg', this)">
+                    <i class="fa-solid fa-image"></i>
+                    <span>Zemin</span>
+                </div>
+                <div class="rail-item" onclick="switchTab('tabFilter', this)">
+                    <i class="fa-solid fa-wand-sparkles"></i>
+                    <span>Fx</span>
+                </div>
+            </div>
+
+            <div class="tools-panel">
+                <div id="tabTemplates" class="tool-section active">
+                    <div class="panel-title">HAZIR ŞABLONLAR</div>
+                    <div id="templatesList" class="template-grid">
+                        <p style="color:#666; grid-column:span 2; text-align:center;">Yükleniyor...</p>
+                    </div>
+                </div>
+
+                <div id="tabText" class="tool-section">
+                    <div class="panel-title">METİN TİPLERİ</div>
+
+                    <div class="text-stack">
+
+                        <button class="text-btn large" onclick="addText('Büyük Başlık', 60, 800)">
+                            Büyük Başlık
+                        </button>
+
+                        <button class="text-btn medium" onclick="addText('Alt Başlık', 32, 600)">
+                            Alt Başlık
+                        </button>
+
+                        <button class="text-btn small" onclick="addText('Biraz metin ekle', 20, 400)">
+                            Gövde Metni
+                        </button>
+
+                    </div>
+                </div>
+
+                <div id="tabShapes" class="tool-section">
+                    <div class="panel-title">ŞEKİL KÜTÜPHANESİ</div>
+
+                    <div class="shape-grid">
+                        <div class="shape-card" onclick="addShape('rect')" title="Kare">
+                            <i class="fa-regular fa-square"></i>
+                            <span>Kare</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('circle')" title="Daire">
+                            <i class="fa-regular fa-circle"></i>
+                            <span>Daire</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('triangle')" title="Üçgen">
+                            <i class="fa-solid fa-play" style="transform: rotate(-90deg);"></i>
+                            <span>Üçgen</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('line')" title="Çizgi">
+                            <i class="fa-solid fa-minus"></i>
+                            <span>Çizgi</span>
+                        </div>
+
+                        <div class="shape-card" onclick="addShape('star')" title="Yıldız">
+                            <i class="fa-regular fa-star"></i>
+                            <span>Yıldız</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('heart')" title="Kalp">
+                            <i class="fa-solid fa-heart"></i>
+                            <span>Kalp</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('arrow')" title="Ok">
+                            <i class="fa-solid fa-arrow-right"></i>
+                            <span>Ok</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('bubble')" title="Balon">
+                            <i class="fa-regular fa-comment"></i>
+                            <span>Balon</span>
+                        </div>
+
+                        <div class="shape-card" onclick="addShape('hexagon')" title="Altıgen">
+                            <i class="fa-solid fa-vector-square"></i>
+                            <span>Altıgen</span>
+                        </div>
+                        <div class="shape-card" onclick="addShape('pentagon')" title="Beşgen">
+                            <i class="fa-solid fa-draw-polygon"></i>
+                            <span>Beşgen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tabAI" class="tool-section">
+                    <div class="panel-title">AI Tasarım Asistanı 🤖</div>
+
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <select id="aiCategorySelect" class="sidebar-input" style="margin-bottom:0;">
+                            <option value="dogumgunu">🎂 Doğum Günü</option>
+                            <option value="ask">❤️ Aşk / Sevgili</option>
+                            <option value="tesekkur">🙏 Teşekkür / Tebrik</option>
+                            <option value="motivasyon">✨ Motivasyon</option>
+                            <option value="ozur">💌 Özür Kartı</option>
+                            <option value="genel">🌈 Genel / Diğer</option>
+                        </select>
+                    </div>
+
+                    <p style="font-size:0.8rem; color:#888; margin-bottom:8px;">
+                        Ne tarz bir kart istediğini yaz; duyguyu, renkleri veya mesajı kısaca anlat.
+                    </p>
+
+                    <textarea id="aiPrompt" class="sidebar-input"
+                              style="height:90px; resize:none;"
+                              placeholder="Örn: pastel ve romantik doğum günü kartı, kısa ama duygusal bir mesaj olsun.">
+					</textarea>
+
+                    <button onclick="generateDesignFromPrompt()" class="sidebar-btn" style="margin-bottom:6px;">
+                        PROMPT İLE TASARLA 🎨
+                    </button>
+
+                    <p style="font-size:0.75rem; color:#777;">
+                        Tasarım geldikten sonra nesneleri yine sürükleyip düzenleyebilirsin.
+                    </p>
+                </div>
+
+
+                <div id="tabQR" class="tool-section">
+                    <div class="panel-title">QR KOD</div>
+                    <input type="text" id="qrText" class="sidebar-input" placeholder="Link veya Yazı">
+                    <button onclick="generateQR()" class="sidebar-btn">OLUŞTUR</button>
+                </div>
+
+                <div id="tabUpload" class="tool-section">
+                    <div class="panel-title">MEDYA</div>
+                    <div class="tool-card" onclick="document.getElementById('imgLoader').click()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Resim Yükle</span>
+                    </div>
+                </div>
+
+                <div id="tabBg" class="tool-section">
+                    <div class="panel-title">ZEMİN</div>
+                    <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center;">
+                        <input type="color" id="bgColorPicker" style="width:40px; height:40px; border:none; cursor:pointer; padding:0; background:none;">
+                        <span style="color:#ccc;">Düz Renk</span>
+                    </div>
+                    <div class="tool-card" onclick="document.getElementById('bgImgLoader').click()">
+                        <i class="fa-regular fa-image"></i>
+                        <span>Resim Seç</span>
+                    </div>
+                </div>
+
+                <div id="tabFilter" class="tool-section">
+                    <div class="panel-title">EFEKTLER</div>
+
+                    <label class="prop-label">HAZIR FİLTRELER</label>
+                    <div class="filter-grid">
+                        <div class="filter-item" onclick="applyPreset('none')">NORMAL</div>
+                        <div class="filter-item" onclick="applyPreset('grayscale')">S/B</div>
+                        <div class="filter-item" onclick="applyPreset('sepia')">SEPIA</div>
+                        <div class="filter-item" onclick="applyPreset('vintage')">VINTAGE</div>
+                        <div class="filter-item" onclick="applyPreset('kodachrome')">FILM</div>
+                        <div class="filter-item" onclick="applyPreset('technicolor')">VIVID</div>
+                    </div>
+
+                    <div style="height:1px; background:#333; margin:15px 0;"></div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>PARLAKLIK</span>
+                            <span id="val-brightness">0</span>
+                        </div>
+                        <input type="range" min="-1" max="1" step="0.05" value="0" class="styled-slider" oninput="updateFilter('brightness', this.value)">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>KONTRAST</span>
+                            <span id="val-contrast">0</span>
+                        </div>
+                        <input type="range" min="-1" max="1" step="0.05" value="0" class="styled-slider" oninput="updateFilter('contrast', this.value)">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>DOYGUNLUK</span>
+                            <span id="val-saturation">0</span>
+                        </div>
+                        <input type="range" min="-1" max="1" step="0.05" value="0" class="styled-slider" oninput="updateFilter('saturation', this.value)">
+                    </div>
+
+                    <button class="sidebar-btn" style="background:#d32f2f; margin-top:10px;" onclick="applyPreset('none')">
+                        SIFIRLA
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace">
+            <div id="floatingBar">
+
+                <div class="tool-group">
+                    <div class="color-wrapper" title="Renk">
+                        <input type="color" id="colorInput">
+                    </div>
+                    <div class="slider-wrapper" title="Opaklık">
+                        <i class="fa-solid fa-circle-half-stroke" style="font-size:0.8rem; color:#aaa;"></i>
+                        <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="1">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div id="textTools" class="tool-group" style="display:none;">
+                    <div class="custom-select-wrapper" title="Yazı Tipi">
+                        <select id="fontFamily" class="modern-select">
+                            <optgroup label="🔥 Popüler"><option value="Inter">Inter</option><option value="Montserrat">Montserrat</option><option value="Roboto">Roboto</option></optgroup>
+                            <optgroup label="✨ Şık"><option value="Playfair Display">Playfair</option><option value="Merriweather">Merriweather</option><option value="Cinzel">Cinzel</option></optgroup>
+                            <optgroup label="✍️ El Yazısı"><option value="Pacifico">Pacifico</option><option value="Dancing Script">Dancing</option><option value="Bangers">Bangers</option></optgroup>
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-arrow"></i>
+                    </div>
+
+                    <input type="number" id="fontSize" value="40" class="bar-input" title="Boyut">
+
+                    <div class="btn-group">
+                        <button class="icon-btn" id="btnBold" title="Kalın"><b>B</b></button>
+                        <button class="icon-btn" id="btnItalic" onclick="toggleStyle('fontStyle', 'italic', 'normal')" title="İtalik"><i class="fa-solid fa-italic"></i></button>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="icon-btn" id="alignLeft" onclick="setTextAlign('left')" title="Sola Yasla"><i class="fa-solid fa-align-left"></i></button>
+                        <button class="icon-btn" id="alignCenter" onclick="setTextAlign('center')" title="Ortala"><i class="fa-solid fa-align-center"></i></button>
+                        <button class="icon-btn" id="alignRight" onclick="setTextAlign('right')" title="Sağa Yasla"><i class="fa-solid fa-align-right"></i></button>
+                    </div>
+
+                    <div class="divider"></div>
+                </div>
+
+                <div class="tool-group">
+                    <div class="btn-group">
+                        <button class="icon-btn" onclick="alignActiveObject('center-h')" title="Yatay Ortala"><i class="fa-solid fa-arrows-left-right"></i></button>
+                        <button class="icon-btn" onclick="alignActiveObject('center-v')" title="Dikey Ortala"><i class="fa-solid fa-arrows-up-down"></i></button>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="tool-group">
+                    <div class="btn-group">
+                        <button class="icon-btn" onclick="canvas.bringForward(canvas.getActiveObject())"><i class="fa-solid fa-layer-group"></i></button>
+                    </div>
+                    <button class="icon-btn" id="lockBtn" onclick="toggleLock()" title="Kilitle"><i class="fa-solid fa-lock-open"></i></button>
+                    <button class="icon-btn" onclick="copy()" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
+                    <button class="icon-btn" onclick="paste()" title="Yapıştır"><i class="fa-solid fa-paste"></i></button>
+
+                    <div class="btn-group" style="border:1px solid rgba(255,68,68,0.3);">
+                        <button class="icon-btn danger" onclick="deleteObject()" title="Seçileni Sil (Delete)"><i class="fa-solid fa-trash"></i></button>
+                        <button class="icon-btn danger" onclick="clearCanvas()" title="Tuvali Temizle"><i class="fa-solid fa-broom"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="canvas-container-shadow">
+                <canvas id="c" width="700" height="500"></canvas>
+            </div>
+        </div>
+
+        <div class="layers-panel">
+            <div class="layers-header">KATMANLAR</div>
+            <div id="layersList" class="layers-list"></div>
+        </div>
+    </div>
+    <button class="fab-tools" id="fabTools" onclick="toggleToolsPanel()" title="Araçlar">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+    </button>
+
+
+    <div class="music-wrapper">
+        <div class="music-toggle" onclick="toggleMusic()" title="Müzik">
+            <i class="fa-brands fa-spotify"></i>
+        </div>
+
+        <div class="spotify-box" id="spotifyBox">
+            <div style="display:flex; padding:10px; border-bottom:1px solid #333;">
+                <input type="text" id="spotifyLinkInput" placeholder="Link yapıştır... veya çalma listesi"
+                       style="flex:1; background:#222; border:none; color:white; padding:5px; border-radius:4px; font-size:0.8rem; outline:none;">
+                <button onclick="loadSpotifyTrack()" style="background:#1db954; border:none; color:black; width:30px; margin-left:5px; border-radius:4px; cursor:pointer;">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+
+            <iframe id="spotifyFrame"
+                    style="border-radius:0 0 12px 12px"
+                    src="https://open.spotify.com/embed/playlist/37i9dQZEVXbIVYVBNw9D5K?utm_source=generator&theme=0"
+                    width="100%"
+                    height="400"
+                    frameBorder="0"
+                    allowfullscreen=""
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy">
+            </iframe>
+        </div>
+    </div>
+
+    <input type="file" id="imgLoader" accept="image/*">
+    <input type="file" id="bgImgLoader" accept="image/*">
+    <input type="hidden" id="savedJsonData" value="@ViewBag.JsonVerisi" />
+    <input type="hidden" id="designId" value="@ViewBag.KayitliId" />
+
+    <div id="sellModal" class="modal-overlay">
+        <div class="modal-box sell-split-modal">
+            <span class="close-modal" onclick="closeModals()">×</span>
+
+            <div class="modal-content-grid">
+
+                <div class="modal-preview-area">
+                    <div class="preview-box">
+                        <img id="sellPreviewImage" src="" alt="Tasarım Önizlemesi" class="preview-img" />
+                        <div class="preview-caption">ONAYLIYOR MUSUN?</div>
+                    </div>
+                    <p class="preview-note">Tasarımınız bu çözünürlükte pazara sunulacaktır.</p>
+                </div>
+
+                <div class="modal-form-area">
+                    <h3>TASARIMI SATIŞA SUN</h3>
+
+                    <div class="designer-info">
+                        <i class="fa-solid fa-user-circle"></i>
+                        <div>
+                            <p class="designer-name">Tasarımcı: **@ViewBag.UserName**</p>
+                            <p class="design-size">Boyut: 700x500 px</p>
+                        </div>
+                    </div>
+
+                    <label for="sellTitle" class="input-label">Tasarım Adı</label>
+                    <input type="text" id="sellTitle" class="sidebar-input" placeholder="Örn: Minimalist Doğum Günü Kartı">
+
+                    <label for="sellPrice" class="input-label">Satış Fiyatı (TL)</label>
+                    <input type="number" id="sellPrice" class="sidebar-input" placeholder="Min. 5 TL" min="5">
+
+                    <button onclick="submitToMarket()" class="sidebar-btn primary-action">ONAYLA VE GÖNDER</button>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div id="aiModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModals()">×</span>
+            <h3>AI Yazar</h3>
+            <select id="aiCategory" class="sidebar-input">
+                <option value="dogumgunu">Doğum Günü</option>
+                <option value="ask">Aşk</option>
+            </select>
+            <button onclick="generateAIText()" class="sidebar-btn">YAZDIR</button>
+        </div>
+    </div>
+
+    <div id="qrModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModals()">×</span>
+            <h3>QR Kod</h3>
+            <input type="text" id="qrTextModal" class="sidebar-input" placeholder="Link...">
+            <button onclick="generateQR()" class="sidebar-btn">OLUŞTUR</button>
+        </div>
+    </div>
+
+    <div id="downloadModal" class="modal-overlay">
+        <div class="modal-box">
+            <span class="close-modal" onclick="closeModals()">×</span>
+            <h3>İndirme Seçenekleri</h3>
+            <div class="download-options" style="margin-top:15px;">
+                <button onclick="downloadAs('png')" class="dl-btn">
+                    <i class="fa-solid fa-image"></i> PNG
+                </button>
+                <button onclick="downloadAs('jpg')" class="dl-btn">
+                    <i class="fa-regular fa-image"></i> JPG
+                </button>
+                <button onclick="downloadAs('svg')" class="dl-btn">
+                    <i class="fa-solid fa-pen-nib"></i> SVG
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">İşlem Başarılı!</div>
+
+    <script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
+    <script>
+		function getCSRFToken() {
+			return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+		}
+
+        var canvas;
+        let isBootstrapping = true;   // ilk load sırasında autosave kapalı
+        let autosaveTimer = null;
+        let autosaveInFlight = false;
+        let autosaveDirty = false;
+
+        function markDirty() {
+            if (isBootstrapping) return;
+            autosaveDirty = true;
+            if (autosaveTimer) clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(runAutosave, 2500); // 2.5sn sonra kaydet
+        }
+
+        async function runAutosave() {
+            if (!autosaveDirty) return;
+            if (autosaveInFlight) return;
+
+            autosaveDirty = false;
+            autosaveInFlight = true;
+
+            // Autosave’da önizlemeyi küçült → request şişmesin
+            const d = await saveToCloud({ silent: true, previewMultiplier: 0.3 });
+
+            autosaveInFlight = false;
+
+            // Eğer autosave başarısızsa tekrar denemeyi kullanıcı değişikliğine bırakalım
+            if (d?.success) {
+                showToast("Otomatik kaydedildi");
+            }
+        }
+
+		var _clipboard = null;
+		var historyStack = [];
+		var isHistoryProcessing = false;
+		const googleFonts = ["Inter", "Space Grotesk", "Roboto", "Pacifico", "Dancing Script", "Permanent Marker"];
+
+		function toggleMusic() {
+			var box = document.getElementById('spotifyBox');
+			if (box.style.display === 'block') {
+				box.style.display = 'none';
+			} else {
+				box.style.display = 'block';
+				box.classList.add('active');
+			}
+		}
+
+		function loadSpotifyTrack() {
+			var inputVal = document.getElementById('spotifyLinkInput').value.trim();
+			var frame = document.getElementById('spotifyFrame');
+
+			if (!inputVal) {
+				Swal.fire({
+					icon: 'info',
+					title: 'Müzik Seç',
+					text: 'Bir YouTube veya Spotify linki yapıştır.',
+					background: '#1e1e1e',
+					color: '#fff',
+					confirmButtonColor: '#c6ff00'
+				});
+				return;
+			}
+
+			var ytMatch = inputVal.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+
+			if (ytMatch && ytMatch[1]) {
+				var ytUrl = "https://www.youtube.com/embed/" + ytMatch[1] + "?autoplay=1&playsinline=1&controls=0&modestbranding=1";
+				frame.src = ytUrl;
+				showMusicBox();
+				return;
+			}
+
+			if (inputVal.includes("spotify.com")) {
+				var embedUrl = inputVal;
+				if (!inputVal.includes("/embed")) {
+					embedUrl = inputVal.replace("spotify.com/", "spotify.com/embed/");
+				}
+
+				frame.src = embedUrl;
+				showMusicBox();
+
+				const Toast = Swal.mixin({
+					toast: true,
+					position: 'top-end',
+					showConfirmButton: false,
+					timer: 5000,
+					background: '#1e1e1e',
+					color: '#fff',
+					iconColor: '#c6ff00'
+				});
+				Toast.fire({
+					icon: 'info',
+					title: 'Spotify Sadece 30sn Çalar',
+					text: 'Kesintisiz müzik için YouTube linki kullanabilirsin.'
+				});
+				return;
+			}
+
+			Swal.fire({
+				icon: 'error',
+				title: 'Hata',
+				text: 'Geçerli bir YouTube veya Spotify linki girmelisin.',
+				background: '#1e1e1e',
+				color: '#fff'
+			});
+		}
+
+		function showMusicBox() {
+			var box = document.getElementById('spotifyBox');
+			if (box.style.display !== 'block') {
+				box.style.display = 'block';
+				box.classList.add('active');
+			}
+		}
+
+		window.onload = function () {
+			// Canvas element'inin yüklendiğinden emin ol
+			const canvasEl = document.getElementById('c');
+			if (!canvasEl) {
+				console.error('Canvas element bulunamadı!');
+				setTimeout(window.onload, 100);
+				return;
+			}
+
+			canvas = new fabric.Canvas('c', {
+				backgroundColor: '#fff',
+				preserveObjectStacking: true,
+				width: 700,
+				height: 500
+			});
+
+			fabric.Object.prototype.set({
+				transparentCorners: false,
+				cornerColor: '#c6ff00',
+				cornerStrokeColor: '#000',
+				borderColor: '#c6ff00',
+				cornerSize: 10,
+				padding: 8,
+				cornerStyle: 'circle'
+			});
+
+			var fs = document.getElementById('fontFamily');
+			googleFonts.forEach(f => {
+				var o = document.createElement('option');
+				o.value = f;
+				o.text = f;
+				o.style.fontFamily = f;
+				fs.appendChild(o);
+			});
+
+			// Canvas'ı ilk render et
+			setTimeout(() => {
+				canvas.renderAll();
+			}, 100);
+
+			var bgUrl = '@Model.ResimUrl';
+			var saved = document.getElementById('savedJsonData').value;
+
+			if (saved && saved.length > 10) {
+				setTimeout(() => {
+					canvas.loadFromJSON(saved, () => {
+						canvas.renderAll();
+						updateLayers();
+                        fitCanvasToWorkspace();
+                        isBootstrapping = false;
+                    });
+
+				}, 500);
+			} else if (bgUrl) {
+				setBackgroundFromURL(bgUrl);
+				setTimeout(() => {
+					canvas.renderAll();
+					fitCanvasToWorkspace();
+				}, 300);
+			} else {
+				// Boş canvas için de render et
+				setTimeout(() => {
+					canvas.renderAll();
+					fitCanvasToWorkspace();
+				}, 200);
+			}
+
+			canvas.on('selection:created', updateUI);
+			canvas.on('selection:updated', updateUI);
+			canvas.on('selection:cleared', updateUI);
+
+            canvas.on('object:added', () => { saveHistory(); updateLayers(); markDirty(); });
+            canvas.on('object:modified', () => { saveHistory(); updateLayers(); markDirty(); });
+            canvas.on('object:removed', () => { saveHistory(); updateLayers(); markDirty(); });
+
+            // Çizim yapan varsa iyi olur
+            canvas.on('path:created', () => { saveHistory(); updateLayers(); markDirty(); });
+
+
+			document.getElementById('bgColorPicker').addEventListener('input', function (e) {
+				canvas.backgroundImage = null;
+				canvas.setBackgroundColor(e.target.value, canvas.renderAll.bind(canvas));
+				saveHistory();
+			});
+
+			document.getElementById('bgImgLoader').addEventListener('change', function (e) {
+				var r = new FileReader();
+				r.onload = function (ev) {
+					setBackgroundFromURL(ev.target.result);
+				};
+				r.readAsDataURL(e.target.files[0]);
+			});
+
+			document.getElementById('imgLoader').onchange = function (e) {
+				var r = new FileReader();
+				r.onload = function (ev) {
+					fabric.Image.fromURL(ev.target.result, function (i) {
+						i.scaleToWidth(200);
+						canvas.add(i);
+						canvas.setActiveObject(i);
+					});
+				};
+				r.readAsDataURL(e.target.files[0]);
+			};
+
+			document.getElementById('colorInput').oninput = function () {
+				var o = canvas.getActiveObject();
+				if (o) o.set('fill', this.value);
+				canvas.requestRenderAll();
+			};
+
+			document.getElementById('opacitySlider').oninput = function () {
+				var o = canvas.getActiveObject();
+				if (o) o.set('opacity', parseFloat(this.value));
+				canvas.requestRenderAll();
+			};
+
+			document.getElementById('fontFamily').onchange = function () {
+				var o = canvas.getActiveObject();
+				if (o && o.type && o.type.includes('text')) {
+					loadGoogleFont(this.value);
+					o.set('fontFamily', this.value);
+					canvas.requestRenderAll();
+				}
+			};
+
+			document.getElementById('fontSize').oninput = function () {
+				var o = canvas.getActiveObject();
+				if (o) {
+					o.set('fontSize', parseInt(this.value));
+					canvas.requestRenderAll();
+				}
+			};
+
+			document.getElementById('btnBold').onclick = function () {
+				toggleStyle('fontWeight', 'bold', 'normal');
+			};
+
+			window.addEventListener('keydown', function (e) {
+				if ((e.key === "Delete" || e.key === "Backspace") && canvas.getActiveObject() && !canvas.getActiveObject().isEditing) {
+					deleteObject();
+				}
+				if (e.ctrlKey || e.metaKey) {
+					if (e.key.toLowerCase() === 'c') { copy(); e.preventDefault(); }
+					if (e.key.toLowerCase() === 'v') { paste(); e.preventDefault(); }
+					if (e.key.toLowerCase() === 'z') { undo(); e.preventDefault(); }
+					if (e.key.toLowerCase() === 's') { saveToCloud(); e.preventDefault(); }
+                }
+
+            });
+
+
+
+
+            loadTemplates();
+
+            // Canvas'ın tam yüklendiğinden emin ol
+            setTimeout(() => {
+                fitCanvasToWorkspace();
+                if (canvas) {
+                    canvas.renderAll();
+                }
+            }, 300);
+
+            window.addEventListener('resize', () => {
+                setTimeout(fitCanvasToWorkspace, 100);
+            });
+
+        };
+        function fitCanvasToWorkspace() {
+            // Canvas yüklenmediyse bekle
+            if (!canvas) {
+                setTimeout(fitCanvasToWorkspace, 100);
+                return;
+            }
+
+            const container = document.querySelector('.canvas-container-shadow');
+            const workspace = document.querySelector('.workspace');
+
+            if (!container || !workspace) return;
+
+            // --- AYARLAR ---
+            const baseWidth = 700;
+            const baseHeight = 500;
+            // 900px altı mobil kabul edilir
+            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+            // PC'de Flexbox ortaladığı için padding şart değil ama
+            // Mobilde kenarlara yapışmasın diye boşluk bırakıyoruz.
+            const padding = isMobile ? 20 : 40;
+
+            // Kullanılabilir alan
+            const wsWidth = workspace.clientWidth;
+            const wsHeight = workspace.clientHeight;
+            const availWidth = wsWidth - padding;
+            const availHeight = wsHeight - padding;
+
+            // Ölçek Hesapla
+            let scale = Math.min(availWidth / baseWidth, availHeight / baseHeight);
+
+            // Sınırlar (Çok büyümesin, aşırı küçülmesin)
+            if (scale > 1) scale = 1;
+            if (scale < 0.2) scale = 0.2;
+
+            // --- UYGULAMA --- //
+
+            // 1. Boyutları Sabitle
+            container.style.width = baseWidth + 'px';
+            container.style.height = baseHeight + 'px';
+
+            // 2. MOBİL VE PC AYRIMI (Burası Çok Önemli)
+            if (isMobile) {
+                // === MOBİL MODU (Kilitli & Çivili) ===
+                // Absolute + Translate ile milimetrik ortalama
+                container.style.position = 'absolute';
+                container.style.left = '50%';
+                container.style.top = '50%';
+                container.style.margin = '0';
+
+                // Translate ile tam ortaya çek, Scale ile küçült
+                container.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            } else {
+                // === PC MODU (Esnek & Özgür) ===
+                // Pozisyonu serbest bırak, CSS'teki Flexbox ortalasın
+                container.style.position = 'relative';
+                container.style.left = 'auto';
+                container.style.top = 'auto';
+                container.style.margin = 'auto';
+
+                // Sadece scale et (translate YOK, çünkü Flexbox zaten ortaladı)
+                container.style.transform = `scale(${scale})`;
+            }
+
+            // 3. Görünür yap
+            container.style.display = 'block';
+            container.style.visibility = 'visible';
+
+            // Fabric.js iç boyutlarını güncelle
+            const canvasEl = document.getElementById('c');
+            if (canvasEl) {
+                canvasEl.style.width = baseWidth + 'px';
+                canvasEl.style.height = baseHeight + 'px';
+            }
+
+            if (canvas.setDimensions) {
+                canvas.setDimensions({ width: baseWidth, height: baseHeight });
+            }
+
+            canvas.renderAll();
+        }
+
+        // Olay Dinleyicileri
+        window.addEventListener('load', () => { setTimeout(fitCanvasToWorkspace, 100); });
+        window.addEventListener('resize', fitCanvasToWorkspace);
+
+        // Olay Dinleyicileri
+        window.addEventListener('load', () => { setTimeout(fitCanvasToWorkspace, 100); });
+        window.addEventListener('resize', fitCanvasToWorkspace);
+
+		function applyPreset(type) {
+			var obj = canvas.getActiveObject();
+			if (!obj || obj.type !== 'image') {
+				showToast('Lütfen bir resim seçin');
+				return;
+			}
+
+			obj.filters = [];
+
+			if (type === 'grayscale') obj.filters.push(new fabric.Image.filters.Grayscale());
+			else if (type === 'sepia') obj.filters.push(new fabric.Image.filters.Sepia());
+			else if (type === 'vintage') obj.filters.push(new fabric.Image.filters.Sepia(), new fabric.Image.filters.Noise({ noise: 100 }));
+			else if (type === 'kodachrome') obj.filters.push(new fabric.Image.filters.Kodachrome());
+			else if (type === 'technicolor') obj.filters.push(new fabric.Image.filters.Technicolor());
+
+			obj.applyFilters();
+			canvas.requestRenderAll();
+			saveHistory();
+		}
+
+		function updateFilter(filterType, value) {
+			var obj = canvas.getActiveObject();
+			if (!obj || obj.type !== 'image') return;
+
+			var filter;
+
+			if (filterType === 'brightness') {
+				filter = obj.filters.find(f => f.type === 'Brightness') || new fabric.Image.filters.Brightness();
+				filter.brightness = parseFloat(value);
+			} else if (filterType === 'contrast') {
+				filter = obj.filters.find(f => f.type === 'Contrast') || new fabric.Image.filters.Contrast();
+				filter.contrast = parseFloat(value);
+			} else if (filterType === 'saturation') {
+				filter = obj.filters.find(f => f.type === 'Saturation') || new fabric.Image.filters.Saturation();
+				filter.saturation = parseFloat(value);
+			}
+
+			if (!obj.filters.includes(filter)) obj.filters.push(filter);
+
+			document.getElementById('val-' + filterType).innerText = value;
+			obj.applyFilters();
+			canvas.requestRenderAll();
+		}
+
+        function switchTab(id, btn) {
+            document.querySelectorAll('.tool-section').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+
+            document.querySelectorAll('.rail-item').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+            if (isMobile) {
+                toggleToolsPanel(true);
+            }
+        }
+
+        function toggleToolsPanel(force) {
+            const sidebar = document.querySelector('.sidebar-container');
+            if (!sidebar) return;
+
+            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+            if (!isMobile) return;
+
+            if (force === true) {
+                sidebar.classList.add('mobile-open');
+                document.body.classList.add('sidebar-open');
+                document.body.style.overflow = 'hidden';
+            } else if (force === false) {
+                sidebar.classList.remove('mobile-open');
+                document.body.classList.remove('sidebar-open');
+                document.body.style.overflow = '';
+            } else {
+                const isOpen = sidebar.classList.contains('mobile-open');
+                sidebar.classList.toggle('mobile-open');
+                document.body.classList.toggle('sidebar-open');
+                document.body.style.overflow = isOpen ? '' : 'hidden';
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar-container');
+            const fab = document.getElementById('fabTools');
+            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+
+            if (!isMobile || !sidebar) return;
+
+            if (fab && (fab.contains(e.target) || fab === e.target)) return;
+            if (sidebar.contains(e.target)) return;
+
+            if (sidebar.classList.contains('mobile-open')) {
+                toggleToolsPanel(false);
+            }
+        }, true);
+
+
+        function updateUI() {
+            var o = canvas.getActiveObject();
+            var bar = document.getElementById('floatingBar');
+
+            if (o) {
+                bar.classList.add('active');
+
+                // Renk & Opaklık
+                if (o.fill && typeof o.fill === 'string') document.getElementById('colorInput').value = o.fill;
+                document.getElementById('opacitySlider').value = o.opacity || 1;
+
+                // Metin Kontrolleri
+                var isText = o.type && o.type.includes('text');
+                var textTools = document.getElementById('textTools');
+
+                if (isText) {
+                    textTools.style.display = 'flex';
+
+                    // Değerleri Oku
+                    document.getElementById('fontFamily').value = o.fontFamily || 'Inter';
+                    document.getElementById('fontSize').value = o.fontSize || 40;
+
+                    // --- BUTON RENKLERİNİ GÜNCELLE ---
+                    const activeColor = '#c6ff00'; // Neon Sarı
+                    const passiveColor = '#ccc';   // Gri
+
+                    // Stil Butonları
+                    document.getElementById('btnBold').style.color = (o.fontWeight === 'bold') ? activeColor : passiveColor;
+                    document.getElementById('btnItalic').style.color = (o.fontStyle === 'italic') ? activeColor : passiveColor;
+                    document.getElementById('btnUnderline').style.color = (o.underline) ? activeColor : passiveColor;
+
+                    // HİZALAMA BUTONLARI (Burası Önemli)
+                    document.getElementById('alignLeft').style.color = (o.textAlign === 'left') ? activeColor : passiveColor;
+                    document.getElementById('alignCenter').style.color = (o.textAlign === 'center') ? activeColor : passiveColor;
+                    document.getElementById('alignRight').style.color = (o.textAlign === 'right') ? activeColor : passiveColor;
+
+                    // Gölge
+                    document.getElementById('btnShadow').style.color = (o.shadow) ? activeColor : passiveColor;
+
+                } else {
+                    textTools.style.display = 'none';
+                }
+
+                // Kilit Butonu
+                var lockBtn = document.getElementById('lockBtn');
+                if (lockBtn) {
+                    lockBtn.className = o.lockMovementX ? "icon-btn danger" : "icon-btn";
+                    lockBtn.innerHTML = o.lockMovementX ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-lock-open"></i>';
+                }
+
+            } else {
+                bar.classList.remove('active');
+            }
+        }
+
+		function loadTemplates() {
+			fetch('/Home/GetSablonlar')
+				.then(r => r.json())
+				.then(data => {
+					var list = document.getElementById('templatesList');
+					list.innerHTML = "";
+					if (!data || data.length === 0) {
+						list.innerHTML = "<p style='color:#666; text-align:center; grid-column:span 2;'>Yüklenemedi.</p>";
+						return;
+					}
+					data.forEach(t => {
+						var div = document.createElement('div');
+						div.className = 'template-item';
+						div.innerHTML = `<img src="${t.resimUrl}" class="template-img"><div class="template-name">${t.baslik}</div>`;
+						div.onclick = () => {
+							setBackgroundFromURL(t.resimUrl);
+							closeModals();
+						};
+						list.appendChild(div);
+					});
+				})
+				.catch(e => { console.error(e); });
+		}
+
+		function openTemplateModal() {
+			openModal('templateModal');
+			loadTemplates();
+		}
+
+		function updateLayers() {
+			var list = document.getElementById('layersList');
+			list.innerHTML = "";
+			var objs = canvas.getObjects().slice().reverse();
+
+			objs.forEach((o, i) => {
+				var name = (o.type && o.type.includes('text')) ? (o.text || '').toString().substring(0, 10) : 'Şekil';
+				var div = document.createElement('div');
+				div.className = 'layer-item ' + (o === canvas.getActiveObject() ? 'selected' : '');
+				div.innerHTML =
+					`<span>${name}</span>
+					 <i class="fa-solid fa-trash" onclick="deleteLayer(event, ${objs.length - 1 - i})" style="color:#555"></i>`;
+
+				div.onclick = (e) => {
+					if (e.target.tagName !== 'I') {
+						canvas.setActiveObject(o);
+						canvas.renderAll();
+						updateUI();
+					}
+				};
+				list.appendChild(div);
+			});
+		}
+
+		function highlightLayer(o) {
+			updateLayers();
+		}
+
+		function deleteLayer(e, i) {
+			e.stopPropagation();
+			canvas.remove(canvas.getObjects()[i]);
+			canvas.discardActiveObject();
+			updateUI();
+		}
+
+		function addText(txt, size, weight) {
+			loadGoogleFont('Poppins');
+			var t = new fabric.IText(txt, {
+				left: 100,
+				top: 100,
+				fontFamily: 'Poppins',
+				fill: '#333',
+				fontSize: size,
+				fontWeight: weight
+			});
+			canvas.add(t);
+			canvas.setActiveObject(t);
+		}
+
+        // --- GELİŞMİŞ ŞEKİL EKLEME SİSTEMİ (addShape) ---
+        function addShape(type) {
+            let shape;
+            // Varsayılan renk siyah (floating bar'da bunu değiştirebilirler)
+            const defaultColor = '#000000';
+
+            // Tüm şekiller için ortak ayarlar
+            const commonOpts = {
+                left: 100,
+                top: 100,
+                fill: defaultColor,
+                stroke: null,
+                originX: 'center',
+                originY: 'center',
+                objectCaching: false // Keskin görünüm için
+            };
+
+            switch (type) {
+                case 'rect':
+                    shape = new fabric.Rect({ ...commonOpts, width: 100, height: 100 });
+                    break;
+
+                case 'circle':
+                    shape = new fabric.Circle({ ...commonOpts, radius: 50 });
+                    break;
+
+                case 'triangle':
+                    shape = new fabric.Triangle({ ...commonOpts, width: 100, height: 100 });
+                    break;
+
+                case 'line':
+                    // Çizgi (İnce, uzun dikdörtgen)
+                    shape = new fabric.Rect({
+                        ...commonOpts,
+                        width: 200, height: 6,
+                        rx: 3, ry: 3, // Köşeleri hafif yuvarlak
+                        fill: defaultColor
+                    });
+                    break;
+
+                case 'star':
+                    // 5 Köşeli Yıldız (Polygon)
+                    shape = new fabric.Polygon([
+                        { x: 0, y: -50 }, { x: 14, y: -20 }, { x: 47, y: -15 }, { x: 23, y: 7 },
+                        { x: 29, y: 40 }, { x: 0, y: 25 }, { x: -29, y: 40 }, { x: -23, y: 7 },
+                        { x: -47, y: -15 }, { x: -14, y: -20 }
+                    ], { ...commonOpts, scaleX: 1.2, scaleY: 1.2 });
+                    break;
+
+                case 'heart':
+                    // Kalp (SVG Path)
+                    const heartPath = "M 272 63.1 c -50 0 -93.8 28.3 -118 70 c -24.2 -41.7 -68 -70 -118 -70 C -39.4 63.1 -64 246.7 154 414.9 L 154 414.9 l 0 0 l 0 0 l 0 0 L 154 414.9 L 372 233.1 C 516 134.1 426 63.1 272 63.1 z";
+                    shape = new fabric.Path(heartPath, {
+                        ...commonOpts, scaleX: 0.25, scaleY: 0.25 // Boyutu küçültüyoruz
+                    });
+                    break;
+
+                case 'arrow':
+                    // Ok (SVG Path)
+                    const arrowPath = "M 50 0 L 100 50 L 75 50 L 75 100 L 25 100 L 25 50 L 0 50 Z";
+                    shape = new fabric.Path(arrowPath, {
+                        ...commonOpts,
+                        scaleX: 1, scaleY: 1,
+                        angle: 90 // Sağa çeviriyoruz
+                    });
+                    break;
+
+                case 'bubble':
+                    // Konuşma Balonu (SVG Path)
+                    const bubblePath = "M 10 10 H 90 A 10 10 0 0 1 100 20 V 70 A 10 10 0 0 1 90 80 H 30 L 10 100 V 80 H 10 A 10 10 0 0 1 0 70 V 20 A 10 10 0 0 1 10 10 Z";
+                    shape = new fabric.Path(bubblePath, {
+                        ...commonOpts, scaleX: 1.5, scaleY: 1.5
+                    });
+                    break;
+
+                case 'hexagon':
+                    // Altıgen (Polygon)
+                    shape = new fabric.Polygon([
+                        { x: 25, y: 0 }, { x: 75, y: 0 }, { x: 100, y: 43 },
+                        { x: 75, y: 86 }, { x: 25, y: 86 }, { x: 0, y: 43 }
+                    ], { ...commonOpts, width: 100, height: 100 });
+                    break;
+
+                case 'pentagon':
+                    // Beşgen (Polygon)
+                    shape = new fabric.Polygon([
+                        { x: 50, y: 0 }, { x: 100, y: 38 }, { x: 82, y: 100 },
+                        { x: 18, y: 100 }, { x: 0, y: 38 }
+                    ], { ...commonOpts, width: 100, height: 100 });
+                    break;
+            }
+
+            if (shape) {
+                canvas.add(shape);
+                canvas.centerObject(shape); // Tuvalin ortasına koy
+                canvas.setActiveObject(shape); // Seçili hale getir
+                shape.setCoords(); // Koordinatları güncelle
+                canvas.requestRenderAll();
+
+                // Varsa geçmişe kaydet ve UI'ı güncelle
+                if (typeof saveHistory === 'function') saveHistory();
+                if (typeof updateUI === 'function') updateUI();
+            }
+        }
+
+		function deleteObject() {
+			var o = canvas.getActiveObject();
+			if (o) {
+				canvas.remove(o);
+				canvas.discardActiveObject();
+				updateUI();
+			}
+		}
+
+		function setBackgroundFromURL(u) {
+			fabric.Image.fromURL(u, function (i) {
+				if (!i) return;
+				var s = Math.max(canvas.width / i.width, canvas.height / i.height);
+				canvas.setBackgroundImage(i, canvas.renderAll.bind(canvas), {
+					scaleX: s,
+					scaleY: s,
+					originX: 'center',
+					originY: 'center',
+					left: canvas.width / 2,
+					top: canvas.height / 2
+				});
+				saveHistory();
+			}, { crossOrigin: 'anonymous' });
+		}
+
+		function saveHistory() {
+			if (!isHistoryProcessing && canvas) {
+				var json = canvas.toJSON();
+				historyStack.push(JSON.stringify(json));
+			}
+		}
+
+		function undo() {
+			if (historyStack.length > 0) {
+				isHistoryProcessing = true;
+				var last = historyStack.pop();
+				canvas.loadFromJSON(last, () => {
+					canvas.renderAll();
+					isHistoryProcessing = false;
+					updateLayers();
+				});
+			}
+		}
+
+		function generateQR() {
+			var tEl = document.getElementById('qrText');
+			var tModalEl = document.getElementById('qrTextModal');
+
+			var t = "";
+			if (tEl && tEl.value.trim()) t = tEl.value.trim();
+			else if (tModalEl && tModalEl.value.trim()) t = tModalEl.value.trim();
+
+			if (!t) {
+				showToast("Önce link veya metin gir 🙂");
+				return;
+			}
+
+			fabric.Image.fromURL(
+				"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(t),
+				function (i) {
+					i.set({ left: 100, top: 100 });
+					canvas.add(i);
+					canvas.setActiveObject(i);
+					closeModals();
+				},
+				{ crossOrigin: 'anonymous' }
+			);
+		}
+
+		function toggleLock() {
+			var o = canvas.getActiveObject();
+			if (o) {
+				var l = !o.lockMovementX;
+				o.set({ lockMovementX: l, lockMovementY: l, selectable: !l });
+				canvas.discardActiveObject();
+				canvas.renderAll();
+				updateUI();
+				showToast(l ? "Kilitlendi" : "Açıldı");
+			}
+		}
+
+		function copy() {
+			var o = canvas.getActiveObject();
+			if (o) o.clone(function (c) {
+				_clipboard = c;
+				showToast("Kopyalandı");
+			});
+		}
+
+		function paste() {
+			if (!_clipboard) return;
+			_clipboard.clone(function (c) {
+				canvas.discardActiveObject();
+				c.set({ left: c.left + 20, top: c.top + 20, evented: true });
+				canvas.add(c);
+				canvas.setActiveObject(c);
+				canvas.requestRenderAll();
+				saveHistory();
+				showToast("Yapıştırıldı");
+			});
+		}
+
+		function loadGoogleFont(f) {
+			var id = 'font-' + f.replace(/\s+/g, '-');
+			if (!document.getElementById(id)) {
+				var l = document.createElement('link');
+				l.id = id;
+				l.href = 'https://fonts.googleapis.com/css2?family=' + f.replace(/\s+/g, '+') + '&display=swap';
+				l.rel = 'stylesheet';
+				document.head.appendChild(l);
+			}
+		}
+
+		function getRandomColor() {
+			return '#' + Math.floor(Math.random() * 16777215).toString(16);
+		}
+
+		function toggleStyle(p, v1, v2) {
+			var o = canvas.getActiveObject();
+			if (o) {
+				o.set(p, o[p] === v1 ? v2 : v1);
+				canvas.requestRenderAll();
+			}
+		}
+
+		async function saveToCloud(options = {}) {
+            const opts = {
+                silent: false,          // true ise toast daha az
+                previewMultiplier: 0.5, // önizleme boyutu
+                keepalive: false,       // beforeunload için
+                ...options
+            };
+
+            try {
+                const json = JSON.stringify(canvas.toJSON());
+
+                const formData = new FormData();
+                formData.append("sablonId", "@Model.Id");
+                formData.append("jsonVerisi", json);
+
+                const k = document.getElementById("designId")?.value;
+                if (k && k !== "0") formData.append("kayitliId", k);
+
+                canvas.discardActiveObject();
+                canvas.renderAll();
+
+                // Önizleme üret (manuelde 0.5, autosave’da 0.3 gibi düşüreceğiz)
+                const preview = canvas.toDataURL({ format: 'png', multiplier: opts.previewMultiplier });
+                formData.append("resimDataUrl", preview);
+
+                // Token gerekiyorsa desteklesin (gerekmese de zararı yok)
+                const csrf = getCSRFToken();
+                if (csrf) formData.append("__RequestVerificationToken", csrf);
+
+                const r = await fetch('/Home/TasarimiKaydet', {
+                    method: 'POST',
+                    body: formData,
+                    keepalive: !!opts.keepalive
+                });
+
+                // JSON değilse bile kullanıcıya hata gösterelim
+                const ct = (r.headers.get("content-type") || "").toLowerCase();
+                let payload;
+
+                if (ct.includes("application/json")) {
+                    payload = await r.json();
+                } else {
+                    const txt = await r.text();
+                    throw new Error(`Kaydetme hatası (HTTP ${r.status}). Sunucu JSON dönmedi.\n${txt?.slice(0, 200) || ""}`);
+                }
+
+                if (!r.ok || payload?.success === false) {
+                    throw new Error(payload?.message || `Kaydedilemedi (HTTP ${r.status})`);
+                }
+
+                if (payload?.id) document.getElementById("designId").value = payload.id;
+
+                if (!opts.silent) showToast(payload.message || "Kaydedildi");
+                return payload;
+            } catch (err) {
+                console.error("saveToCloud error:", err);
+                showToast("Kaydetme başarısız!");
+                return { success: false, message: err?.message || "Kaydetme başarısız" };
+            }
+        }
+
+        async function manualSave() {
+            showToast("Kaydediliyor...");
+            const d = await saveToCloud({ silent: false, previewMultiplier: 0.5 });
+
+            if (!d || d.success === false) {
+                // SweetAlert varsa daha net gösterir
+                if (window.Swal) Swal.fire("Kaydetme Başarısız", d.message || "Kaydetme hatası", "error");
+            }
+        }
+
+
+        function submitToMarket() {
+            var t = document.getElementById('sellTitle').value.trim(),
+                p = document.getElementById('sellPrice').value.trim();
+
+            // Doğrulama...
+            if (!t || !p || isNaN(parseInt(p)) || parseInt(p) < 5) {
+                Swal.fire({ /* ... uyarı kodları ... */ });
+                return;
+            }
+
+            // Dikkat: Ana modalı burada KAPATMIYORUZ, çünkü SweetAlert açılınca çakışma oluyor.
+            // closeModals(); // <-- BU SATIRI BURADAN KALDIRDIK!
+
+            showToast("Tasarımınız pazara gönderiliyor...");
+
+            canvas.discardActiveObject();
+            canvas.renderAll();
+
+            var f = new FormData();
+            f.append("baslik", t);
+            f.append("fiyat", p);
+            f.append("jsonVerisi", JSON.stringify(canvas.toJSON()));
+            f.append("resimDataUrl", canvas.toDataURL({ format: 'png', multiplier: 0.5 }));
+            f.append("__RequestVerificationToken", getCSRFToken());
+
+            fetch('/Home/SatisYap', {
+                method: 'POST',
+                body: f
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        // BAŞARILI DURUM
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'BAŞARILI! 🚀',
+                            text: d.message || "Tasarımınız başarıyla pazara sunulmuştur.",
+                            background: '#1e1e1e',
+                            color: '#fff',
+                            confirmButtonText: 'Tamam',
+                            confirmButtonColor: '#c6ff00',
+
+                            // ✅ KRİTİK ÇÖZÜM: SweetAlert KAPANDIKTAN SONRA (after close)
+                            didClose: () => {
+                                // SweetAlert kapanır kapanmaz, arkada kalan ana modalı kapatır.
+                                closeModals();
+                            }
+
+                        });
+                    } else {
+                        // BAŞARISIZ DURUM
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'HATA!',
+                            text: d.message || "Tasarım gönderilirken bir sorun oluştu.",
+                            background: '#1e1e1e',
+                            color: '#fff',
+                            confirmButtonColor: '#ff4444',
+
+                            // ✅ KRİTİK ÇÖZÜM: Hata durumunda da modalı kapat
+                            didClose: () => {
+                                closeModals();
+                            }
+                        });
+                    }
+                })
+                .catch(e => {
+                    // BAĞLANTI HATASI
+                    console.error("Satış hatası:", e);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'BAĞLANTI HATASI',
+                        text: 'Sunucuya ulaşılamadı. Lütfen internet bağlantınızı kontrol edin.',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        confirmButtonColor: '#ff4444',
+                        didClose: () => {
+                            closeModals();
+                        }
+                    });
+                });
+        }
+
+		function downloadAs(f) {
+			var fd = new FormData();
+			fd.append("__RequestVerificationToken", getCSRFToken());
+			fetch('/Home/IndirmeHakkiKontrol', { method: 'POST', body: fd })
+				.then(r => r.json())
+				.then(d => {
+					if (d.success) {
+						canvas.discardActiveObject();
+						canvas.renderAll();
+
+						var l = document.createElement('a');
+						l.download = 'kartist.' + f;
+						var fmt = f === 'jpg' ? 'jpeg' : f;
+
+						if (f === 'svg') {
+							var blob = new Blob([canvas.toSVG()], { type: "image/svg+xml;charset=utf-8" });
+							l.href = URL.createObjectURL(blob);
+						} else {
+							l.href = canvas.toDataURL({ format: fmt, multiplier: 2 });
+						}
+						l.click();
+						closeModals();
+						showToast('İndirildi');
+					}
+					else alert(d.message || "İndirme hakkı yok");
+				});
+		}
+
+		function showToast(m) {
+			var t = document.getElementById('toast');
+			t.innerText = m;
+			t.style.opacity = 1;
+			setTimeout(() => { t.style.opacity = 0; }, 2000);
+		}
+        function closeModals() {
+            // Tüm modal overlay'leri seçip kapatmak en garanti yoldur
+            document.querySelectorAll('.modal-overlay').forEach(m => {
+                m.style.display = 'none';
+            });
+
+            // Ek olarak, mobil cihazlarda arkaplan kaymasını engellemek için
+            // body'deki olası overflow kilitlerini de serbest bırakmalıyız.
+            document.body.style.overflow = '';
+        }
+        // --- Modal Dış Tıklama Kapatma ---
+        document.addEventListener('click', function (e) {
+            const sellModal = document.getElementById('sellModal');
+
+            // Eğer SAT modalı aktifse VE tıklanan yer modalın içeriği değilse
+            if (sellModal && sellModal.style.display === 'flex') {
+                // Tıklanan yer modalın tam üzerine (overlay) ise kapat
+                // Yani tıklanan yer, modalın kendisi (modal-overlay) olmalı, içindeki kutu değil.
+                if (e.target.classList.contains('modal-overlay')) {
+                    closeModals();
+                }
+            }
+        });
+
+        // --- Mobil Cihazda 'X' Butonunu Kapatma Kontrolü ---
+        // Zaten bu butona onclick="closeModals()" ekliydi, çalışmıyorsa
+        // bu demektir ki click olayları mobil modda overlay'e takılıyor.
+        function openModal(id) {
+            closeModals();
+            var el = document.getElementById(id);
+            if (el) {
+
+                if (id === 'sellModal') {
+                    // SELL MODAL ÖZEL İŞLEMİ: Önizlemeyi yükle
+
+                    // 1. Canvas'ın seçili objesini kaldır (Önizlemede kontrol noktaları görünmesin)
+                    canvas.discardActiveObject();
+                    canvas.renderAll();
+
+                    // 2. Yüksek Çözünürlüklü Resmi Oluştur
+                    // multiplier: 2 (700x500 ise 1400x1000 resim üretir)
+                    const dataURL = canvas.toDataURL({
+                        format: 'png',
+                        multiplier: 2.0 // Yüksek çözünürlük
+                    });
+
+                    // 3. Resim elementine yükle
+                    const imgEl = document.getElementById('sellPreviewImage');
+                    if (imgEl) {
+                        imgEl.src = dataURL;
+                    }
+                }
+
+                el.style.display = 'flex';
+            }
+        }
+
+		function openDownloadModal() {
+			openModal('downloadModal');
+		}
+
+		function openSellModal() {
+			openModal('sellModal');
+		}
+
+		function closeModals() {
+			document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+		}
+
+        async function generateDesignFromPrompt() {
+            const promptEl = document.getElementById("aiPrompt");
+            const catEl = document.getElementById("aiCategorySelect");
+
+            const prompt = (promptEl?.value || "").trim();
+            const selectedCategory = catEl ? catEl.value : "genel";
+
+            if (!prompt) {
+                Swal.fire("Eksik bilgi", "Ne tarz bir kart istediğini yazmalısın 🙂", "warning");
+                return;
+            }
+
+            showToast("AI kart tasarımı hazırlanıyor... 🎨");
+
+            const fd = new FormData();
+            fd.append("prompt", prompt);
+            fd.append("kategori", selectedCategory);
+            fd.append("__RequestVerificationToken", getCSRFToken());
+
+            let apiResponse;
+            try {
+                const res = await fetch("/Home/KartTasarimOner", {
+                    method: "POST",
+                    body: fd
+                });
+                apiResponse = await res.json();
+            } catch (e) {
+                console.error(e);
+                Swal.fire("Bağlantı Hatası", "Sunucuya ulaşılamadı.", "error");
+                return;
+            }
+
+            if (!apiResponse || !apiResponse.success) {
+                console.error("AI Hatası:", apiResponse ? apiResponse.data : "Bilinmiyor");
+                Swal.fire("AI Hatası", apiResponse ? apiResponse.data : "Sunucu hatası.", "error");
+                return;
+            }
+
+            let aiData;
+            try {
+                let raw = apiResponse.data;
+
+                if (typeof raw === "string") {
+                    raw = raw.trim();
+
+                    if (raw.startsWith("{") && raw.indexOf("\"renkPaleti\"") !== -1) {
+                        aiData = JSON.parse(raw);
+                    } else {
+                        const outer = JSON.parse(raw);
+                        const content = outer &&
+                            outer.choices &&
+                            outer.choices[0] &&
+                            outer.choices[0].message &&
+                            outer.choices[0].message.content;
+
+                        if (!content) throw new Error("choices[0].message.content bulunamadı");
+                        aiData = JSON.parse(content);
+                    }
+                } else if (typeof raw === "object" && raw !== null) {
+                    if (raw.renkPaleti || raw.tema || raw.anaMetin) {
+                        aiData = raw;
+                    } else if (
+                        raw.choices &&
+                        raw.choices[0] &&
+                        raw.choices[0].message &&
+                        raw.choices[0].message.content
+                    ) {
+                        aiData = JSON.parse(raw.choices[0].message.content);
+                    } else {
+                        throw new Error("Geçersiz AI response formatı");
+                    }
+                } else {
+                    throw new Error("Beklenmeyen data.data tipi");
+                }
+            } catch (e) {
+                console.error("AI response parse hatası:", e, apiResponse.data);
+                Swal.fire("Veri Hatası", "AI tasarım verisi okunamadı.", "error");
+                return;
+            }
+
+            console.log("AI Tasarım JSON:", aiData);
+
+            const palette = Array.isArray(aiData.renkPaleti) ? aiData.renkPaleti : [];
+
+            let kategori = (aiData.kategori || selectedCategory || "kart").toString().toLowerCase();
+            const kategoriSlug = kategori
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]+/g, " ");
+
+            let baseColor = "#0f172a";
+            let accentColor = "#f97316";
+            let softColor = "#22c55e";
+
+            if (palette.length >= 3) {
+                baseColor = palette[0] || baseColor;
+                accentColor = palette[1] || accentColor;
+                softColor = palette[2] || softColor;
+            } else {
+                if (kategoriSlug.includes("dogum")) {
+                    baseColor = "#020617";
+                    accentColor = "#f97316";
+                    softColor = "#ec4899";
+                } else if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) {
+                    baseColor = "#111827";
+                    accentColor = "#ec4899";
+                    softColor = "#9333ea";
+                } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
+                    baseColor = "#020617";
+                    accentColor = "#22c55e";
+                    softColor = "#06b6d4";
+                } else if (kategoriSlug.includes("motivasyon")) {
+                    baseColor = "#020617";
+                    accentColor = "#38bdf8";
+                    softColor = "#facc15";
+                } else if (kategoriSlug.includes("ozur")) {
+                    baseColor = "#020617";
+                    accentColor = "#fb7185";
+                    softColor = "#38bdf8";
+                }
+            }
+
+            const tema = (aiData.tema || "Başlık").toString();
+            const anaMetin = (aiData.anaMetin || prompt).toString();
+            const yaziFontu = (aiData.yaziFontu || "Poppins").toString();
+            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler : [];
+            const arkaPlanAciklama = (aiData.arkaPlan || "").toString();
+
+            if (yaziFontu) loadGoogleFont(yaziFontu);
+
+            canvas.clear();
+
+            const cw = canvas.getWidth();
+            const ch = canvas.getHeight();
+
+            const bgRect = new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: cw,
+                height: ch,
+                selectable: false,
+                evented: false
+            });
+
+            bgRect.set("fill", new fabric.Gradient({
+                type: "linear",
+                gradientUnits: "percentage",
+                coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
+                colorStops: [
+                    { offset: 0, color: baseColor },
+                    { offset: 1, color: "#020617" }
+                ]
+            }));
+
+            bgRect.shadow = {
+                color: "rgba(0,0,0,0.7)",
+                blur: 60,
+                offsetX: 0,
+                offsetY: 25
+            };
+
+            canvas.add(bgRect);
+
+            canvas.add(new fabric.Circle({
+                left: -150,
+                top: -80,
+                radius: 170,
+                fill: softColor,
+                opacity: 0.18,
+                selectable: false,
+                evented: false
+            }));
+
+            canvas.add(new fabric.Circle({
+                left: cw - 260,
+                top: ch - 230,
+                radius: 200,
+                fill: accentColor,
+                opacity: 0.15,
+                selectable: false,
+                evented: false
+            }));
+
+            // Kart
+            const cardW = cw * 0.78;
+            const cardH = ch * 0.7;
+            const cardLeft = (cw - cardW) / 2;
+            const cardTop = (ch - cardH) / 2;
+
+            const card = new fabric.Rect({
+                left: cardLeft,
+                top: cardTop,
+                width: cardW,
+                height: cardH,
+                rx: 32,
+                ry: 32,
+                fill: "rgba(15,23,42,0.94)",
+                stroke: "rgba(148,163,184,0.45)",
+                strokeWidth: 1.4,
+                selectable: false,
+                evented: false,
+                shadow: {
+                    color: "rgba(0,0,0,0.75)",
+                    blur: 34,
+                    offsetX: 0,
+                    offsetY: 20
+                }
+            });
+            canvas.add(card);
+
+            const centerX = cardLeft + cardW / 2;
+
+            const headerBadge = new fabric.IText(kategori, {
+                left: cardLeft + 32,
+                top: cardTop + 18,
+                fontFamily: "Poppins",
+                fontSize: 12,
+                fill: "#e5e7eb",
+                backgroundColor: "rgba(15,23,42,0.98)",
+                padding: 6
+            });
+            canvas.add(headerBadge);
+
+            const headerCenterY = cardTop + cardH * 0.2;
+
+            let titleFontSize = 34;
+            if (tema.length > 18) titleFontSize = 30;
+            if (tema.length > 28) titleFontSize = 26;
+
+            const titleText = new fabric.Textbox(tema, {
+                left: centerX,
+                top: headerCenterY - 20,
+                originX: "center",
+                fontFamily: yaziFontu || "Poppins",
+                fontSize: titleFontSize,
+                fontWeight: "700",
+                fill: "#f9fafb",
+                textAlign: "center",
+                width: cardW * 0.7
+            });
+            canvas.add(titleText);
+
+            if (arkaPlanAciklama) {
+                const subtitle = new fabric.Textbox(arkaPlanAciklama, {
+                    left: centerX,
+                    top: headerCenterY + 10,
+                    originX: "center",
+                    fontFamily: "Poppins",
+                    fontSize: 13,
+                    fill: "#9ca3af",
+                    textAlign: "center",
+                    width: cardW * 0.7
+                });
+                canvas.add(subtitle);
+            }
+
+            const headerBandEnd = cardTop + cardH * 0.25;
+            const heroBandTop = headerBandEnd + 10;
+            const heroBandEnd = cardTop + cardH * 0.60;
+
+            const heroCenterY = (heroBandTop + heroBandEnd) / 2;
+            const heroBandHeight = heroBandEnd - heroBandTop;
+
+            const circleRadius = Math.min(heroBandHeight / 2 - 8, 80);
+
+            const emojiCircle = new fabric.Circle({
+                left: centerX - circleRadius,
+                top: heroCenterY - circleRadius,
+                radius: circleRadius,
+                fill: "rgba(30,64,175,0.45)",
+                selectable: false,
+                evented: false
+            });
+            canvas.add(emojiCircle);
+
+            // Kategoriye göre ana emoji seç (fallback)
+            let heroEmoji = "🎉";
+            if (emojiler.length) {
+                heroEmoji = emojiler[0];
+            } else if (kategoriSlug.includes("ask")) {
+                heroEmoji = "❤️";
+            } else if (kategoriSlug.includes("dogum")) {
+                heroEmoji = "🎂";
+            } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
+                heroEmoji = "🙏";
+            } else if (kategoriSlug.includes("motivasyon")) {
+                heroEmoji = "✨";
+            }
+
+            const emojiText = new fabric.Text(heroEmoji, {
+                left: centerX,
+                top: heroCenterY,
+                originX: "center",
+                originY: "center",
+                fontSize: 66,
+                selectable: true
+            });
+            canvas.add(emojiText);
+
+            // --- EK EMOJİLER: DAİRENİN ALTINDA TEK SATIR, ORTALANMIŞ ---
+            const extraEmojis = emojiler.filter(e => e !== heroEmoji).slice(0, 3);
+            let extraRowBottom = heroBandEnd; // body top hesaplaması için
+
+            if (extraEmojis.length > 0) {
+                const iconSize = 24;
+                const gap = 10;
+                const totalW = extraEmojis.length * iconSize + (extraEmojis.length - 1) * gap;
+                let startX = centerX - totalW / 2;
+                const rowY = heroBandEnd - iconSize; // tam hero bandının alt çizgisine oturmasın
+
+                extraEmojis.forEach(em => {
+                    const t = new fabric.Text(em, {
+                        left: startX + iconSize / 2,
+                        top: rowY,
+                        originX: "center",
+                        originY: "center",
+                        fontSize: iconSize,
+                        selectable: true
+                    });
+                    canvas.add(t);
+                    startX += iconSize + gap;
+                });
+
+                extraRowBottom = rowY + iconSize; // body için gerçek alt sınır
+            }
+
+            // --- BODY: ANA METİN (HER ZAMAN ALTTA, ORTALI ve SABİT GENİŞLİKTE) ---
+            let bodyFontSize = 22;
+            const len = anaMetin.length;
+            if (len > 120) bodyFontSize = 20;
+            if (len > 220) bodyFontSize = 18;
+            if (len > 340) bodyFontSize = 16;
+
+            const bodyBandTop = extraRowBottom + 16;              // hero’dan 16px boşluk
+            const bodyBandBottom = cardTop + cardH - 28;          // kart altından 28px içeri
+            const bodyTop = bodyBandTop;                          // yazının başlayacağı yer
+            const bodyWidth = cardW * 0.8;
+
+            const bodyText = new fabric.Textbox(anaMetin, {
+                left: centerX,
+                top: bodyTop,
+                originX: "center",
+                fontFamily: yaziFontu || "Poppins",
+                fontSize: bodyFontSize,
+                fill: "#e5e7eb",
+                textAlign: "center",
+                width: bodyWidth,
+                lineHeight: 1.35
+            });
+            canvas.add(bodyText);
+            canvas.setActiveObject(bodyText);
+
+
+            canvas.renderAll();
+            if (typeof saveHistory === "function") {
+                saveHistory();
+            }
+
+            showToast("AI kart tasarımı hazır 🎨");
+        }
+
+
+
+
+
+
+
+
+        // --- PAYLAŞ BUTONU ---
+        async function shareDesign() {
+            // 1) Önce kaydet ve sonucu kontrol et
+            const saved = await saveToCloud({ silent: true, previewMultiplier: 0.4 });
+            if (!saved || saved.success === false) {
+                const msg = saved?.message || "Kaydetme başarısız. Link oluşturulamıyor.";
+                showToast(msg);
+                if (window.Swal) Swal.fire("Kaydetme Başarısız", msg, "error");
+                return;
+            }
+
+            // designId'yi DOM’dan değil, mümkünse response’tan al (en sağlamı)
+            let kid = saved.id || document.getElementById("designId")?.value;
+            if (!kid || kid === "0") {
+                showToast("Önce kaydedilmeli.");
+                return;
+            }
+
+            const { value: formValues, isConfirmed } = await Swal.fire({
+                title: 'Kartı Özelleştir ✨',
+                html: `
+                  <div style="text-align:left; margin-bottom:10px; color:#aaa; font-size:0.9rem;">1. Tema Seç</div>
+                  <select id="swal-category" class="swal2-input" style="margin:0 0 20px 0; background:#222; color:white; border:1px solid #444;">
+                    <option value="Standart">Standart (Zarf)</option>
+                    <option value="DogumGunu">🎂 Doğum Günü</option>
+                    <option value="Dugun">💍 Düğün / Davet</option>
+                    <option value="Ask">❤️ Aşk / Sevgili</option>
+                    <option value="Parti">🎉 Parti / Eğlence</option>
+                  </select>
+
+                  <div style="text-align:left; margin-bottom:10px; color:#aaa; font-size:0.9rem;">2. Müzik Ekle (İsteğe Bağlı)</div>
+                  <div style="display:flex; gap:10px;">
+                    <input type="file" id="swal-music" class="swal2-file" accept="audio/*" style="background:#222; color:#ccc; border:1px solid #444;">
+                  </div>
+                  <div id="upload-status" style="font-size:0.8rem; color:#c6ff00; margin-top:5px; height:20px;"></div>
+                `,
+                background: '#1e1e1e',
+                color: '#fff',
+                showCancelButton: true,
+                confirmButtonText: 'LİNKİ OLUŞTUR 🔗',
+                confirmButtonColor: '#c6ff00',
+                cancelButtonText: 'Vazgeç',
+                cancelButtonColor: '#333',
+                preConfirm: async () => {
+                    const cat = document.getElementById('swal-category')?.value || "Standart";
+                    const fileInput = document.getElementById('swal-music');
+                    let musicUrl = "";
+
+                    if (fileInput?.files?.length > 0) {
+                        document.getElementById('upload-status').innerText = "Müzik yükleniyor...";
+                        const fd = new FormData();
+                        fd.append("muzikDosyasi", fileInput.files[0]);
+
+                        const csrf = getCSRFToken();
+                        if (csrf) fd.append("__RequestVerificationToken", csrf);
+
+                        try {
+                            const resp = await fetch('/Home/MuzikYukle', { method: 'POST', body: fd });
+                            const ct = (resp.headers.get("content-type") || "").toLowerCase();
+
+                            if (!ct.includes("application/json")) {
+                                const t = await resp.text();
+                                Swal.showValidationMessage(`Müzik yükleme hatası (HTTP ${resp.status}). ${t?.slice(0, 150) || ""}`);
+                                return false;
+                            }
+
+                            const resJson = await resp.json();
+                            if (resp.ok && resJson.success) musicUrl = resJson.url;
+                            else {
+                                Swal.showValidationMessage(resJson.message || "Yükleme hatası");
+                                return false;
+                            }
+                        } catch (e) {
+                            Swal.showValidationMessage("Yükleme hatası!");
+                            return false;
+                        }
+                    }
+
+                    return { category: cat, music: musicUrl };
+                }
+            });
+
+            if (!isConfirmed || !formValues) return;
+
+            // 2) Link oluştur
+            try {
+                const fd = new FormData();
+                fd.append("kayitId", kid);
+                fd.append("kategori", formValues.category);
+                fd.append("muzikUrl", formValues.music || "");
+
+                const csrf = getCSRFToken();
+                if (csrf) fd.append("__RequestVerificationToken", csrf);
+
+                const resp = await fetch('/Home/LinkOlustur', { method: 'POST', body: fd });
+                const ct = (resp.headers.get("content-type") || "").toLowerCase();
+
+                if (!ct.includes("application/json")) {
+                    const t = await resp.text();
+                    throw new Error(`Link oluşturma hatası (HTTP ${resp.status}). Sunucu JSON dönmedi. ${t?.slice(0, 200) || ""}`);
+                }
+
+                const d = await resp.json();
+
+                if (!resp.ok || !d.success) {
+                    throw new Error(d.message || `Link oluşturulamadı (HTTP ${resp.status})`);
+                }
+
+                if (typeof confetti === "function") {
+                    confetti({ particleCount: 180, spread: 70, origin: { y: 0.6 } });
+                }
+
+                // Clipboard bazı ortamlarda engellenebilir; başarısızsa yine de linki gösteriyoruz
+                try { await navigator.clipboard.writeText(d.link); } catch { }
+
+                Swal.fire({
+                    title: 'HAZIR! 🚀',
+                    html: `<input value="${d.link}" style="width:100%; padding:10px; background:#222; color:#c6ff00; border:1px solid #444; border-radius:5px; text-align:center;" readonly>`,
+                    icon: 'success',
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#c6ff00',
+                    confirmButtonText: 'Tamam'
+                });
+
+            } catch (err) {
+                console.error("LinkOlustur error:", err);
+                showToast(err.message || "Link oluşturma başarısız!");
+                Swal.fire("Hata", err.message || "Link oluşturma başarısız!", "error");
+            }
+        }
+
+
+		function copyLinkManually() {
+			var copyText = document.getElementById("shareLinkInput");
+			if (!copyText) return;
+			copyText.select();
+			navigator.clipboard.writeText(copyText.value);
+			event.target.innerText = "OK!";
+			setTimeout(() => { event.target.innerText = "KOPYALA"; }, 2000);
+		}
+
+		// --- SİTE REHBERİ (TUTORIAL) ---
+		function startTour() {
+			const driver = window.driver.js.driver;
+
+			const driverObj = driver({
+				showProgress: true,
+				animate: true,
+				popoverClass: 'driverjs-theme',
+				steps: [
+					{
+						element: '.logo',
+						popover: {
+							title: 'Kartist Editörüne Hoş Geldin! 🎨',
+							description: 'Seni kısa bir tura çıkaralım. Hayallerini tasarlamak sandığından çok daha kolay.',
+							side: "bottom",
+							align: 'start'
+						}
+					},
+					{
+						element: '#tabTemplates',
+						popover: {
+							title: '1. Hazır Şablonlar',
+							description: 'İlham gelmedi mi? Buradan Düğün, Parti veya Kurumsal şablonlardan birini seçip hemen başla.',
+							side: "right",
+							align: 'start'
+						}
+					},
+					{
+						element: '#tabText',
+						popover: {
+							title: '2. Yazı ve İçerik',
+							description: 'Buradan başlıklar ve metinler ekleyebilirsin. Fontları ve renkleri özgürce değiştir.',
+							side: "right",
+							align: 'start'
+						}
+					},
+					{
+						element: '#tabAI',
+						popover: {
+							title: '3. Yapay Zeka (AI) ✨',
+							description: 'Ne yazacağını bilmiyor musun? Konuyu seç, Yapay Zeka senin için en etkileyici sözleri yazsın.',
+							side: "right",
+							align: 'start'
+						}
+					},
+					{
+						element: '.workspace',
+						popover: {
+							title: '4. Çalışma Alanı',
+							description: 'Burası senin sahnen! Her şeyi buraya sürükle, büyüt, küçült ve yerleştir.',
+							side: "top",
+							align: 'center'
+						}
+					},
+					{
+						element: '.music-toggle',
+						popover: {
+							title: '5. Müzik Kutusu 🎵',
+							description: 'Tasarım yaparken gaza gelmek için buradan müzik açabilirsin. Spotify veya YouTube linki yapıştır!',
+							side: "left",
+							align: 'start'
+						}
+					},
+					{
+						element: '.header-right',
+						popover: {
+							title: '6. Paylaş ve İndir',
+							description: 'İşin bitince tasarımı indir veya link olarak arkadaşlarınla paylaş. Üstelik paylaşırken özel efektler seçebilirsin!',
+							side: "bottom",
+							align: 'end'
+						}
+					},
+					{
+						popover: {
+							title: 'Hazırsın! 🚀',
+							description: 'Artık sıra sende. Efsane tasarımlar yaratmaya başla!',
+						}
+					}
+				]
+			});
+
+			driverObj.drive();
+		}
+
+		// if (!localStorage.getItem('tourShown')) { startTour(); localStorage.setItem('tourShown', 'true'); }
+
+		// Mobil Menü Toggle
+		function toggleMobileMenu() {
+			const overlay = document.getElementById('mobileMenuOverlay');
+			if (overlay) {
+				overlay.classList.toggle('active');
+				document.body.style.overflow = overlay.classList.contains('active') ? 'hidden' : '';
+			}
+		}
+
+		// Overlay dışına tıklayınca kapat
+		document.addEventListener('click', function(e) {
+			const overlay = document.getElementById('mobileMenuOverlay');
+			if (overlay && overlay.classList.contains('active')) {
+				if (e.target === overlay) {
+					toggleMobileMenu();
+				}
+			}
+        });
+        // --- METİN STİL FONKSİYONLARI ---
+        // 1. Hizalama Fonksiyonu (Left, Center, Right)
+        function setTextAlign(align) {
+            var o = canvas.getActiveObject();
+            // Seçili nesne yazı mı diye kontrol et
+            if (o && o.type && (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox')) {
+                o.set('textAlign', align);
+                canvas.requestRenderAll(); // Tuvali güncelle
+                updateUI(); // Buton rengini güncelle
+            }
+        }
+
+        // 2. Font Değiştirme Olayı
+        document.getElementById('fontFamily').addEventListener('change', function () {
+            var fontName = this.value;
+            var o = canvas.getActiveObject();
+
+            if (o && o.type && o.type.includes('text')) {
+                // Fontu Google'dan yükle (eğer yüklenmediyse)
+                loadGoogleFont(fontName);
+
+                // Nesneye uygula
+                o.set('fontFamily', fontName);
+                canvas.requestRenderAll();
+            }
+        });
+
+        // Google Font Yükleyici (Dinamik)
+        function loadGoogleFont(fontName) {
+            var id = 'font-' + fontName.replace(/\s+/g, '-').toLowerCase();
+            if (!document.getElementById(id)) {
+                var link = document.createElement('link');
+                link.id = id;
+                link.href = 'https://fonts.googleapis.com/css2?family=' + fontName.replace(/\s+/g, '+') + '&display=swap';
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+            }
+        }
+        // Altı Çizili Yap/Kaldır
+        function toggleUnderline() {
+            var o = canvas.getActiveObject();
+            if (o && o.type && o.type.includes('text')) {
+                // underline özelliği boolean (true/false) çalışır
+                o.set('underline', !o.underline);
+                canvas.requestRenderAll();
+                updateUI(); // Butonun aktifliğini güncellemek için
+            }
+        }
+
+        // Hizalama (Left, Center, Right)
+        function setTextAlign(align) {
+            var o = canvas.getActiveObject();
+            if (o && o.type && o.type.includes('text')) {
+                o.set('textAlign', align);
+                canvas.requestRenderAll();
+            }
+        }
+
+        // Genel Stil Değiştirici (Bold, Italic için)
+        function toggleStyle(prop, val1, val2) {
+            var o = canvas.getActiveObject();
+            if (o && o.type && o.type.includes('text')) {
+                o.set(prop, o[prop] === val1 ? val2 : val1);
+                canvas.requestRenderAll();
+                updateUI();
+            }
+        }
+
+        // Gölge Aç/Kapa
+        function toggleShadow() {
+            var o = canvas.getActiveObject();
+            if (!o) return;
+
+            if (o.shadow) {
+                // Gölge varsa kaldır
+                o.set('shadow', null);
+            } else {
+                // Gölge yoksa siyah, hafif flu bir gölge ekle
+                o.set('shadow', new fabric.Shadow({
+                    color: 'rgba(0,0,0,0.6)',
+                    blur: 10,
+                    offsetX: 5,
+                    offsetY: 5
+                }));
+            }
+            canvas.requestRenderAll();
+        }
+        // --- TUVALDE HİZALAMA FONKSİYONU ---
+        function alignObject(type) {
+            var o = canvas.getActiveObject();
+            if (!o) return;
+
+            if (type === 'center') {
+                // Hem yatay hem dikey ortalar
+                canvas.centerObject(o);
+            }
+            else if (type === 'h') {
+                // Sadece yatay ortalar (centerObjectH)
+                canvas.centerObjectH(o);
+            }
+            else if (type === 'v') {
+                // Sadece dikey ortalar (centerObjectV)
+                canvas.centerObjectV(o);
+            }
+
+            // Koordinatları güncelle ve yeniden çiz
+            o.setCoords();
+            canvas.requestRenderAll();
+            saveHistory(); // Geçmişe kaydet (Geri Al çalışsın diye)
+        }
+        // --- NESNE KONUMLANDIRMA SİSTEMİ ---
+        function alignActiveObject(position) {
+            var obj = canvas.getActiveObject();
+            if (!obj) return;
+
+            // Tuval Boyutları
+            const canvasW = canvas.width;
+            const canvasH = canvas.height;
+
+            // Nesne Boyutları (Scale edilmiş haliyle)
+            const objW = obj.getScaledWidth();
+            const objH = obj.getScaledHeight();
+
+            switch (position) {
+                case 'left':
+                    // En sola yapıştır
+                    obj.set({ left: 0 });
+                    break;
+
+                case 'right':
+                    // En sağa yapıştır (Tuval Genişliği - Nesne Genişliği)
+                    obj.set({ left: canvasW - objW });
+                    break;
+
+                case 'center-h':
+                    // Yatay Ortala
+                    canvas.centerObjectH(obj);
+                    break;
+
+                case 'top':
+                    // En tepeye yapıştır
+                    obj.set({ top: 0 });
+                    break;
+
+                case 'bottom':
+                    // En alta yapıştır (Tuval Yüksekliği - Nesne Yüksekliği)
+                    obj.set({ top: canvasH - objH });
+                    break;
+
+                case 'center-v':
+                    // Dikey Ortala
+                    canvas.centerObjectV(obj);
+                    break;
+            }
+
+            obj.setCoords(); // Tıklanabilir alanı güncelle
+            canvas.requestRenderAll(); // Çizimi yenile
+            saveHistory(); // Geri alabilmek için kaydet
+        }
+        // --- 1. ÇOKLU SİLME FONKSİYONU (GÜNCELLENDİ) ---
+        function deleteObject() {
+            var activeObjects = canvas.getActiveObjects(); // Seçili olan her şeyi al
+
+            if (activeObjects.length) {
+                // Hepsini döngüyle sil
+                activeObjects.forEach(function (object) {
+                    canvas.remove(object);
+                });
+
+                canvas.discardActiveObject(); // Seçimi kaldır
+                canvas.requestRenderAll(); // Tuvali yenile
+                saveHistory(); // Geçmişe kaydet
+                updateUI();
+            }
+        }
+
+        // --- 2. TUVALİ KOMPLE TEMİZLEME ---
+        function clearCanvas() {
+            // Yanlışlıkla basmaya karşı onay alalım
+            if (confirm('Tüm çalışmayı silmek istediğine emin misin?')) {
+                canvas.clear(); // Her şeyi siler
+                canvas.setBackgroundColor(null, canvas.renderAll.bind(canvas)); // Arka planı sıfırla
+                canvas.requestRenderAll();
+                saveHistory();
+
+                // Grid veya temel ayarları geri getirmek istersen buraya ekleyebilirsin
+                // fitCanvasToWorkspace();
+            }
+        }
+
+        // --- 3. KLAVYE KISAYOLLARI (CTRL+A ve DELETE) ---
+        document.addEventListener('keydown', function (e) {
+
+            // SİLME (Delete veya Backspace Tuşu)
+            // Eğer bir input alanında yazı yazıyorsak çalışmasın
+            if ((e.key === 'Delete' || e.key === 'Backspace') && e.target.tagName !== 'INPUT') {
+                deleteObject();
+            }
+
+            // HEPSİNİ SEÇ (Ctrl + A)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT') {
+                e.preventDefault(); // Sayfanın hepsini seçmesini engelle
+
+                // Tuvaldeki tüm objeleri seçili hale getir
+                var allObjects = canvas.getObjects();
+                if (allObjects.length > 0) {
+                    canvas.setActiveObject(new fabric.ActiveSelection(allObjects, {
+                        canvas: canvas
+                    }));
+                    canvas.requestRenderAll();
+                    updateUI(); // Barı aç
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

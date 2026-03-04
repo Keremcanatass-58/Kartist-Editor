@@ -1,0 +1,260 @@
+﻿@model Kartist.Models.Sablon
+@{
+    ViewData["Title"] = "Güvenli Ödeme";
+}
+
+<style>
+    .payment-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+    }
+
+    .checkout-box {
+        background: rgba(20, 20, 25, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        width: 900px;
+        display: flex;
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    /* Sol Taraf: Ürün Bilgisi */
+    .product-summary {
+        width: 40%;
+        background: linear-gradient(135deg, #1a1a20 0%, #000 100%);
+        padding: 40px;
+        text-align: center;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .product-img {
+        width: 100%;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid #333;
+    }
+
+    /* Sağ Taraf: Kredi Kartı Formu */
+    .payment-form {
+        width: 60%;
+        padding: 40px;
+    }
+
+    .form-control-neon {
+        background: #111;
+        border: 1px solid #333;
+        color: white;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+
+        .form-control-neon:focus {
+            background: #1a1a1a;
+            border-color: var(--accent-neon);
+            color: white;
+            box-shadow: none;
+        }
+
+    .btn-pay {
+        background: var(--accent-neon);
+        color: black;
+        width: 100%;
+        padding: 15px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        border: none;
+        border-radius: 8px;
+        transition: 0.3s;
+        margin-top: 10px;
+    }
+
+        .btn-pay:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(198, 255, 0, 0.4);
+        }
+
+    /* Görsel Kredi Kartı */
+    .card-visual {
+        background: linear-gradient(45deg, #1db954, #191414);
+        padding: 25px;
+        border-radius: 15px;
+        color: white;
+        margin-bottom: 25px;
+        position: relative;
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+
+    .chip {
+        width: 50px;
+        height: 35px;
+        background: #ffd700;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        opacity: 0.8;
+    }
+
+    .card-number-display {
+        font-size: 1.5rem;
+        letter-spacing: 4px;
+        font-family: monospace;
+        text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+    }
+</style>
+
+<div class="container payment-container">
+    <div class="checkout-box">
+
+        <div class="product-summary">
+            <h4 class="text-white mb-4">SEÇİLEN TASARIM</h4>
+            <img src="@Model.ResimUrl" class="product-img">
+            <h3 class="fw-bold text-white">@Model.Baslik</h3>
+            <p class="text-muted">@Model.Kategori</p>
+            <div style="margin-top:auto">
+                <small class="text-muted">TOPLAM TUTAR</small>
+                <h1 style="color:var(--accent-neon); font-size:3rem;">@Model.Fiyat.ToString("0.##") ₺</h1>
+            </div>
+        </div>
+
+        <div class="payment-form">
+            <h3 class="mb-4 text-white">Ödeme Bilgileri 🔒</h3>
+
+            <div class="card-visual">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="chip"></div>
+                    <i class="fa-brands fa-cc-mastercard fa-3x" style="opacity:0.8"></i>
+                </div>
+                <div class="card-number-display" id="cardNumDisplay">**** **** **** ****</div>
+                <div class="d-flex justify-content-between text-uppercase small">
+                    <div>
+                        <div style="opacity:0.7; font-size:0.7rem;">KART SAHİBİ</div>
+                        <span id="cardNameDisplay" style="font-size:1.1rem; font-weight:bold;">AD SOYAD</span>
+                    </div>
+                    <div>
+                        <div style="opacity:0.7; font-size:0.7rem;">SKT</div>
+                        <span style="font-size:1.1rem; font-weight:bold;">12/28</span>
+                    </div>
+                </div>
+            </div>
+
+            <form id="paymentForm" onsubmit="return false;">
+                <div class="mb-2">
+                    <label class="text-muted small">KART ÜZERİNDEKİ İSİM</label>
+                    <input type="text" class="form-control-neon" id="cardName" placeholder="Ad Soyad" oninput="updateCard()">
+                </div>
+                <div class="mb-2">
+                    <label class="text-muted small">KART NUMARASI</label>
+                    <input type="text" class="form-control-neon" id="cardNum" placeholder="0000 0000 0000 0000" maxlength="19" oninput="updateCard()">
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <label class="text-muted small">SON KULLANMA</label>
+                        <input type="text" class="form-control-neon" placeholder="AA/YY" value="12/28">
+                    </div>
+                    <div class="col-6">
+                        <label class="text-muted small">CVC</label>
+                        <input type="text" class="form-control-neon" placeholder="123" maxlength="3" value="123">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-pay" onclick="processPayment()">
+                    GÜVENLİ ÖDE VE BAŞLA 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Kart Görselini Canlı Güncelleme
+    function updateCard() {
+        var numInput = document.getElementById('cardNum');
+        var nameInput = document.getElementById('cardName');
+
+        // Sadece rakamları al
+        var rawValue = numInput.value.replace(/\D/g, '');
+
+        // 4 hanede bir boşluk koy (Görsel güzellik için)
+        var formattedValue = rawValue.replace(/(.{4})/g, '$1 ').trim();
+
+        // Input değerini güncelle (kullanıcı yazarken boşluk eklensin)
+        if (numInput.value !== formattedValue) {
+             numInput.value = formattedValue;
+        }
+
+        document.getElementById('cardNumDisplay').innerText = formattedValue || "**** **** **** ****";
+        document.getElementById('cardNameDisplay').innerText = nameInput.value.toUpperCase() || "AD SOYAD";
+    }
+
+    // 2. ÖDEME İŞLEMİ (Backende Gönderme)
+    function processPayment() {
+        var btn = document.querySelector('.btn-pay');
+
+        // Verileri Topla ve Temizle
+        var data = {
+            KartId: @Model.Id,
+            Fiyat: @Model.Fiyat.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture),
+            KartSahibi: document.getElementById('cardName').value,
+
+            // Backend'e gönderirken boşlukları siliyoruz (Sadece rakam gidiyor)
+            KartNumarasi: document.getElementById('cardNum').value.replace(/\s/g, ''),
+
+            SonKullanmaAy: "12", // Simülasyon olduğu için sabit
+            SonKullanmaYil: "25",
+            Cvc: "123"
+        };
+
+        // Basit Kontrol
+        if(data.KartNumarasi.length < 15) {
+            alert("Lütfen geçerli bir kart numarası girin.");
+            return;
+        }
+
+        // Butonu Kilitle (Dönüyor efekti)
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> İŞLENİYOR...';
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
+
+        // Backend'e Gönder
+        fetch('/Home/OdemeYap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(response => {
+            if(response.success) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> ÖDEME ALINDI!';
+                btn.style.background = "#00ff00";
+                btn.style.color = "#000";
+
+                // 1.5 Saniye sonra yönlendir
+                setTimeout(() => {
+                    window.location.href = response.redirectUrl;
+                }, 1500);
+            } else {
+                btn.innerHTML = 'TEKRAR DENE';
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                alert(response.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerHTML = 'HATA OLUŞTU';
+            btn.disabled = false;
+        });
+    }
+</script>
