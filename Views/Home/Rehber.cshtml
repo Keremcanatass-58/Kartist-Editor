@@ -1,0 +1,100 @@
+﻿@{
+    ViewData["Title"] = "Nasıl Çalışır?";
+}
+
+<style>
+    .guide-step {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        transition: 0.3s;
+    }
+
+        .guide-step:hover {
+            border-color: var(--accent-neon);
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.08);
+        }
+
+    .step-num {
+        font-size: 4rem;
+        font-weight: 900;
+        color: var(--accent-neon);
+        opacity: 0.5;
+        min-width: 80px;
+    }
+
+    .step-content h3 {
+        color: white;
+        margin-bottom: 10px;
+    }
+
+    .step-content p {
+        color: #aaa;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .guide-icon {
+        font-size: 2.5rem;
+        color: white;
+        margin-bottom: 15px;
+        display: block;
+    }
+</style>
+
+<div class="container" style="padding-top: 50px; padding-bottom:100px;">
+
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">KARTIST <span style="color:var(--accent-neon)">REHBERİ</span></h1>
+        <p class="text-muted">Hayalindeki tasarımı gerçeğe dönüştürmenin 4 basit adımı.</p>
+    </div>
+
+    <div class="guide-step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+            <i class="fa-solid fa-layer-group guide-icon"></i>
+            <h3>Bir Başlangıç Seç</h3>
+            <p>İstersen yüzlerce hazır şablondan birini seç, istersen "Hemen Başla" diyerek boş bir tuval aç. Düğün, parti, kurumsal veya tamamen özgür bir sanat eseri... Seçim senin.</p>
+        </div>
+    </div>
+
+    <div class="guide-step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+            <i class="fa-solid fa-wand-magic-sparkles guide-icon"></i>
+            <h3>Sihirli Editörü Kullan</h3>
+            <p>Yazı tiplerini değiştir, Google Fonts kütüphanesinden seçim yap. Bilgisayarından fotoğraf yükle veya stok ikonları kullan. Arka planı tek tıkla değiştir.</p>
+        </div>
+    </div>
+
+    <div class="guide-step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+            <i class="fa-solid fa-cloud-arrow-up guide-icon"></i>
+            <h3>Kaydet ve Devam Et</h3>
+            <p>Tasarımın yarım mı kaldı? "KAYDET" butonuna bas. İstediğin zaman profiline girip kaldığın yerden düzenlemeye devam et. Hiçbir emeğin kaybolmaz.</p>
+        </div>
+    </div>
+
+    <div class="guide-step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+            <i class="fa-solid fa-sack-dollar guide-icon"></i>
+            <h3>İndir veya Satış Yap</h3>
+            <p>Tasarımın bittiğinde yüksek kalitede (HD) indir. Eğer kendine güveniyorsan "SAT" butonuna bas ve tasarımını mağazaya koyarak para kazanmaya başla!</p>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="/" class="btn btn-lg fw-bold px-5 py-3 rounded-pill" style="background:var(--accent-neon); color:black;">
+            ANLADIM, BAŞLAYALIM! 🚀
+        </a>
+    </div>
+
+</div>

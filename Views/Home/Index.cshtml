@@ -1,0 +1,289 @@
+﻿@model List<Kartist.Models.Sablon>
+@{
+    ViewData["Title"] = "Ana Sayfa - Hoşgeldiniz";
+}
+
+<style>
+    /* --- NANO PERFORMANCE CORE --- */
+    :root {
+        --neon: #c6ff00;
+        --neon-glow: rgba(198, 255, 0, 0.3); /* Glowu azalttık */
+        --dark-bg: #030303;
+        /* Buzlu cam yerine düz, hızlı renk */
+        --panel-bg: rgba(15, 15, 15, 0.95);
+        --border-light: rgba(255, 255, 255, 0.1);
+        --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+        background-color: var(--dark-bg) !important;
+        color: #fff !important;
+        font-family: var(--font-primary);
+        overflow-x: hidden;
+        margin: 0;
+        /* Arka planı basitleştirdik ve fixed'ı kaldırdık */
+        background-image: radial-gradient(circle at top center, rgba(198, 255, 0, 0.08) 0%, var(--dark-bg) 60%);
+    }
+
+    a { text-decoration: none; color: inherit; transition: 0.2s; }
+
+    /* --- ORTAK BİLEŞENLER (OPTİMİZE EDİLDİ) --- */
+    /* Nano Panel - BLUR YOK, HIZ VAR */
+    .nano-panel {
+        background: var(--panel-bg);
+        /* backdrop-filter: blur(20px); <-- KASMA SEBEBİ BUYDU, SİLDİK */
+        border: 1px solid var(--border-light);
+        border-radius: 24px;
+        /* Gölgeleri küçülttük */
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        overflow: hidden;
+        transition: border-color 0.3s, transform 0.3s;
+        /* Donanım hızlandırma ipucu */
+        will-change: transform;
+    }
+    .nano-panel:hover {
+        border-color: rgba(198, 255, 0, 0.5);
+        transform: translateY(-3px);
+    }
+
+    /* Neon Buton (Hızlı) */
+    .btn-nano {
+        background: var(--neon);
+        color: #000;
+        padding: 14px 32px;
+        border-radius: 100px;
+        font-weight: 800;
+        font-size: 1rem;
+        display: inline-flex; align-items: center; gap: 10px;
+        border: none; cursor: pointer;
+        transition: 0.2s;
+    }
+    .btn-nano:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 20px var(--neon-glow);
+    }
+
+    /* --- HERO SECTION --- */
+    .hero-section {
+        min-height: 90vh;
+        display: flex; align-items: center; justify-content: center;
+        padding: 120px 20px 80px 20px;
+        position: relative;
+    }
+
+    .hero-container {
+        display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 50px;
+        max-width: 1200px; width: 100%;
+        padding: 50px;
+        /* Paneli hero için özelleştir */
+        background: rgba(10, 10, 10, 0.8);
+        border: 1px solid #222;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 14px; background: rgba(198,255,0,0.1); color: var(--neon);
+        border-radius: 20px; font-weight: 700; font-size: 0.8rem; margin-bottom: 25px;
+        border: 1px solid rgba(198,255,0,0.2);
+    }
+
+    .hero-title {
+        font-size: clamp(3rem, 5vw, 4.5rem);
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 20px;
+        letter-spacing: -1px;
+    }
+    .hero-title span { color: var(--neon); }
+
+    .hero-desc { font-size: 1.15rem; color: #aaa; margin-bottom: 35px; max-width: 500px; line-height: 1.5; }
+
+    /* Sağdaki Görsel (Basitleştirilmiş 3D) */
+    .hero-visual-nano {
+        position: relative;
+        display: flex; align-items: center; justify-content: center;
+        perspective: 1000px; /* Derinlik */
+    }
+
+    /* Dönen halkaları kaldırdık (Performans için) */
+
+    /* Ortadaki Ana Kart (Daha Stabil) */
+    .nano-card-main {
+        width: 320px; height: 480px;
+        background: linear-gradient(135deg, #0a0a0a, #000);
+        border-radius: 20px;
+        border: 1px solid #222;
+        padding: 30px;
+        display: flex; flex-direction: column; justify-content: space-between;
+        box-shadow: -20px 20px 50px rgba(0,0,0,0.5);
+        position: relative; z-index: 2;
+        /* Statik duruş, hoverda hafif oynama */
+        transform: rotateY(-15deg) rotateX(5deg);
+        transition: 0.3s;
+    }
+    .hero-container:hover .nano-card-main {
+        transform: rotateY(-12deg) rotateX(2deg) scale(1.02);
+        border-color: var(--neon);
+    }
+
+    .card-chip-nano {
+        width: 40px; height: 30px; background: #222;
+        border-radius: 4px; border: 1px solid #333;
+    }
+
+    /* --- KOLEKSİYON --- */
+    .section-wrap { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+    .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+
+    .nano-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 25px;
+    }
+
+    /* Nano Ürün Kartı (Hızlı) */
+    .nano-item {
+        aspect-ratio: 4/5;
+        position: relative;
+        background: #0a0a0a; /* Düz renk */
+    }
+
+    .nano-img-box { height: 100%; width: 100%; position: relative; overflow: hidden; }
+    .nano-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; opacity: 0.9; }
+    .nano-item:hover .nano-img { transform: scale(1.05); opacity: 1; }
+
+    .nano-overlay {
+        position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px;
+        background: linear-gradient(to top, #000 50%, transparent);
+        display: flex; flex-direction: column; gap: 10px;
+        z-index: 2;
+        transform: translateY(100%); /* Başlangıçta gizle */
+        transition: 0.3s;
+    }
+    .nano-item:hover .nano-overlay { transform: translateY(0); /* Hoverda göster */ }
+
+    .price-nano {
+        position: absolute; top: 10px; right: 10px;
+        background: var(--neon); color: #000;
+        padding: 4px 10px; border-radius: 6px; font-weight: 800;
+        font-size: 0.9rem; z-index: 10;
+    }
+
+    /* --- MOBİL --- */
+    @@media (max-width: 992px) {
+        .hero-section { padding: 100px 0 60px 0; }
+        .hero-container { grid-template-columns: 1fr; padding: 30px 20px; text-align: center; background: transparent; border: none; box-shadow: none; }
+        .hero-visual-nano { display: none; }
+        .hero-title { font-size: 2.8rem; }
+        .nano-panel { border-radius: 16px; }
+        .nano-overlay { transform: translateY(0); background: linear-gradient(to top, #000 80%, transparent); padding: 15px; } /* Mobilde overlay hep açık olsun */
+    }
+</style>
+
+<div class="hero-section">
+    <div class="hero-container nano-panel">
+        <div>
+            <div class="hero-badge">⚡KartİST V1.0 Hizmetinizde</div>
+            <h1 class="hero-title">
+                Geleceğin<br>
+                <span>Tasarım</span> Gücü.
+            </h1>
+            <p class="hero-desc">
+                Kartist'in yeni nesil arayüzü ile tanış.
+                Sıradanlığı aş, saniyeler içinde profesyonel kimliğini oluştur.
+            </p>
+
+            <div style="display:flex; gap:15px; flex-wrap:wrap; @@media(max-width:992px){justify-content:center;}">
+                <a href="@(User.Identity.IsAuthenticated ? "/Home/Tasarim/0" : "/Account/Giris")" class="btn-nano">
+                    HEMEN BAŞLA <i class="fa-solid fa-bolt"></i>
+                </a>
+                <a href="#koleksiyon" style="display:inline-flex; align-items:center; padding:0 20px; color:#fff; font-weight:600; border:1px solid var(--border-light); border-radius:100px;">
+                    Keşfet <i class="fa-solid fa-arrow-down" style="margin-left:10px;"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-visual-nano">
+            <div class="nano-card-main">
+                <div>
+                    <div style="font-size:1.5rem; font-weight:900; letter-spacing:1px;">KART<span style="color:var(--neon)">İST</span></div>
+                    <div class="card-chip-nano" style="margin-top:20px;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div>
+                        <div style="font-size:0.8rem; color:#666; font-weight:bold;">KULLANICI</div>
+                        <div style="font-size:1.1rem; font-weight:700;">@(User.Identity.IsAuthenticated ? User.Identity.Name.ToUpper() : "MİSAFİR")</div>
+                    </div>
+                    <i class="fa-solid fa-fingerprint" style="font-size:2.5rem; color:var(--neon); opacity:0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section id="koleksiyon" class="section-wrap">
+    <div class="section-head">
+        <div>
+            <h2 style="font-size:2rem; font-weight:800; margin-bottom:5px;">Kartist Koleksiyon</h2>
+            <p style="color:#aaa; margin:0;">Hız ve estetiğin buluşması.</p>
+        </div>
+    </div>
+
+    <div class="nano-grid">
+        <a href="/Home/Tasarim/0" class="nano-panel nano-item" style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.02); border-style:dashed;">
+            <div style="text-align:center; color:#555;">
+                <div style="width:50px; height:50px; background:#222; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px auto; color:var(--neon); font-size:1.2rem;">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+                <h4 style="margin:0;">Yeni Oluştur</h4>
+            </div>
+        </a>
+
+        @if (Model != null && Model.Count > 0)
+        {
+            @foreach (var kart in Model)
+            {
+                <div class="nano-panel nano-item">
+                    <div class="nano-img-box">
+                        @* Performans için loading="lazy" şart *@
+                        <img src="@kart.ResimUrl" class="nano-img" loading="lazy">
+                        <div class="price-nano">@kart.Fiyat.ToString("0.##") ₺</div>
+                    </div>
+                    <div class="nano-overlay">
+                        <h4 style="margin:0; font-weight:700; color:#fff;">@kart.Baslik</h4>
+                        <span style="color:#aaa; font-size:0.85rem;">@kart.Kategori</span>
+
+                        <div class="d-flex gap-2 mt-2">
+                            <a href="/Home/Tasarim/@kart.Id" class="btn-nano" style="padding:8px 16px; font-size:0.8rem; flex:1; justify-content:center;">TASARLA</a>
+                            <button onclick="toggleFav(this, @kart.Id)" style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:#fff; border-radius:12px; cursor:pointer; border:1px solid var(--border-light); background:#111;">
+                                <i class="fa-solid fa-heart @(kart.IsFavori ? "text-danger" : "")"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function toggleFav(btn, id) {
+        btn.style.transform = "scale(0.9)";
+        setTimeout(() => btn.style.transform = "scale(1)", 150);
+        var fd = new FormData();
+        fd.append("__RequestVerificationToken", document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
+        fetch('/Home/Favorile/' + id, { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    const icon = btn.querySelector('i');
+                    if (d.isFav) icon.classList.add('text-danger');
+                    else icon.classList.remove('text-danger');
+                } else {
+                    Swal.fire({ icon: 'info', title: 'Giriş Yapmalısın', text: 'Favorilere eklemek için hesabına giriş yap.', confirmButtonColor: '#c6ff00', background: '#111', color: '#fff' });
+                }
+            });
+    }
+</script>

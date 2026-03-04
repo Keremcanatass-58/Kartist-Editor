@@ -1,0 +1,222 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetici Girişi - Kartist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at center, rgba(198, 255, 0, 0.05) 0%, transparent 70%);
+        }
+
+        .login-card {
+            background: rgba(20, 20, 25, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px;
+            border-radius: 20px;
+            width: 400px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .brand {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+        }
+
+            .brand span {
+                color: #c6ff00;
+            }
+
+        input {
+            background: #111;
+            border: 1px solid #333;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+            input:focus {
+                background: #1a1a1a;
+                border-color: #c6ff00;
+                color: white;
+                box-shadow: none;
+            }
+
+        .btn-neon {
+            background: #c6ff00;
+            color: black;
+            width: 100%;
+            padding: 15px;
+            font-weight: 800;
+            border: none;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        .btn-neon:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(198, 255, 0, 0.4);
+        }
+
+        /* ============================================
+           RESPONSIVE TASARIM - TÜM CİHAZLAR İÇİN
+           ============================================ */
+
+        /* Tablet ve küçük ekranlar (992px ve altı) */
+        @@media (max-width: 992px) {
+            body {
+                padding: 20px;
+            }
+
+            .login-card {
+                width: 90%;
+                max-width: 400px;
+                padding: 40px;
+            }
+        }
+
+        /* Mobil cihazlar (768px ve altı) */
+        @@media (max-width: 768px) {
+            body {
+                padding: 15px;
+                align-items: flex-start;
+                padding-top: 50px;
+            }
+
+            .login-card {
+                width: 100%;
+                max-width: 100%;
+                padding: 30px 20px;
+                border-radius: 15px;
+            }
+
+            .brand {
+                font-size: 1.5rem;
+                margin-bottom: 25px;
+            }
+
+            input {
+                padding: 12px;
+                font-size: 0.95rem;
+            }
+
+            .btn-neon {
+                padding: 12px;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Küçük telefonlar (480px ve altı) */
+        @@media (max-width: 480px) {
+            body {
+                padding: 10px;
+                padding-top: 30px;
+            }
+
+            .login-card {
+                padding: 25px 15px;
+                border-radius: 12px;
+            }
+
+            .brand {
+                font-size: 1.3rem;
+                margin-bottom: 20px;
+            }
+
+            .brand span {
+                font-size: 0.7rem;
+            }
+
+            input {
+                padding: 10px;
+                font-size: 0.9rem;
+                margin-bottom: 12px;
+            }
+
+            .btn-neon {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            .alert {
+                font-size: 0.85rem;
+                padding: 8px;
+            }
+        }
+
+        /* Çok küçük telefonlar (360px ve altı) */
+        @@media (max-width: 360px) {
+            .login-card {
+                padding: 20px 12px;
+            }
+
+            .brand {
+                font-size: 1.2rem;
+            }
+
+            input {
+                padding: 8px;
+                font-size: 0.85rem;
+            }
+
+            .btn-neon {
+                padding: 8px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Yatay mod (landscape) mobil */
+        @@media (max-width: 900px) and (orientation: landscape) {
+            body {
+                padding-top: 20px;
+            }
+
+            .login-card {
+                padding: 25px 20px;
+            }
+
+            .brand {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="brand">KART<span>IST</span> <span style="font-size:0.8rem; color:#666; display:block; font-weight:400; letter-spacing:2px;">YÖNETİM PANELİ</span></div>
+
+        @if (ViewBag.Hata != null)
+        {
+            <div class="alert alert-danger p-2 small">@ViewBag.Hata</div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <input type="text" name="kadi" class="form-control" placeholder="Yönetici Adı" required autocomplete="off">
+            <input type="password" name="sifre" class="form-control" placeholder="Şifre" required>
+            <button type="submit" class="btn btn-neon">SİSTEME GİR</button>
+        </form>
+
+        <a href="/" style="display:block; margin-top:20px; color:#666; text-decoration:none; font-size:0.9rem;">← Siteye Dön</a>
+    </div>
+</body>
+</html>
