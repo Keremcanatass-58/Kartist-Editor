@@ -52,14 +52,16 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
 
-    - name: Deploy to IIS/Plesk via WebDeploy
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'kartistt.com.tr'
-        publish-profile: ${{ secrets.PUBLISH_PROFILE }}
-        package: ./publish
+    - name: Zip Published Files
+      run: |
+        cd publish
+        zip -r ../release.zip ./*
+
+    - name: Deploy via Custom PHP Webhook
+      run: |
+        curl -X POST -F "secret=${{ secrets.DEPLOY_SECRET }}" -F "file=@release.zip" https://kartistt.com.tr/deploy.php
 
     - name: Verify deployment
       run: |
-        echo "Deployment completed successfully via WebDeploy!"
+        echo "Deployment completed successfully via HTTP Webhook!"
         echo "Site should be back online at https://kartistt.com.tr"
