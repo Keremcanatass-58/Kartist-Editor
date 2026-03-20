@@ -2,6 +2,18 @@
 @{
     ViewData["Title"] = "Ana Sayfa - Hoşgeldiniz";
 }
+@functions {
+    public string SafeResim(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "/img/default-design.svg";
+        if (url.StartsWith("http")) return url;
+        if (url.StartsWith("data:")) return url;
+        if (url.StartsWith("blob:")) return url;
+        if (url.StartsWith("/")) return url;
+        if (!url.Contains("/")) return "/uploads/market/" + url;
+        return "/" + url;
+    }
+}
 
 <style>
     /* --- NANO PERFORMANCE CORE --- */
@@ -247,7 +259,7 @@
                 <div class="nano-panel nano-item">
                     <div class="nano-img-box">
                         @* Performans için loading="lazy" şart *@
-                        <img src="@kart.ResimUrl" class="nano-img" loading="lazy">
+                        <img src="@SafeResim(kart.ResimUrl)" class="nano-img" loading="lazy" onerror="this.onerror=null;this.src='/img/default-design.svg';">
                         <div class="price-nano">@kart.Fiyat.ToString("0.##") ₺</div>
                     </div>
                     <div class="nano-overlay">
@@ -287,3 +299,9 @@
             });
     }
 </script>
+
+
+
+
+
+

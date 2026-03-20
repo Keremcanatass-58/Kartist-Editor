@@ -231,6 +231,96 @@
         }
 
 
+        .main-body.layout-tools-right {
+            grid-template-columns: minmax(0, 1fr) 220px 350px;
+            grid-template-areas: "workspace layers sidebar";
+        }
+
+        .main-body.layout-tools-right .sidebar-container {
+            border-right: none;
+            border-left: 1px solid #333;
+        }
+
+        .main-body.layout-tools-right .icon-rail {
+            border-right: none;
+            border-left: 1px solid #333;
+        }
+
+        body[data-theme="neon"] {
+            background: #0b0f14;
+        }
+
+        body[data-theme="neon"] .header {
+            background: #121521;
+            border-bottom: 1px solid rgba(198, 255, 0, 0.25);
+            box-shadow: 0 0 18px rgba(198, 255, 0, 0.1);
+        }
+
+        body[data-theme="neon"] .sidebar-container,
+        body[data-theme="neon"] .tools-panel {
+            background: #141823;
+        }
+
+        body[data-theme="neon"] .icon-rail {
+            background: #0f121a;
+        }
+
+        body[data-theme="neon"] .layers-panel {
+            background: #121621;
+            border-left: 1px solid rgba(198, 255, 0, 0.2);
+        }
+
+        body[data-theme="neon"] .panel-title {
+            color: #d7ff5c;
+        }
+
+        body[data-theme="neon"] .btn-head.primary {
+            box-shadow: 0 0 18px rgba(198, 255, 0, 0.25);
+        }
+
+        body[data-theme="neon"] .rail-item.active {
+            box-shadow: inset 0 0 12px rgba(198, 255, 0, 0.2);
+        }
+
+        .setting-group {
+            margin-top: 12px;
+        }
+
+        .setting-label {
+            font-size: 0.75rem;
+            color: #8a8a8a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .segmented {
+            display: flex;
+            gap: 8px;
+        }
+
+        .seg-btn {
+            flex: 1;
+            background: #2a2b2f;
+            border: 1px solid #333;
+            color: #ccc;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .seg-btn.active {
+            background: #c6ff00;
+            color: #111;
+            border-color: #c6ff00;
+        }
+
+        .seg-btn:hover {
+            background: #3a3b40;
+        }
+
         /* SOL MENÜ */
         .sidebar-container {
             grid-area: sidebar;
@@ -1432,6 +1522,34 @@
                 width: calc(100vw - 20px);
                 max-width: 320px;
             }
+            .support-widget {
+                right: 12px;
+                bottom: 240px;
+            }
+
+            .support-panel {
+                width: min(360px, calc(100vw - 24px));
+            }
+
+            .support-toggle {
+                width: 48px;
+                height: 48px;
+                padding: 0;
+                border-radius: 50%;
+                justify-content: center;
+            }
+
+            .support-toggle span {
+                display: none !important;
+            }
+
+            .segmented {
+                flex-direction: column;
+            }
+
+            .seg-btn {
+                width: 100%;
+            }
             /* Canvas container mobilde görünür */
             /* Canvas container mobilde görünür - scale ile küçültülecek */
             .canvas-container-shadow {
@@ -1465,7 +1583,18 @@
         @@media (max-width: 480px) {
             .header {
                 height: 45px;
+            
+            .support-toggle {
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                border-radius: 50%;
             }
+
+            .support-toggle span {
+                display: none;
+            }
+        }
 
             .btn-head {
                 padding: 5px 8px;
@@ -1509,7 +1638,16 @@
                 font-size: 0.7rem;
             }
 
-            .modal-box {
+                        .support-widget {
+                right: 10px;
+                bottom: 220px;
+            }
+
+            .support-panel {
+                width: calc(100vw - 20px);
+                max-width: none;
+            }
+.modal-box {
                 width: 95%;
                 padding: 15px;
             }
@@ -1809,6 +1947,146 @@
         .swal2-popup.animate__animated {
             animation-duration: 0.4s !important;
         }
+    
+        .support-widget {
+            position: fixed;
+            right: 24px;
+            bottom: 110px;
+            z-index: 3000;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .support-toggle {
+            background: #1f2023;
+            color: #c6ff00;
+            border: 1px solid #2c2d33;
+            border-radius: 999px;
+            padding: 10px 14px;
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .support-toggle span {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .support-badge {
+            background: #ff4444;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 999px;
+        }
+
+        .support-panel {
+            position: absolute;
+            right: 0;
+            bottom: 60px;
+            width: 320px;
+            background: #141518;
+            border: 1px solid #2c2d33;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .support-panel.open {
+            display: flex;
+        }
+
+        .support-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #222;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #191a1e;
+        }
+
+        .support-title {
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .support-sub {
+            font-size: 0.7rem;
+            color: #8a8a8a;
+        }
+
+        .support-close {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .support-messages {
+            padding: 14px;
+            height: 260px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .support-msg {
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.35;
+            max-width: 85%;
+            word-break: break-word;
+        }
+
+        .support-msg.from-user {
+            align-self: flex-end;
+            background: rgba(198, 255, 0, 0.15);
+            color: #d7ff5c;
+            border: 1px solid rgba(198, 255, 0, 0.3);
+        }
+
+        .support-msg.from-admin {
+            align-self: flex-start;
+            background: #1f2025;
+            color: #eee;
+            border: 1px solid #2c2d33;
+        }
+
+        .support-input {
+            display: flex;
+            gap: 8px;
+            padding: 12px 14px 14px;
+            border-top: 1px solid #222;
+            background: #191a1e;
+        }
+
+        .support-input input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #2c2d33;
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .support-input button {
+            background: #c6ff00;
+            border: none;
+            color: #111;
+            width: 38px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -1912,6 +2190,10 @@
                     <i class="fa-solid fa-wand-sparkles"></i>
                     <span>Fx</span>
                 </div>
+                <div class="rail-item" onclick="switchTab('tabSettings', this)">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Ayar</span>
+                </div>
             </div>
 
             <div class="tools-panel">
@@ -2000,8 +2282,8 @@
                             <option value="ask">❤️ Aşk / Sevgili</option>
                             <option value="tesekkur">🙏 Teşekkür / Tebrik</option>
                             <option value="motivasyon">✨ Motivasyon</option>
-                            <option value="ozur">💌 Özür Kartı</option>
-                            <option value="genel">🌈 Genel / Diğer</option>
+                            <option value="ozur">🙏 Özür Kartı</option>
+                            <option value="genel">🎨 Genel / Diğer</option>
                         </select>
                     </div>
 
@@ -2050,7 +2332,7 @@
                     </div>
                 </div>
 
-                <div id="tabFilter" class="tool-section">
+                                <div id="tabFilter" class="tool-section">
                     <div class="panel-title">EFEKTLER</div>
 
                     <label class="prop-label">HAZIR FİLTRELER</label>
@@ -2092,6 +2374,30 @@
                     <button class="sidebar-btn" style="background:#d32f2f; margin-top:10px;" onclick="applyPreset('none')">
                         SIFIRLA
                     </button>
+                </div>
+
+                <div id="tabSettings" class="tool-section">
+                    <div class="panel-title">KİŞİSELLEŞTİRME</div>
+
+                    <div class="setting-group">
+                        <div class="setting-label">Tema</div>
+                        <div class="segmented">
+                            <button type="button" class="seg-btn" data-theme-option="dark">Karanlık</button>
+                            <button type="button" class="seg-btn" data-theme-option="neon">Neon</button>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <div class="setting-label">Araç Kutusu</div>
+                        <div class="segmented">
+                            <button type="button" class="seg-btn" data-tools-side="left">Sol</button>
+                            <button type="button" class="seg-btn" data-tools-side="right">Sağ</button>
+                        </div>
+                    </div>
+
+                    <p style="font-size:0.75rem; color:#777; margin-top:12px;">
+                        Tercihlerin tarayıcında saklanır ve her girişte korunur.
+                    </p>
                 </div>
             </div>
         </div>
@@ -2171,7 +2477,30 @@
             <div id="layersList" class="layers-list"></div>
         </div>
     </div>
-    <button class="fab-tools" id="fabTools" onclick="toggleToolsPanel()" title="Araçlar">
+
+    <div class="support-widget" id="supportWidget">
+        <button class="support-toggle" id="supportToggle" title="Canlı Destek">
+            <i class="fa-solid fa-headset"></i>
+            <span>Destek</span>
+            <span class="support-badge" id="supportBadge" style="display:none;">1</span>
+        </button>
+        <div class="support-panel" id="supportPanel">
+            <div class="support-header">
+                <div>
+                    <div class="support-title">Canlı Destek</div>
+                    <div class="support-sub">Ortalama cevap: 2-5 dk</div>
+                </div>
+                <button class="support-close" id="supportClose" title="Kapat">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="support-messages" id="supportMessages"></div>
+            <div class="support-input">
+                <input type="text" id="supportInput" placeholder="Mesajını yaz...">
+                <button id="supportSend" title="Gönder"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>    <button class="fab-tools" id="fabTools" onclick="toggleToolsPanel()" title="Araçlar">
         <i class="fa-solid fa-wand-magic-sparkles"></i>
     </button>
 
@@ -2291,6 +2620,7 @@
     <script src="https://unpkg.com/fabric@5.3.0/dist/fabric.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js'></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
@@ -2298,6 +2628,156 @@
 		function getCSRFToken() {
 			return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
 		}
+        const editorPrefsKey = "kartist.editor.prefs";
+        const defaultPrefs = { theme: "dark", toolsSide: "left" };
+
+        function loadEditorPrefs() {
+            try {
+                const raw = localStorage.getItem(editorPrefsKey);
+                if (!raw) return { ...defaultPrefs };
+                const parsed = JSON.parse(raw);
+                return { ...defaultPrefs, ...parsed };
+            } catch {
+                return { ...defaultPrefs };
+            }
+        }
+
+        function saveEditorPrefs(prefs) {
+            localStorage.setItem(editorPrefsKey, JSON.stringify(prefs));
+        }
+
+        function applyEditorPrefs(prefs) {
+            const theme = prefs.theme || defaultPrefs.theme;
+            const toolsSide = prefs.toolsSide || defaultPrefs.toolsSide;
+
+            document.body.setAttribute("data-theme", theme);
+            const mainBody = document.querySelector('.main-body');
+            if (mainBody) {
+                mainBody.classList.toggle('layout-tools-right', toolsSide === 'right');
+            }
+
+            updatePrefUI({ theme, toolsSide });
+        }
+
+        function updatePrefUI(prefs) {
+            document.querySelectorAll('[data-theme-option]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.themeOption === prefs.theme);
+            });
+
+            document.querySelectorAll('[data-tools-side]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.toolsSide === prefs.toolsSide);
+            });
+        }
+
+        function setPref(key, value) {
+            const prefs = loadEditorPrefs();
+            prefs[key] = value;
+            saveEditorPrefs(prefs);
+            applyEditorPrefs(prefs);
+        }
+
+        function initEditorPrefs() {
+            const prefs = loadEditorPrefs();
+            applyEditorPrefs(prefs);
+
+            document.querySelectorAll('[data-theme-option]').forEach(btn => {
+                btn.addEventListener('click', () => setPref('theme', btn.dataset.themeOption));
+            });
+
+            document.querySelectorAll('[data-tools-side]').forEach(btn => {
+                btn.addEventListener('click', () => setPref('toolsSide', btn.dataset.toolsSide));
+            });
+        }
+
+        function initSupportChat() {
+            if (window.__supportChatInited) return;
+            window.__supportChatInited = true;
+
+            let lastMsgKey = '';
+            let lastMsgAt = 0;
+            const email = "@(ViewBag.UserEmail ?? string.Empty)";
+            const toggle = document.getElementById('supportToggle');
+            const panel = document.getElementById('supportPanel');
+            const closeBtn = document.getElementById('supportClose');
+            const sendBtn = document.getElementById('supportSend');
+            const input = document.getElementById('supportInput');
+            const list = document.getElementById('supportMessages');
+            const badge = document.getElementById('supportBadge');
+
+            if (!toggle || !panel || !sendBtn || !input || !list) return;
+
+            let unread = 0;
+
+            function setOpen(open) {
+                panel.classList.toggle('open', open);
+                if (open) {
+                    unread = 0;
+                    if (badge) badge.style.display = 'none';
+                    setTimeout(() => list.scrollTop = list.scrollHeight, 50);
+                }
+            }
+
+            function addMessage(payload) {
+                const key = (payload?.from || "") + "|" + (payload?.email || "") + "|" + (payload?.message || "");
+                const now = Date.now();
+                if (key === lastMsgKey && (now - lastMsgAt) < 1500) return;
+                lastMsgKey = key;
+                lastMsgAt = now;
+                if (!payload || !payload.message) return;
+                const msg = document.createElement('div');
+                msg.className = `support-msg ${payload.from === 'admin' ? 'from-admin' : 'from-user'}`;
+                msg.textContent = payload.message;
+                list.appendChild(msg);
+                list.scrollTop = list.scrollHeight;
+            }
+
+            toggle.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+            if (closeBtn) closeBtn.addEventListener('click', () => setOpen(false));
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/adminHub')
+                .build();
+
+            connection.on('SupportMessage', data => {
+                addMessage(data);
+                const isOpen = panel.classList.contains('open');
+                if (!isOpen && data?.from === 'admin') {
+                    unread += 1;
+                    if (badge) {
+                        badge.textContent = unread;
+                        badge.style.display = 'inline-flex';
+                    }
+                }
+            });
+
+            connection.start().then(() => {
+                if (email) connection.invoke('JoinUser', email);
+            }).catch(err => console.error(err));
+
+            function sendMessage() {
+                const text = input.value.trim();
+                if (!text) return;
+                if (!email) {
+                    Swal.fire({ icon: 'info', title: 'Giriş gerekli', text: 'Destek için giriş yapmalısın.' });
+                    return;
+                }
+                input.value = '';
+                connection.invoke('SendUserMessage', email, text).catch(err => console.error(err));
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initEditorPrefs();
+            initSupportChat();
+        });
 
         var canvas;
         let isBootstrapping = true;   // ilk load sırasında autosave kapalı
@@ -2577,13 +3057,8 @@
                 }
             }, 300);
 
-            window.addEventListener('resize', () => {
-                setTimeout(fitCanvasToWorkspace, 100);
-            });
-
-        };
+            };
         function fitCanvasToWorkspace() {
-            // Canvas yüklenmediyse bekle
             if (!canvas) {
                 setTimeout(fitCanvasToWorkspace, 100);
                 return;
@@ -2591,82 +3066,50 @@
 
             const container = document.querySelector('.canvas-container-shadow');
             const workspace = document.querySelector('.workspace');
-
             if (!container || !workspace) return;
 
-            // --- AYARLAR ---
             const baseWidth = 700;
             const baseHeight = 500;
-            // 900px altı mobil kabul edilir
-            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+            const padding = 40;
 
-            // PC'de Flexbox ortaladığı için padding şart değil ama
-            // Mobilde kenarlara yapışmasın diye boşluk bırakıyoruz.
-            const padding = isMobile ? 20 : 40;
-
-            // Kullanılabilir alan
             const wsWidth = workspace.clientWidth;
             const wsHeight = workspace.clientHeight;
             const availWidth = wsWidth - padding;
             const availHeight = wsHeight - padding;
 
-            // Ölçek Hesapla
             let scale = Math.min(availWidth / baseWidth, availHeight / baseHeight);
-
-            // Sınırlar (Çok büyümesin, aşırı küçülmesin)
             if (scale > 1) scale = 1;
             if (scale < 0.2) scale = 0.2;
 
-            // --- UYGULAMA --- //
-
-            // 1. Boyutları Sabitle
             container.style.width = baseWidth + 'px';
             container.style.height = baseHeight + 'px';
 
-            // 2. MOBİL VE PC AYRIMI (Burası Çok Önemli)
-            if (isMobile) {
-                // === MOBİL MODU (Kilitli & Çivili) ===
-                // Absolute + Translate ile milimetrik ortalama
-                container.style.position = 'absolute';
-                container.style.left = '50%';
-                container.style.top = '50%';
-                container.style.margin = '0';
+            // Always center with absolute positioning to avoid drift
+            container.style.setProperty('position', 'absolute', 'important');
+            container.style.setProperty('left', '50%', 'important');
+            container.style.setProperty('top', '50%', 'important');
+            container.style.setProperty('margin', '0', 'important');
+            container.style.setProperty('transform-origin', 'center center', 'important');
+            container.style.setProperty('transform', `translate(-50%, -50%) scale(${scale})`, 'important');
 
-                // Translate ile tam ortaya çek, Scale ile küçült
-                container.style.transform = `translate(-50%, -50%) scale(${scale})`;
-            } else {
-                // === PC MODU (Esnek & Özgür) ===
-                // Pozisyonu serbest bırak, CSS'teki Flexbox ortalasın
-                container.style.position = 'relative';
-                container.style.left = 'auto';
-                container.style.top = 'auto';
-                container.style.margin = 'auto';
-
-                // Sadece scale et (translate YOK, çünkü Flexbox zaten ortaladı)
-                container.style.transform = `scale(${scale})`;
-            }
-
-            // 3. Görünür yap
             container.style.display = 'block';
             container.style.visibility = 'visible';
 
-            // Fabric.js iç boyutlarını güncelle
             const canvasEl = document.getElementById('c');
             if (canvasEl) {
                 canvasEl.style.width = baseWidth + 'px';
                 canvasEl.style.height = baseHeight + 'px';
             }
 
+            if (canvas.setViewportTransform) {
+                canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            }
             if (canvas.setDimensions) {
                 canvas.setDimensions({ width: baseWidth, height: baseHeight });
             }
 
             canvas.renderAll();
         }
-
-        // Olay Dinleyicileri
-        window.addEventListener('load', () => { setTimeout(fitCanvasToWorkspace, 100); });
-        window.addEventListener('resize', fitCanvasToWorkspace);
 
         // Olay Dinleyicileri
         window.addEventListener('load', () => { setTimeout(fitCanvasToWorkspace, 100); });
@@ -2797,7 +3240,8 @@
                     // Stil Butonları
                     document.getElementById('btnBold').style.color = (o.fontWeight === 'bold') ? activeColor : passiveColor;
                     document.getElementById('btnItalic').style.color = (o.fontStyle === 'italic') ? activeColor : passiveColor;
-                    document.getElementById('btnUnderline').style.color = (o.underline) ? activeColor : passiveColor;
+                    var btnUnderline = document.getElementById('btnUnderline');
+                    if (btnUnderline) btnUnderline.style.color = (o.underline) ? activeColor : passiveColor;
 
                     // HİZALAMA BUTONLARI (Burası Önemli)
                     document.getElementById('alignLeft').style.color = (o.textAlign === 'left') ? activeColor : passiveColor;
@@ -2805,7 +3249,8 @@
                     document.getElementById('alignRight').style.color = (o.textAlign === 'right') ? activeColor : passiveColor;
 
                     // Gölge
-                    document.getElementById('btnShadow').style.color = (o.shadow) ? activeColor : passiveColor;
+                    var btnShadow = document.getElementById('btnShadow');
+                    if (btnShadow) btnShadow.style.color = (o.shadow) ? activeColor : passiveColor;
 
                 } else {
                     textTools.style.display = 'none';
@@ -3059,7 +3504,7 @@
 			else if (tModalEl && tModalEl.value.trim()) t = tModalEl.value.trim();
 
 			if (!t) {
-				showToast("Önce link veya metin gir 🙂");
+				showToast("Önce link veya metin gir 😅");
 				return;
 			}
 
@@ -3238,7 +3683,7 @@
                         // BAŞARILI DURUM
                         Swal.fire({
                             icon: 'success',
-                            title: 'BAŞARILI! 🚀',
+                            title: 'BAŞARILI! 🎉',
                             text: d.message || "Tasarımınız başarıyla pazara sunulmuştur.",
                             background: '#1e1e1e',
                             color: '#fff',
@@ -3397,11 +3842,11 @@
             const selectedCategory = catEl ? catEl.value : "genel";
 
             if (!prompt) {
-                Swal.fire("Eksik bilgi", "Ne tarz bir kart istediğini yazmalısın 🙂", "warning");
+                Swal.fire("Eksik bilgi", "Ne tarz bir kart istediğini yazmalısın.", "warning");
                 return;
             }
 
-            showToast("AI kart tasarımı hazırlanıyor... 🎨");
+            showToast("AI kart tasarımı hazırlanıyor...");
 
             const fd = new FormData();
             fd.append("prompt", prompt);
@@ -3438,24 +3883,14 @@
                         aiData = JSON.parse(raw);
                     } else {
                         const outer = JSON.parse(raw);
-                        const content = outer &&
-                            outer.choices &&
-                            outer.choices[0] &&
-                            outer.choices[0].message &&
-                            outer.choices[0].message.content;
-
+                        const content = outer && outer.choices && outer.choices[0] && outer.choices[0].message && outer.choices[0].message.content;
                         if (!content) throw new Error("choices[0].message.content bulunamadı");
                         aiData = JSON.parse(content);
                     }
                 } else if (typeof raw === "object" && raw !== null) {
                     if (raw.renkPaleti || raw.tema || raw.anaMetin) {
                         aiData = raw;
-                    } else if (
-                        raw.choices &&
-                        raw.choices[0] &&
-                        raw.choices[0].message &&
-                        raw.choices[0].message.content
-                    ) {
+                    } else if (raw.choices && raw.choices[0] && raw.choices[0].message && raw.choices[0].message.content) {
                         aiData = JSON.parse(raw.choices[0].message.content);
                     } else {
                         throw new Error("Geçersiz AI response formatı");
@@ -3469,292 +3904,199 @@
                 return;
             }
 
-            console.log("AI Tasarım JSON:", aiData);
+            function normalizeHex(color, fallback) {
+                if (!color || typeof color !== "string") return fallback;
+                const c = color.trim();
+                if (/^#[0-9a-fA-F]{6}$/.test(c)) return c;
+                if (/^#[0-9a-fA-F]{3}$/.test(c)) return "#" + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+                return fallback;
+            }
 
-            const palette = Array.isArray(aiData.renkPaleti) ? aiData.renkPaleti : [];
-
-            let kategori = (aiData.kategori || selectedCategory || "kart").toString().toLowerCase();
-            const kategoriSlug = kategori
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/[^a-z0-9]+/g, " ");
-
-            let baseColor = "#0f172a";
-            let accentColor = "#f97316";
-            let softColor = "#22c55e";
-
-            if (palette.length >= 3) {
-                baseColor = palette[0] || baseColor;
-                accentColor = palette[1] || accentColor;
-                softColor = palette[2] || softColor;
-            } else {
-                if (kategoriSlug.includes("dogum")) {
-                    baseColor = "#020617";
-                    accentColor = "#f97316";
-                    softColor = "#ec4899";
-                } else if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) {
-                    baseColor = "#111827";
-                    accentColor = "#ec4899";
-                    softColor = "#9333ea";
-                } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
-                    baseColor = "#020617";
-                    accentColor = "#22c55e";
-                    softColor = "#06b6d4";
-                } else if (kategoriSlug.includes("motivasyon")) {
-                    baseColor = "#020617";
-                    accentColor = "#38bdf8";
-                    softColor = "#facc15";
-                } else if (kategoriSlug.includes("ozur")) {
-                    baseColor = "#020617";
-                    accentColor = "#fb7185";
-                    softColor = "#38bdf8";
+                        function fitTextboxToHeight(tb, minSize, maxHeight) {
+                while (tb.fontSize > minSize && tb.calcTextHeight() > maxHeight) {
+                    tb.set("fontSize", tb.fontSize - 1);
                 }
             }
 
-            const tema = (aiData.tema || "Başlık").toString();
-            const anaMetin = (aiData.anaMetin || prompt).toString();
-            const yaziFontu = (aiData.yaziFontu || "Poppins").toString();
-            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler : [];
-            const arkaPlanAciklama = (aiData.arkaPlan || "").toString();
+            function cleanPromptText(text) {
+                return (text || "")
+                    .replace(/[“”„"]/g, "")
+                    .replace(/\bkart(ı|i)?\s*üret\b/gi, "")
+                    .replace(/\bkart(ı|i)?\s*yap\b/gi, "")
+                    .replace(/\bkart(ı|i)?\s*tasarla\b/gi, "")
+                    .replace(/\bdoğum günü\s*kart(ı|i)?\b/gi, "doğum günü")
+                    .replace(/\bkart(ı|i)?\b/gi, "")
+                    .replace(/\s{2,}/g, " ")
+                    .trim();
+            }
+
+            function capitalizeTR(text) {
+                if (!text) return "";
+                const t = text.toString();
+                return t.charAt(0).toLocaleUpperCase('tr-TR') + t.slice(1);
+            }
+
+            function buildTitle(kategoriSlug, name) {
+                if (kategoriSlug.includes("dogum")) return "İyi ki Doğdun" + (name ? " " + name : "");
+                if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) return "Sana Özel";
+                if (kategoriSlug.includes("tesekkur")) return "Teşekkür Ederim";
+                if (kategoriSlug.includes("tebrik")) return "Tebrikler";
+                if (kategoriSlug.includes("ozur")) return "Özür Dilerim";
+                return "Özel Bir Mesaj";
+            }
+
+            function buildMessage(kategoriSlug, name, promptText) {
+                if (kategoriSlug.includes("dogum")) return (name ? `İyi ki doğdun ${name}! Yeni yaşın sana sağlık, mutluluk ve başarı getirsin.` : "İyi ki doğdun! Yeni yaşın sana sağlık ve mutluluk getirsin.");
+                if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) return (name ? `${name}, iyi ki varsın. Seni çok seviyorum.` : "İyi ki varsın. Seni çok seviyorum.");
+                if (kategoriSlug.includes("tesekkur")) return "Her şey için teşekkür ederim. İyi ki varsın.";
+                if (kategoriSlug.includes("tebrik")) return "Başarınla gurur duyuyorum. Tebrik ederim!";
+                if (kategoriSlug.includes("ozur")) return "Kalbini kırdıysam özür dilerim. Beni affet.";
+                return promptText || (name ? `Senin için özel bir mesajım var, ${name}.` : "Sana özel bir kart hazırladım.");
+            }
+            function pickTheme(kategoriSlug, palette) {
+                const p0 = normalizeHex(palette?.[0], "#0f172a");
+                const p1 = normalizeHex(palette?.[1], "#22d3ee");
+                const p2 = normalizeHex(palette?.[2], "#c6ff00");
+
+                let theme = {
+                    bg1: p0,
+                    bg2: "#020617",
+                    accent: p1,
+                    soft: p2,
+                    panel: "rgba(10,15,28,0.88)",
+                    text: "#f8fafc",
+                    muted: "#a3b1c6"
+                };
+
+                if (kategoriSlug.includes("dogum")) {
+                    theme = { ...theme, bg1: p0, bg2: "#1f1130", accent: "#f97316", soft: "#ec4899" };
+                } else if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) {
+                    theme = { ...theme, bg1: "#1a1023", bg2: "#0b1022", accent: "#ec4899", soft: "#a78bfa" };
+                } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
+                    theme = { ...theme, bg1: "#0b1c1a", bg2: "#0a1020", accent: "#22c55e", soft: "#38bdf8" };
+                } else if (kategoriSlug.includes("ozur")) {
+                    theme = { ...theme, bg1: "#1b1020", bg2: "#0b0f1f", accent: "#fb7185", soft: "#93c5fd" };
+                }
+                return theme;
+            }
+
+            const palette = Array.isArray(aiData.renkPaleti) ? aiData.renkPaleti : [];
+            const kategori = (aiData.kategori || selectedCategory || "kart").toString();
+            const kategoriSlug = kategori.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ");
+            const temaRaw = (aiData.tema || "").toString().trim();
+            const anaRaw = (aiData.anaMetin || "").toString().trim();
+            const yaziFontu = (aiData.yaziFontu || "Poppins").toString().trim() || "Poppins";
+            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler.filter(Boolean) : [];
+            const arkaPlanAciklama = (aiData.arkaPlan || "").toString().trim();
+            const cleanedPrompt = cleanPromptText(prompt);
+            const normalizedPrompt = cleanedPrompt.toLowerCase();
+            const nameMatch = normalizedPrompt.match(/([\\p{L}]+)\\s*için/iu);
+            const name = nameMatch ? capitalizeTR(nameMatch[1]) : "";
+            const finalTema = (temaRaw && temaRaw.toLowerCase() !== "ai onerisi") ? temaRaw : buildTitle(kategoriSlug, name);
+            const fallbackMetin = buildMessage(kategoriSlug, name, cleanedPrompt);
+            const finalMetin = (anaRaw && anaRaw.length > 3 && anaRaw !== prompt) ? anaRaw : fallbackMetin;
 
             if (yaziFontu) loadGoogleFont(yaziFontu);
 
+            const theme = pickTheme(kategoriSlug, palette);
             canvas.clear();
 
             const cw = canvas.getWidth();
             const ch = canvas.getHeight();
 
-            const bgRect = new fabric.Rect({
-                left: 0,
-                top: 0,
-                width: cw,
-                height: ch,
-                selectable: false,
-                evented: false
+            const bg = new fabric.Rect({
+                left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
+                fill: new fabric.Gradient({
+                    type: "linear", gradientUnits: "percentage", coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
+                    colorStops: [{ offset: 0, color: theme.bg1 }, { offset: 1, color: theme.bg2 }]
+                })
             });
+            canvas.add(bg);
 
-            bgRect.set("fill", new fabric.Gradient({
-                type: "linear",
-                gradientUnits: "percentage",
-                coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
-                colorStops: [
-                    { offset: 0, color: baseColor },
-                    { offset: 1, color: "#020617" }
-                ]
+            for (let i = 0; i < 10; i++) {
+                const y = (ch / 10) * i;
+                canvas.add(new fabric.Line([0, y, cw, y], { stroke: "rgba(255,255,255,0.03)", strokeWidth: 1, selectable: false, evented: false }));
+            }
+
+            canvas.add(new fabric.Circle({ left: -120, top: -80, radius: 170, fill: theme.soft, opacity: 0.14, selectable: false, evented: false }));
+            canvas.add(new fabric.Circle({ left: cw - 230, top: ch - 200, radius: 190, fill: theme.accent, opacity: 0.14, selectable: false, evented: false }));
+
+            const panelW = cw * 0.84;
+            const panelH = ch * 0.78;
+            const panelX = (cw - panelW) / 2;
+            const panelY = (ch - panelH) / 2;
+
+            const panel = new fabric.Rect({
+                left: panelX, top: panelY, width: panelW, height: panelH, rx: 28, ry: 28,
+                fill: theme.panel, stroke: "rgba(255,255,255,0.14)", strokeWidth: 1.2,
+                selectable: false, evented: false,
+                shadow: { color: "rgba(0,0,0,0.7)", blur: 28, offsetX: 0, offsetY: 16 }
+            });
+            canvas.add(panel);
+
+            canvas.add(new fabric.Rect({
+                left: panelX + 20, top: panelY + 20, width: 6, height: panelH - 40, rx: 4, ry: 4,
+                fill: theme.accent, opacity: 0.85, selectable: false, evented: false
             }));
 
-            bgRect.shadow = {
-                color: "rgba(0,0,0,0.7)",
-                blur: 60,
-                offsetX: 0,
-                offsetY: 25
-            };
+            const contentLeft = panelX + 46;
+            const contentRight = panelX + panelW - 30;
+            const contentWidth = contentRight - contentLeft;
 
-            canvas.add(bgRect);
-
-            canvas.add(new fabric.Circle({
-                left: -150,
-                top: -80,
-                radius: 170,
-                fill: softColor,
-                opacity: 0.18,
-                selectable: false,
-                evented: false
-            }));
-
-            canvas.add(new fabric.Circle({
-                left: cw - 260,
-                top: ch - 230,
-                radius: 200,
-                fill: accentColor,
-                opacity: 0.15,
-                selectable: false,
-                evented: false
-            }));
-
-            // Kart
-            const cardW = cw * 0.78;
-            const cardH = ch * 0.7;
-            const cardLeft = (cw - cardW) / 2;
-            const cardTop = (ch - cardH) / 2;
-
-            const card = new fabric.Rect({
-                left: cardLeft,
-                top: cardTop,
-                width: cardW,
-                height: cardH,
-                rx: 32,
-                ry: 32,
-                fill: "rgba(15,23,42,0.94)",
-                stroke: "rgba(148,163,184,0.45)",
-                strokeWidth: 1.4,
-                selectable: false,
-                evented: false,
-                shadow: {
-                    color: "rgba(0,0,0,0.75)",
-                    blur: 34,
-                    offsetX: 0,
-                    offsetY: 20
-                }
+            const badge = new fabric.Textbox((kategori || "kart").toUpperCase(), {
+                left: contentLeft, top: panelY + 24, width: Math.min(contentWidth, 260),
+                fontFamily: "Poppins", fontSize: 12, fontWeight: 700, fill: theme.soft, charSpacing: 40
             });
-            canvas.add(card);
+            canvas.add(badge);
 
-            const centerX = cardLeft + cardW / 2;
-
-            const headerBadge = new fabric.IText(kategori, {
-                left: cardLeft + 32,
-                top: cardTop + 18,
-                fontFamily: "Poppins",
-                fontSize: 12,
-                fill: "#e5e7eb",
-                backgroundColor: "rgba(15,23,42,0.98)",
-                padding: 6
+            const title = new fabric.Textbox(finalTema || "Kart Tasarımı", {
+                left: contentLeft, top: panelY + 52, width: contentWidth - 20,
+                fontFamily: yaziFontu, fontSize: 52, fontWeight: 800, fill: theme.text, lineHeight: 1.08
             });
-            canvas.add(headerBadge);
+            fitTextboxToHeight(title, 24, panelH * 0.28);
+            canvas.add(title);
 
-            const headerCenterY = cardTop + cardH * 0.2;
-
-            let titleFontSize = 34;
-            if (tema.length > 18) titleFontSize = 30;
-            if (tema.length > 28) titleFontSize = 26;
-
-            const titleText = new fabric.Textbox(tema, {
-                left: centerX,
-                top: headerCenterY - 20,
-                originX: "center",
-                fontFamily: yaziFontu || "Poppins",
-                fontSize: titleFontSize,
-                fontWeight: "700",
-                fill: "#f9fafb",
-                textAlign: "center",
-                width: cardW * 0.7
-            });
-            canvas.add(titleText);
-
+            let subtitleTop = title.top + title.calcTextHeight() + 10;
             if (arkaPlanAciklama) {
                 const subtitle = new fabric.Textbox(arkaPlanAciklama, {
-                    left: centerX,
-                    top: headerCenterY + 10,
-                    originX: "center",
-                    fontFamily: "Poppins",
-                    fontSize: 13,
-                    fill: "#9ca3af",
-                    textAlign: "center",
-                    width: cardW * 0.7
+                    left: contentLeft, top: subtitleTop, width: contentWidth - 24,
+                    fontFamily: "Poppins", fontSize: 14, fill: theme.muted, lineHeight: 1.35
                 });
+                fitTextboxToHeight(subtitle, 12, 52);
                 canvas.add(subtitle);
+                subtitleTop = subtitle.top + subtitle.calcTextHeight() + 18;
             }
 
-            const headerBandEnd = cardTop + cardH * 0.25;
-            const heroBandTop = headerBandEnd + 10;
-            const heroBandEnd = cardTop + cardH * 0.60;
-
-            const heroCenterY = (heroBandTop + heroBandEnd) / 2;
-            const heroBandHeight = heroBandEnd - heroBandTop;
-
-            const circleRadius = Math.min(heroBandHeight / 2 - 8, 80);
-
-            const emojiCircle = new fabric.Circle({
-                left: centerX - circleRadius,
-                top: heroCenterY - circleRadius,
-                radius: circleRadius,
-                fill: "rgba(30,64,175,0.45)",
-                selectable: false,
-                evented: false
+            const body = new fabric.Textbox(finalMetin || prompt, {
+                left: contentLeft + 18, top: subtitleTop + 16, width: contentWidth - 36,
+                fontFamily: yaziFontu, fontSize: 26, fontWeight: 500, fill: "#eef2ff", lineHeight: 1.34
             });
-            canvas.add(emojiCircle);
+            fitTextboxToHeight(body, 15, panelY + panelH - (subtitleTop + 84));
+            canvas.add(body);
 
-            // Kategoriye göre ana emoji seç (fallback)
-            let heroEmoji = "🎉";
-            if (emojiler.length) {
-                heroEmoji = emojiler[0];
-            } else if (kategoriSlug.includes("ask")) {
-                heroEmoji = "❤️";
-            } else if (kategoriSlug.includes("dogum")) {
-                heroEmoji = "🎂";
-            } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
-                heroEmoji = "🙏";
-            } else if (kategoriSlug.includes("motivasyon")) {
-                heroEmoji = "✨";
-            }
-
-            const emojiText = new fabric.Text(heroEmoji, {
-                left: centerX,
-                top: heroCenterY,
-                originX: "center",
-                originY: "center",
-                fontSize: 66,
-                selectable: true
-            });
-            canvas.add(emojiText);
-
-            // --- EK EMOJİLER: DAİRENİN ALTINDA TEK SATIR, ORTALANMIŞ ---
-            const extraEmojis = emojiler.filter(e => e !== heroEmoji).slice(0, 3);
-            let extraRowBottom = heroBandEnd; // body top hesaplaması için
-
-            if (extraEmojis.length > 0) {
-                const iconSize = 24;
-                const gap = 10;
-                const totalW = extraEmojis.length * iconSize + (extraEmojis.length - 1) * gap;
-                let startX = centerX - totalW / 2;
-                const rowY = heroBandEnd - iconSize; // tam hero bandının alt çizgisine oturmasın
-
-                extraEmojis.forEach(em => {
-                    const t = new fabric.Text(em, {
-                        left: startX + iconSize / 2,
-                        top: rowY,
-                        originX: "center",
-                        originY: "center",
-                        fontSize: iconSize,
-                        selectable: true
-                    });
-                    canvas.add(t);
-                    startX += iconSize + gap;
+            if (emojiler.length > 0) {
+                const chips = emojiler.slice(0, 4);
+                let x = contentLeft;
+                const y = panelY + panelH - 34;
+                chips.forEach(em => {
+                    const chip = new fabric.Text(em, { left: x, top: y, fontSize: 22, selectable: true });
+                    canvas.add(chip);
+                    x += 28;
                 });
-
-                extraRowBottom = rowY + iconSize; // body için gerçek alt sınır
             }
 
-            // --- BODY: ANA METİN (HER ZAMAN ALTTA, ORTALI ve SABİT GENİŞLİKTE) ---
-            let bodyFontSize = 22;
-            const len = anaMetin.length;
-            if (len > 120) bodyFontSize = 20;
-            if (len > 220) bodyFontSize = 18;
-            if (len > 340) bodyFontSize = 16;
-
-            const bodyBandTop = extraRowBottom + 16;              // hero’dan 16px boşluk
-            const bodyBandBottom = cardTop + cardH - 28;          // kart altından 28px içeri
-            const bodyTop = bodyBandTop;                          // yazının başlayacağı yer
-            const bodyWidth = cardW * 0.8;
-
-            const bodyText = new fabric.Textbox(anaMetin, {
-                left: centerX,
-                top: bodyTop,
-                originX: "center",
-                fontFamily: yaziFontu || "Poppins",
-                fontSize: bodyFontSize,
-                fill: "#e5e7eb",
-                textAlign: "center",
-                width: bodyWidth,
-                lineHeight: 1.35
+            const signature = new fabric.Text("Kartist AI Studio", {
+                left: panelX + panelW - 140, top: panelY + panelH - 20,
+                fontFamily: "Poppins", fontSize: 11, fill: "rgba(255,255,255,0.45)", selectable: false, evented: false
             });
-            canvas.add(bodyText);
-            canvas.setActiveObject(bodyText);
+            canvas.add(signature);
 
-
+            canvas.setActiveObject(body);
             canvas.renderAll();
-            if (typeof saveHistory === "function") {
-                saveHistory();
-            }
+            if (typeof saveHistory === "function") saveHistory();
 
-            showToast("AI kart tasarımı hazır 🎨");
+            showToast("AI kart tasarımı profesyonel olarak hazırlandı.");
         }
-
-
-
-
-
-
-
 
         // --- PAYLAŞ BUTONU ---
         async function shareDesign() {
@@ -4219,4 +4561,46 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

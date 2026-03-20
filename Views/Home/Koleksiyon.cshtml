@@ -2,6 +2,19 @@
     ViewData["Title"] = "Koleksiyon";
     var varsayilanlar = ViewBag.Varsayilanlar as List<Kartist.Models.Sablon>;
     var kullaniciTasarimlari = ViewBag.KullaniciTasarimlari as List<Kartist.Models.Sablon>;
+    var pageSize = ViewBag.PageSize == null ? 24 : (int)ViewBag.PageSize;
+}
+@functions {
+    public string SafeResim(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "/img/default-design.svg";
+        if (url.StartsWith("http")) return url;
+        if (url.StartsWith("data:")) return url;
+        if (url.StartsWith("blob:")) return url;
+        if (url.StartsWith("/")) return url;
+        if (!url.Contains("/")) return "/uploads/market/" + url;
+        return "/" + url;
+    }
 }
 
 <style>
@@ -41,6 +54,12 @@
     .btn-edit-card:hover { background: #c6ff00; color: black; border-color: #c6ff00; }
 
     .hidden-section { display: none; animation: fadeIn 0.5s; }
+    .load-more-wrap { text-align:center; margin: 30px 0 10px 0; }
+    .load-more-btn {
+        background: #111; color:#c6ff00; border:1px solid #2a2a2a; padding:12px 26px; border-radius: 999px;
+        font-weight:700; letter-spacing:0.5px; cursor:pointer; transition: 0.2s;
+    }
+    .load-more-btn:hover { border-color:#c6ff00; box-shadow: 0 0 18px rgba(198,255,0,0.2); }
     @@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
@@ -60,7 +79,7 @@
         @foreach (var kart in varsayilanlar)
         {
                 <div class="art-card">
-                    <img src="@kart.ResimUrl" class="art-img">
+                    <img src="@SafeResim(kart.ResimUrl)" class="art-img" loading="lazy" onerror="this.onerror=null;this.src='/img/default-design.svg';">
                     <div class="price-badge">@kart.Fiyat.ToString("0.##") ₺</div>
                     <button onclick="toggleFav(this, @kart.Id)" class="fav-btn @(kart.IsFavori ? "active" : "")"><i class="fa-solid fa-heart"></i></button>
                     <div class="card-overlay">
@@ -78,6 +97,9 @@
                 </div>
         }
     </div>
+    <div class="load-more-wrap" id="load-more-default-wrap">
+        <button class="load-more-btn" id="load-more-default" onclick="loadMore('default')">DAHA FAZLA</button>
+    </div>
 
     <div id="sec-user" class="art-grid hidden-section">
         @if (kullaniciTasarimlari.Count == 0)
@@ -93,7 +115,7 @@
             @foreach (var kart in kullaniciTasarimlari)
             {
                         <div class="art-card" style="border-color:#333;">
-                            <img src="@kart.ResimUrl" class="art-img">
+                            <img src="@SafeResim(kart.ResimUrl)" class="art-img" loading="lazy" onerror="this.onerror=null;this.src='/img/default-design.svg';">
                             <div class="price-badge" style="background:#ff4081; color:white;">@kart.Fiyat.ToString("0.##") ₺</div>
                             <button onclick="toggleFav(this, @kart.Id)" class="fav-btn @(kart.IsFavori ? "active" : "")"><i class="fa-solid fa-heart"></i></button>
                             <div class="card-overlay">
@@ -105,10 +127,18 @@
             }
         }
     </div>
+    <div class="load-more-wrap" id="load-more-user-wrap" style="display:none;">
+        <button class="load-more-btn" id="load-more-user" onclick="loadMore('user')">DAHA FAZLA</button>
+    </div>
 
 </div>
 
 <script>
+    const pageSize = @pageSize;
+    const isAuth = @User.Identity.IsAuthenticated.ToString().ToLower();
+    let defaultOffset = @pageSize;
+    let userOffset = @pageSize;
+
     function switchSection(sec) {
         // Butonları ayarla
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -119,7 +149,11 @@
         document.getElementById('sec-user').style.display = 'none';
 
         document.getElementById('sec-' + sec).style.display = 'grid';
-        document.getElementById('sec-' + sec).classList.add('hidden-section'); // Animasyonu tetikle
+        document.getElementById('sec-' + sec).classList.remove('hidden-section'); // Animasyonu tetikle
+
+        // load more butonlarını göster/gizle
+        document.getElementById('load-more-default-wrap').style.display = (sec === 'default') ? 'block' : 'none';
+        document.getElementById('load-more-user-wrap').style.display = (sec === 'user') ? 'block' : 'none';
     }
 
     // Favori Fonksiyonu (Index'tekiyle aynı mantık)
@@ -147,4 +181,85 @@
             }
         });
     }
+    function buildCard(item, type) {
+        const id = item.id || item.Id;
+        const baslik = item.baslik || item.Baslik || "Kart";
+        const resim = (item.resimUrl || item.ResimUrl || "/img/default-design.svg");
+        const fiyat = item.fiyat || item.Fiyat || 0;
+        const isFav = (item.isFavori || item.IsFavori) ? "active" : "";
+        const actionHtml = isAuth
+            ? "<a href=\"/Home/Tasarim/" + id + "\" class=\"btn-edit-card\">TASARLA <i class=\"fa-solid fa-pen-nib\"></i></a>"
+            : "<button onclick=\"uyariVer()\" class=\"btn-edit-card\" style=\"width:100%; border:none;\">TASARLA <i class=\"fa-solid fa-lock\"></i></button>";
+
+        if (type === "user") {
+            return `
+                <div class="art-card" style="border-color:#333;">
+                    <img src="${resim}" class="art-img" loading="lazy" onerror="this.onerror=null;this.src='/img/default-design.svg';">
+                    <div class="price-badge" style="background:#ff4081; color:white;">${Number(fiyat).toFixed(2).replace(/\.00$/, '')} ₺</div>
+                    <button onclick="toggleFav(this, ${id})" class="fav-btn ${isFav}"><i class="fa-solid fa-heart"></i></button>
+                    <div class="card-overlay">
+                        <h4 class="card-title">${baslik}</h4>
+                        <span class="card-cat text-warning">⭐ Kullanıcı Tasarımı</span>
+                        <a href="/Home/Tasarim/${id}" class="btn-edit-card">SATIN AL & DÜZENLE</a>
+                    </div>
+                </div>`;
+        }
+
+        return `
+            <div class="art-card">
+                <img src="${resim}" class="art-img" loading="lazy" onerror="this.onerror=null;this.src='/img/default-design.svg';">
+                <div class="price-badge">${Number(fiyat).toFixed(2).replace(/\.00$/, '')} ₺</div>
+                <button onclick="toggleFav(this, ${id})" class="fav-btn ${isFav}"><i class="fa-solid fa-heart"></i></button>
+                <div class="card-overlay">
+                    <h4 class="card-title">${baslik}</h4>
+                    <span class="card-cat">${item.kategori || item.Kategori || ""}</span>
+                    ${actionHtml}
+                </div>
+            </div>`;
+    }
+
+    function loadMore(type) {
+        const offset = type === "user" ? userOffset : defaultOffset;
+        const btn = document.getElementById(type === "user" ? "load-more-user" : "load-more-default");
+        btn.disabled = true;
+        btn.textContent = "YÜKLENİYOR...";
+
+        fetch(`/Home/KoleksiyonListe?type=${type}&offset=${offset}&take=${pageSize}`)
+            .then(r => r.json())
+            .then(d => {
+                if (!d || !d.success) return;
+                const items = d.items || [];
+                if (items.length === 0) {
+                    btn.textContent = "BİTTİ";
+                    btn.disabled = true;
+                    return;
+                }
+                const grid = document.getElementById(type === "user" ? "sec-user" : "sec-default");
+                items.forEach(it => grid.insertAdjacentHTML("beforeend", buildCard(it, type)));
+
+                if (type === "user") userOffset += items.length;
+                else defaultOffset += items.length;
+
+                if (items.length < pageSize) {
+                    btn.textContent = "BİTTİ";
+                    btn.disabled = true;
+                } else {
+                    btn.textContent = "DAHA FAZLA";
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => {
+                btn.textContent = "DAHA FAZLA";
+                btn.disabled = false;
+            });
+    }
 </script>
+
+
+
+
+
+
+
+
+

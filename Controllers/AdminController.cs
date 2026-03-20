@@ -28,10 +28,15 @@ namespace Kartist.Controllers
             {
                 try
                 {
-                    string yetki = db.QueryFirstOrDefault<string>("SELECT Yetki FROM Kullanicilar WHERE Email = @e", new { e = email });
+                    string yetki = db.QueryFirstOrDefault<string>(
+                        "SELECT Yetki FROM Kullanicilar WHERE Email = @e",
+                        new { e = email }, commandTimeout: 3);
                     return yetki == "Admin";
                 }
-                catch { return true; }
+                catch
+                {
+                    return true;
+                }
             }
         }
 
@@ -46,8 +51,11 @@ namespace Kartist.Controllers
         {
             using (var db = new SqlConnection(_baglanti))
             {
-                var admin = db.QueryFirstOrDefault("SELECT * FROM Yoneticiler WHERE KullaniciAdi = @k AND Sifre = @s", new { k = kadi, s = sifre });
-                if (admin != null)
+                var adminId = db.ExecuteScalar<int?>(
+                    "SELECT TOP 1 Id FROM Yoneticiler WHERE KullaniciAdi = @k AND Sifre = @s",
+                    new { k = kadi, s = sifre }, commandTimeout: 3);
+
+                if (adminId.HasValue)
                 {
                     HttpContext.Session.SetString("AdminOturumu", "Aktif");
                     return RedirectToAction("Panel");
@@ -59,20 +67,34 @@ namespace Kartist.Controllers
 
         public IActionResult Panel()
         {
-            if (HttpContext.Session.GetString("AdminOturumu") == null && !AdminKontrol()) return RedirectToAction("Login");
+            if (HttpContext.Session.GetString("AdminOturumu") == null && !AdminKontrol())
+                return RedirectToAction("Login");
 
             using (var db = new SqlConnection(_baglanti))
             {
-                ViewBag.ToplamUye = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Kullanicilar");
-                ViewBag.ToplamTasarim = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Sablonlar");
-                ViewBag.BekleyenSayisi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Sablonlar WHERE OnayDurumu = 'Bekliyor'");
-                ViewBag.ToplamCiro = db.ExecuteScalar<decimal>("SELECT ISNULL(SUM(Fiyat), 0) FROM Sablonlar");
+                const int timeout = 3;
 
-                ViewBag.Bekleyenler = db.Query<Sablon>("SELECT * FROM Sablonlar WHERE OnayDurumu = 'Bekliyor' ORDER BY Id DESC").ToList();
+                ViewBag.ToplamUye = db.ExecuteScalar<int>(
+                    "SELECT COUNT(1) FROM Kullanicilar", commandTimeout: timeout);
+                ViewBag.ToplamTasarim = db.ExecuteScalar<int>(
+                    "SELECT COUNT(1) FROM Sablonlar", commandTimeout: timeout);
+                ViewBag.BekleyenSayisi = db.ExecuteScalar<int>(
+                    "SELECT COUNT(1) FROM Sablonlar WHERE OnayDurumu = 'Bekliyor'",
+                    commandTimeout: timeout);
+                ViewBag.ToplamCiro = db.ExecuteScalar<decimal>(
+                    "SELECT ISNULL(SUM(Fiyat), 0) FROM Sablonlar", commandTimeout: timeout);
 
-                ViewBag.SonUyeler = db.Query<dynamic>("SELECT TOP 50 * FROM Kullanicilar ORDER BY Id DESC").ToList();
+                ViewBag.Bekleyenler = db.Query<Sablon>(
+                    "SELECT TOP 50 Id, Baslik, Kategori, Fiyat, ResimUrl, OnayDurumu FROM Sablonlar WHERE OnayDurumu = 'Bekliyor' ORDER BY Id DESC",
+                    commandTimeout: timeout).ToList();
 
-                var aktifKartlar = db.Query<Sablon>("SELECT * FROM Sablonlar WHERE OnayDurumu = 'Onaylandi' OR OnayDurumu IS NULL ORDER BY Id DESC").ToList();
+                ViewBag.SonUyeler = db.Query<dynamic>(
+                    "SELECT TOP 50 Id, AdSoyad, Email, KalanKredi, UyelikTipi FROM Kullanicilar ORDER BY Id DESC",
+                    commandTimeout: timeout).ToList();
+
+                var aktifKartlar = db.Query<Sablon>(
+                    "SELECT TOP 60 Id, Baslik, Kategori, Fiyat, ResimUrl, OnayDurumu FROM Sablonlar WHERE OnayDurumu = 'Onaylandi' OR OnayDurumu IS NULL ORDER BY Id DESC",
+                    commandTimeout: timeout).ToList();
 
                 return View(aktifKartlar);
             }
@@ -83,10 +105,14 @@ namespace Kartist.Controllers
         {
             using (var db = new SqlConnection(_baglanti))
             {
-                string email = db.QueryFirstOrDefault<string>("SELECT Email FROM Kullanicilar WHERE Id = @id", new { id });
-                db.Execute("UPDATE Kullanicilar SET KalanKredi = KalanKredi + @m WHERE Id = @id", new { m = miktar, id = id });
+                string email = db.QueryFirstOrDefault<string>(
+                    "SELECT Email FROM Kullanicilar WHERE Id = @id", new { id }, commandTimeout: 3);
+                db.Execute(
+                    "UPDATE Kullanicilar SET KalanKredi = KalanKredi + @m WHERE Id = @id",
+                    new { m = miktar, id = id }, commandTimeout: 3);
 
-                if (!string.IsNullOrEmpty(email)) await _hubContext.Clients.Group(email).SendAsync("SayfayiYenile");
+                if (!string.IsNullOrEmpty(email))
+                    await _hubContext.Clients.Group(email).SendAsync("SayfayiYenile");
             }
             return Ok();
         }
@@ -96,10 +122,14 @@ namespace Kartist.Controllers
         {
             using (var db = new SqlConnection(_baglanti))
             {
-                string email = db.QueryFirstOrDefault<string>("SELECT Email FROM Kullanicilar WHERE Id = @id", new { id });
-                db.Execute("UPDATE Kullanicilar SET UyelikTipi = @t WHERE Id = @id", new { t = tip, id = id });
+                string email = db.QueryFirstOrDefault<string>(
+                    "SELECT Email FROM Kullanicilar WHERE Id = @id", new { id }, commandTimeout: 3);
+                db.Execute(
+                    "UPDATE Kullanicilar SET UyelikTipi = @t WHERE Id = @id",
+                    new { t = tip, id = id }, commandTimeout: 3);
 
-                if (!string.IsNullOrEmpty(email)) await _hubContext.Clients.Group(email).SendAsync("SayfayiYenile");
+                if (!string.IsNullOrEmpty(email))
+                    await _hubContext.Clients.Group(email).SendAsync("SayfayiYenile");
             }
             return Ok();
         }
@@ -110,26 +140,37 @@ namespace Kartist.Controllers
             using (var db = new SqlConnection(_baglanti))
             {
                 model.OnayDurumu = "Onaylandi";
-                db.Execute("INSERT INTO Sablonlar (Baslik, Kategori, Fiyat, ResimUrl, OnayDurumu) VALUES (@Baslik, @Kategori, @Fiyat, @ResimUrl, @OnayDurumu)", model);
+                db.Execute(
+                    "INSERT INTO Sablonlar (Baslik, Kategori, Fiyat, ResimUrl, OnayDurumu) VALUES (@Baslik, @Kategori, @Fiyat, @ResimUrl, @OnayDurumu)",
+                    model, commandTimeout: 3);
             }
             return RedirectToAction("Panel");
         }
 
         public IActionResult Sil(int id)
         {
-            using (var db = new SqlConnection(_baglanti)) { db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }); }
+            using (var db = new SqlConnection(_baglanti))
+            {
+                db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }, commandTimeout: 3);
+            }
             return RedirectToAction("Panel");
         }
 
         public IActionResult Onayla(int id)
         {
-            using (var db = new SqlConnection(_baglanti)) { db.Execute("UPDATE Sablonlar SET OnayDurumu = 'Onaylandi' WHERE Id = @id", new { id }); }
+            using (var db = new SqlConnection(_baglanti))
+            {
+                db.Execute("UPDATE Sablonlar SET OnayDurumu = 'Onaylandi' WHERE Id = @id", new { id }, commandTimeout: 3);
+            }
             return RedirectToAction("Panel");
         }
 
         public IActionResult Reddet(int id)
         {
-            using (var db = new SqlConnection(_baglanti)) { db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }); }
+            using (var db = new SqlConnection(_baglanti))
+            {
+                db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }, commandTimeout: 3);
+            }
             return RedirectToAction("Panel");
         }
 
