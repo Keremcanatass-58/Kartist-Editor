@@ -52,66 +52,30 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
 
-    - name: Install lftp
-      run: sudo apt-get install -y lftp
-
     - name: Enable Maintenance Mode
-      env:
-        FTP_SERVER: ${{ secrets.FTP_SERVER }}
-        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       run: |
-        lftp -e "
-          set ftp:ssl-force true;
-          set ssl:verify-certificate no;
-          set ftp:passive-mode yes;
-          set net:timeout 30;
-          set net:max-retries 3;
-          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
-          cd httpdocs || exit 1;
-          put app_offline.htm;
-          bye;
-        "
+        curl -T app_offline.htm --ftp-create-dirs ftp://${{ secrets.FTP_SERVER }}/httpdocs/app_offline.htm --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" --ftp-ssl -k
+      continue-on-error: true
 
     - name: Wait for maintenance page to activate
       run: sleep 5
 
     - name: Deploy files to server
-      env:
-        FTP_SERVER: ${{ secrets.FTP_SERVER }}
-        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      run: |
-        lftp -e "
-          set ftp:ssl-force true;
-          set ssl:verify-certificate no;
-          set ftp:passive-mode yes;
-          set net:timeout 60;
-          set net:max-retries 3;
-          set mirror:parallel-transfer-count 5;
-          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
-          mirror --reverse --delete --verbose --exclude ^\.git/ --exclude ^\.github/ --exclude appsettings\.Development\.json --exclude app_offline\.htm ./publish/ httpdocs/;
-          bye;
-        "
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./publish/
+        server-dir: httpdocs/
+        dangerous-clean-slate: false
+        timeout: 120000
 
     - name: Disable Maintenance Mode
-      env:
-        FTP_SERVER: ${{ secrets.FTP_SERVER }}
-        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       run: |
-        lftp -e "
-          set ftp:ssl-force true;
-          set ssl:verify-certificate no;
-          set ftp:passive-mode yes;
-          set net:timeout 30;
-          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
-          cd httpdocs || exit 1;
-          rm -f app_offline.htm;
-          bye;
-        "
+        curl ftp://${{ secrets.FTP_SERVER }}/httpdocs/ -X "DELE app_offline.htm" --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" --ftp-ssl -k
+      continue-on-error: true
 
     - name: Verify deployment
       run: |
-        echo "Deployment completed successfully!"
-        echo "Site should be back online at https://kartistt.com.tr"
+        echo "Deployment completed successfully! Site should be back online at https://kartistt.com.tr"
