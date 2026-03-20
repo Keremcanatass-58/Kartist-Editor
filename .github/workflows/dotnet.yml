@@ -56,32 +56,60 @@ jobs:
       run: sudo apt-get install -y lftp
 
     - name: Enable Maintenance Mode
+      env:
+        FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       run: |
-        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
-        cd httpdocs
-        put app_offline.htm
-        bye
-        EOF
+        lftp -e "
+          set ftp:ssl-force true;
+          set ssl:verify-certificate no;
+          set ftp:passive-mode yes;
+          set net:timeout 30;
+          set net:max-retries 3;
+          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
+          cd httpdocs || exit 1;
+          put app_offline.htm;
+          bye;
+        "
 
     - name: Wait for maintenance page to activate
       run: sleep 5
 
     - name: Deploy files to server
+      env:
+        FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       run: |
-        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
-        set ftp:ssl-allow no
-        set mirror:parallel-transfer-count 5
-        mirror --reverse --delete --verbose --exclude .git/ --exclude .github/ --exclude appsettings.Development.json --exclude app_offline.htm ./publish/ httpdocs/
-        bye
-        EOF
+        lftp -e "
+          set ftp:ssl-force true;
+          set ssl:verify-certificate no;
+          set ftp:passive-mode yes;
+          set net:timeout 60;
+          set net:max-retries 3;
+          set mirror:parallel-transfer-count 5;
+          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
+          mirror --reverse --delete --verbose --exclude ^\.git/ --exclude ^\.github/ --exclude appsettings\.Development\.json --exclude app_offline\.htm ./publish/ httpdocs/;
+          bye;
+        "
 
     - name: Disable Maintenance Mode
+      env:
+        FTP_SERVER: ${{ secrets.FTP_SERVER }}
+        FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+        FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
       run: |
-        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
-        cd httpdocs
-        rm -f app_offline.htm
-        bye
-        EOF
+        lftp -e "
+          set ftp:ssl-force true;
+          set ssl:verify-certificate no;
+          set ftp:passive-mode yes;
+          set net:timeout 30;
+          open -u \"$FTP_USERNAME\",\"$FTP_PASSWORD\" $FTP_SERVER;
+          cd httpdocs || exit 1;
+          rm -f app_offline.htm;
+          bye;
+        "
 
     - name: Verify deployment
       run: |
