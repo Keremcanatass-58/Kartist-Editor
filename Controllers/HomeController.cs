@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Kartist.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -23,23 +23,37 @@ namespace Kartist.Controllers
         {
             return User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value : null;
         }
-
         public IActionResult Index()
         {
             string email = GetUserEmail();
 
-            using (var baglanti = new SqlConnection(_baglantiCumlesi))
+            try
             {
-                string sql = @"
-                    SELECT s.*, 
-                           CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
-                    FROM Sablonlar s
-                    LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
-                    WHERE (s.OnayDurumu = 'Onaylandi' OR s.OnayDurumu IS NULL) AND s.Kategori != 'Ozel'
-                    ORDER BY NEWID()";
+                using (var baglanti = new SqlConnection(_baglantiCumlesi))
+                {
+                    const int take = 24;
+                    string sql = @"
+                        SELECT TOP (@take)
+                               s.Id,
+                               s.Baslik,
+                               s.ResimUrl,
+                               s.Kategori,
+                               s.Fiyat,
+                               s.SaticiId,
+                               s.OnayDurumu,
+                               CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
+                        FROM Sablonlar s
+                        LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
+                        WHERE (s.OnayDurumu IN ('Onaylandi','Onayli') OR s.OnayDurumu IS NULL) AND s.Kategori != 'Ozel'
+                        ORDER BY s.Id DESC";
 
-                var kartlar = baglanti.Query<Sablon>(sql, new { mail = email }).ToList();
-                return View(kartlar);
+                    var kartlar = baglanti.Query<Sablon>(sql, new { mail = email, take }, commandTimeout: 5).ToList();
+                    return View(kartlar);
+                }
+            }
+            catch
+            {
+                return View(new List<Sablon>());
             }
         }
 
@@ -47,6 +61,7 @@ namespace Kartist.Controllers
         public IActionResult Favorile(int id)
         {
             string email = GetUserEmail();
+
             if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             using (var db = new SqlConnection(_baglantiCumlesi))
@@ -78,6 +93,7 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        [IgnoreAntiforgeryToken]
         public IActionResult OdemeYap([FromBody] OdemeModel veri)
         {
             try
@@ -101,6 +117,7 @@ namespace Kartist.Controllers
                 return RedirectToAction("Giris", "Account");
             }
             string email = GetUserEmail();
+
             Sablon secilenKart;
 
             if (kayitliId.HasValue && kayitliId > 0)
@@ -114,7 +131,7 @@ namespace Kartist.Controllers
 
                     if (sahipEmail != email)
                     {
-                        return Content("⛔ HATA: Bu tasarım size ait değil! Başkasının çalışmasını düzenleyemezsiniz.");
+                        return Content("? HATA: Bu tasarım size ait değil! Başkasının çalışmasını düzenleyemezsiniz.");
                     }
                 }
             }
@@ -161,6 +178,7 @@ namespace Kartist.Controllers
                 ViewBag.KayitliId = kayitliId;
                 ViewBag.Kredi = kalanKredi;
                 ViewBag.UyelikTipi = uyelikTipi;
+                ViewBag.UserEmail = email;
 
                 return View(secilenKart);
             }
@@ -172,10 +190,11 @@ namespace Kartist.Controllers
             try
             {
                 string email = GetUserEmail();
+
                 if (email == null)
                     return Json(new { success = false, message = "Kaydetmek için giriş yapmalısın." });
 
-                // ✅ 0 veya negatif sablonId gelirse FK'ye takılmasın
+                // ? 0 veya negatif sablonId gelirse FK'ye takılmasın
                 int? sid = sablonId > 0 ? sablonId : (int?)null;
 
                 string onizlemeYolu = null;
@@ -226,14 +245,14 @@ namespace Kartist.Controllers
                         yeniId = db.ExecuteScalar<int>(sql, new
                         {
                             mail = email,
-                            sid = sid, // ✅ artık NULL gidebilir
+                            sid = sid, // ? artık NULL gidebilir
                             json = jsonVerisi,
                             img = onizlemeYolu,
                             muz = muzikUrl
                         });
                     }
 
-                    return Json(new { success = true, message = "Kaydedildi! 💾", id = yeniId });
+                    return Json(new { success = true, message = "Kaydedildi! ??", id = yeniId });
                 }
             }
             catch (Exception ex)
@@ -246,6 +265,7 @@ namespace Kartist.Controllers
         public IActionResult TasarimiSil(int id)
         {
             string email = GetUserEmail();
+
             if (email == null) return RedirectToAction("Index");
 
             using (var db = new SqlConnection(_baglantiCumlesi))
@@ -259,6 +279,7 @@ namespace Kartist.Controllers
         public IActionResult SatisYap(string baslik, decimal fiyat, string jsonVerisi, string resimDataUrl)
         {
             string email = GetUserEmail();
+
             if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             if (string.IsNullOrWhiteSpace(baslik))
@@ -314,7 +335,7 @@ namespace Kartist.Controllers
                                VALUES (@b, 'Kullanıcı Tasarımı', @f, @r, @uid, 'Bekliyor', @json)";
                 db.Execute(sql, new { b = baslik, f = fiyat, r = resimUrl, uid = userId, json = jsonVerisi });
             }
-            return Json(new { success = true, message = "Tasarımın onaya gönderildi! 🚀" });
+            return Json(new { success = true, message = "Tasarımın onaya gönderildi! ??" });
         }
 
         [HttpPost]
@@ -354,7 +375,7 @@ namespace Kartist.Controllers
                                                                 </td>
                                                                 <td align='right'>
                                                                     <span style='background-color:rgba(198, 255, 0, 0.1); color:#c6ff00; border:1px solid rgba(198, 255, 0, 0.2); padding: 6px 12px; border-radius:50px; font-size:11px; font-weight:bold; letter-spacing:1px;'>
-                                                                        YENİ MESAJ ⚡
+                                                                        YENİ MESAJ ?
                                                                     </span>
                                                                 </td>
                                                             </tr>
@@ -421,7 +442,7 @@ namespace Kartist.Controllers
             try
             {
                 // Not: Alıcı (toEmail) yine senin mailin olacak.
-                MailGonder("kartistt.official@gmail.com", "⚡ Yeni Mesaj: " + email, emailSablonu);
+                MailGonder("kartistt.official@gmail.com", "? Yeni Mesaj: " + email, emailSablonu);
                 return Json(new { success = true, message = "Mesajın başarıyla iletildi!" });
             }
             catch (Exception ex)
@@ -471,6 +492,7 @@ namespace Kartist.Controllers
         public IActionResult LinkOlustur(int kayitId, string kategori = "Standart", string muzikUrl = "")
         {
             string email = GetUserEmail();
+
             if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             try
@@ -555,6 +577,7 @@ namespace Kartist.Controllers
         public IActionResult TopluSil(List<int> secilenIdler)
         {
             string email = GetUserEmail();
+
             if (email == null) return RedirectToAction("Index");
 
             if (secilenIdler != null && secilenIdler.Count > 0)
@@ -571,6 +594,7 @@ namespace Kartist.Controllers
         public IActionResult ProjeAdDegistir(int id, string yeniAd)
         {
             string email = GetUserEmail();
+
             if (email == null) return Json(new { success = false });
 
             using (var db = new SqlConnection(_baglantiCumlesi))
@@ -584,6 +608,7 @@ namespace Kartist.Controllers
         public IActionResult ProjeKopyala(int id)
         {
             string email = GetUserEmail();
+
             if (email == null) return RedirectToAction("Index");
 
             using (var db = new SqlConnection(_baglantiCumlesi))
@@ -607,6 +632,7 @@ namespace Kartist.Controllers
         public IActionResult IndirmeHakkiKontrol()
         {
             string email = GetUserEmail();
+
             if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             using (var db = new SqlConnection(_baglantiCumlesi))
@@ -640,34 +666,28 @@ namespace Kartist.Controllers
         {
             using (var db = new SqlConnection(_baglantiCumlesi))
             {
-                string sql = "SELECT TOP 20 * FROM Sablonlar WHERE Kategori != 'Ozel'";
-                if (!string.IsNullOrEmpty(kategori) && kategori != "Hepsi") sql += " AND Kategori = @kat";
-                sql += " ORDER BY NEWID()";
+                string sql = "SELECT TOP 20 * FROM Sablonlar s WHERE s.Kategori != 'Ozel'";
+                if (!string.IsNullOrEmpty(kategori) && kategori != "Hepsi") sql += " AND s.Kategori = @kat";
+                sql += " ORDER BY s.Id DESC";
                 var list = db.Query<Sablon>(sql, new { kat = kategori }).ToList();
                 return Json(list);
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> KartTasarimOner(string prompt)
+        public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null)
         {
             try
             {
-                string apiKey = _configuration["Groq:ApiKey"];
-                if (string.IsNullOrEmpty(apiKey))
-                {
-                    return Json(new { success = false, data = "API anahtarı yapılandırılmamış." });
-                }
-
                 if (string.IsNullOrWhiteSpace(prompt))
                 {
                     return Json(new { success = false, data = "Prompt boş olamaz." });
                 }
 
                 prompt = Helpers.InputValidator.SanitizeHtml(prompt);
-                if (!Helpers.InputValidator.IsValidInput(prompt))
+                if (!Helpers.InputValidator.IsValidPrompt(prompt))
                 {
-                    return Json(new { success = false, data = "Geçersiz karakterler tespit edildi." });
+                    return Json(new { success = false, data = "Gecersiz karakterler tespit edildi." });
                 }
 
                 if (prompt.Length > 1000)
@@ -675,59 +695,42 @@ namespace Kartist.Controllers
                     return Json(new { success = false, data = "Prompt çok uzun (max 1000 karakter)." });
                 }
 
+                var aiConfig = ResolveAiConfig();
+                if (string.IsNullOrWhiteSpace(aiConfig.ApiKey))
+                {
+                    return Json(new { success = true, data = BuildFallbackDesignJson(prompt, kategori) });
+                }
+
                 using var client = new HttpClient();
                 client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", aiConfig.ApiKey);
 
                 var systemPrompt = @"
-                        Sen üst düzey bir grafik tasarım DİREKTÖRÜ ve metin yazarı (copywriter) olarak çalışıyorsun.
-
-                        Görevin:
-                        - Kullanıcının yazdığı prompt'u bir tasarım brief'i gibi okumak.
-                        - Bu briefe göre profesyonel bir KART tasarımı için
-                          hem görsel stil hem de metin önerisi üretmek.
-
-                        Kullanıcı genelde şunları karışık yazar:
-                        - Kart üzerinde yazmasını istediği cümleler,
-                        - Renk / stil istekleri (pastel, neon, minimal, elegant, playful vb.),
-                        - Duygu (romantik, mizahi, resmî, içten vb.).
-
-                        YETKİLERİN:
-                        - Kullanıcının yazdığı metni aynen kullanmak ZORUNDA değilsin.
-                        - Anlamı bozmadan cümleleri daha akıcı, duygusal, profesyonel hale getirebilirsin.
-                        - Renk paletini, emojileri, tema başlığını ve arka plan açıklamasını tamamen sen seçebilirsin.
-                        - Kullanıcının belirttiği stil/dil (pastel, minimal, karanlık, Türkçe/İngilizce) mutlaka korunmalı.
-
-                        ÇIKTIN:
-                        Aşağıdaki JSON şemasına %100 uymalısın ve SADECE GEÇERLİ JSON döndürmelisin:
-
-                        {
-                          ""renkPaleti"": [""#hex1"", ""#hex2"", ""#hex3""],
-                          ""tema"": ""Kısa ve etkileyici başlık"",
-                          ""yaziFontu"": ""Poppins"",
-                          ""arkaPlan"": ""Arka planın görsel tarzını 1 cümle ile anlat"",
-                          ""kategori"": ""doğum günü kartı"",
-                          ""anaMetin"": ""Kartın üzerinde gözükecek asıl cümle veya paragraf"",
-                          ""emojiler"": [""🎂"", ""🎉"", ""🎁""]
-                        }
-
-                        Kurallar:
-                        - Markdown, açıklama, ``` gibi şeyler kullanma; sadece JSON ver.
-                        - Türkçe prompt gelirse TÜRKÇE, İngilizce gelirse İNGİLİZCE yaz.
-                        - Metni kart üzerinde şık duracak uzunlukta tut; çok paragrafa bölme.
-                        ";
-
-
-
+Sen üst düzey bir grafik tasarım direktörü ve metin yazarı olarak çalışıyorsun.
+Görevin kullanıcı prompt'una göre profesyonel bir kart tasarımı için görsel stil ve metin önerisi üretmek.
+Sadece geçerli JSON döndür:
+{
+  ""renkPaleti"": [""#hex1"", ""#hex2"", ""#hex3""],
+  ""tema"": ""Kısa başlık"",
+  ""yaziFontu"": ""Poppins"",
+  ""arkaPlan"": ""Arka planı 1 cümle ile anlat"",
+  ""kategori"": ""doğum günü kartı"",
+  ""anaMetin"": ""Kart metni"",
+  ""emojiler"": [""??"", ""??"", ""??""]
+}
+Kurallar:
+- Sadece JSON ver, markdown veya ekstra metin verme.
+- Türkçe prompt gelirse Türkçe, İngilizce prompt gelirse İngilizce yaz.
+";
 
                 var payload = new
                 {
-                    model = "llama-3.3-70b-versatile",
+                    model = aiConfig.Model,
                     messages = new[]
                     {
-                new { role = "system", content = systemPrompt },
-                new { role = "user", content = $"İstek: {prompt}" }
-            },
+                        new { role = "system", content = systemPrompt },
+                        new { role = "user", content = $"Kategori: {kategori ?? "genel"}\nIstek: {prompt}" }
+                    },
                     temperature = 0.7
                 };
 
@@ -737,38 +740,50 @@ namespace Kartist.Controllers
                     "application/json"
                 );
 
-                var response = await client.PostAsync(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    jsonContent
-                );
-
+                var response = await client.PostAsync(aiConfig.Endpoint, jsonContent);
                 var responseString = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    var err = responseString?.ToLowerInvariant() ?? "";
+                    if (response.StatusCode == HttpStatusCode.Unauthorized || err.Contains("invalid api key") || err.Contains("invalid_api_key"))
+                    {
+                        return Json(new { success = true, data = BuildFallbackDesignJson(prompt, kategori) });
+                    }
+
                     return Json(new
                     {
                         success = false,
-                        data = "API Hatası: " + response.StatusCode + " - " + responseString
+                        data = "API Hatası: " + response.StatusCode
                     });
                 }
 
                 return Json(new { success = true, data = responseString });
             }
-            catch (Exception ex)
+            catch
             {
-                return Json(new { success = false, data = "Sunucu Hatası: " + ex.Message });
+                return Json(new { success = true, data = BuildFallbackDesignJson(prompt ?? "", kategori) });
             }
         }
+
 
         public IActionResult Koleksiyon()
         {
             string email = GetUserEmail();
 
+            const int take = 24;
+
             using (var db = new SqlConnection(_baglantiCumlesi))
             {
                 string sqlDefault = @"
-                    SELECT s.*, CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
+                    SELECT TOP (@take)
+                               s.Id,
+                               s.Baslik,
+                               s.ResimUrl,
+                               s.Kategori,
+                               s.Fiyat,
+                               s.SaticiId,
+                               s.OnayDurumu, CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
                     FROM Sablonlar s
                     LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
                     WHERE (s.SaticiId IS NULL OR s.SaticiId = 0)
@@ -777,18 +792,152 @@ namespace Kartist.Controllers
                     ORDER BY s.Id DESC";
 
                 string sqlUser = @"
-                    SELECT s.*, CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
+                    SELECT TOP (@take)
+                               s.Id,
+                               s.Baslik,
+                               s.ResimUrl,
+                               s.Kategori,
+                               s.Fiyat,
+                               s.SaticiId,
+                               s.OnayDurumu, CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
                     FROM Sablonlar s
                     LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
                     WHERE s.SaticiId > 0
-                      AND (s.OnayDurumu IN ('Onaylandi','Onayli'))  -- istersen kullanıcının kendi tasarımlarında bu şartı kaldırabiliriz
+                      AND (s.OnayDurumu IN ('Onaylandi','Onayli'))
                     ORDER BY s.Id DESC";
 
-                ViewBag.Varsayilanlar = db.Query<Sablon>(sqlDefault, new { mail = email }).ToList();
-                ViewBag.KullaniciTasarimlari = db.Query<Sablon>(sqlUser, new { mail = email }).ToList();
+                ViewBag.Varsayilanlar = db.Query<Sablon>(sqlDefault, new { mail = email, take }).ToList();
+                ViewBag.KullaniciTasarimlari = db.Query<Sablon>(sqlUser, new { mail = email, take }).ToList();
+                ViewBag.PageSize = take;
 
                 return View();
             }
         }
+
+        [HttpGet]
+        public IActionResult KoleksiyonListe(string type, int offset = 0, int take = 24)
+        {
+            string email = GetUserEmail();
+
+            if (take <= 0 || take > 60) take = 24;
+            if (offset < 0) offset = 0;
+
+            using (var db = new SqlConnection(_baglantiCumlesi))
+            {
+                if (string.Equals(type, "user", StringComparison.OrdinalIgnoreCase))
+                {
+                    string sqlUser = @"
+                        SELECT s.Id, s.Baslik, s.ResimUrl, s.Fiyat, s.Kategori,
+                               CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
+                        FROM Sablonlar s
+                        LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
+                        WHERE s.SaticiId > 0
+                          AND (s.OnayDurumu IN ('Onaylandi','Onayli'))
+                        ORDER BY s.Id DESC
+                        OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY";
+
+                    var list = db.Query(sqlUser, new { mail = email, offset, take }).ToList();
+                    return Json(new { success = true, items = list });
+                }
+                else
+                {
+                    string sqlDefault = @"
+                        SELECT s.Id, s.Baslik, s.ResimUrl, s.Fiyat, s.Kategori,
+                               CASE WHEN f.Id IS NOT NULL THEN 1 ELSE 0 END as IsFavori
+                        FROM Sablonlar s
+                        LEFT JOIN Favoriler f ON s.Id = f.SablonId AND f.KullaniciEmail = @mail
+                        WHERE (s.SaticiId IS NULL OR s.SaticiId = 0)
+                          AND s.Kategori != 'Ozel'
+                          AND (s.OnayDurumu IN ('Onaylandi','Onayli') OR s.OnayDurumu IS NULL)
+                        ORDER BY s.Id DESC
+                        OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY";
+
+                    var list = db.Query(sqlDefault, new { mail = email, offset, take }).ToList();
+                    return Json(new { success = true, items = list });
+                }
+            }
+        }
+        private (string ApiKey, string Endpoint, string Model) ResolveAiConfig()
+        {
+            string openAiKey =
+                _configuration["OpenAI:ApiKey"] ??
+                _configuration["OPENAI_API_KEY"] ??
+                Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+            string groqKey =
+                _configuration["Groq:ApiKey"] ??
+                _configuration["GROQ_API_KEY"] ??
+                Environment.GetEnvironmentVariable("GROQ_API_KEY");
+
+            if (!string.IsNullOrWhiteSpace(groqKey))
+            {
+                return (
+                    groqKey.Trim(),
+                    _configuration["Groq:Endpoint"] ?? "https://api.groq.com/openai/v1/chat/completions",
+                    _configuration["Groq:Model"] ?? "llama-3.3-70b-versatile"
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(openAiKey))
+            {
+                return (
+                    openAiKey.Trim(),
+                    _configuration["OpenAI:Endpoint"] ?? "https://api.openai.com/v1/chat/completions",
+                    _configuration["OpenAI:Model"] ?? "gpt-4o-mini"
+                );
+            }
+
+            return ("", "", "");
+        }
+
+        private string BuildFallbackDesignJson(string prompt, string kategori)
+        {
+            var metin = string.IsNullOrWhiteSpace(prompt)
+                ? "Bugün senin için özel bir kart hazırladım."
+                : (prompt.Length > 220 ? prompt.Substring(0, 220) : prompt);
+
+            var kat = string.IsNullOrWhiteSpace(kategori) ? "genel" : kategori.ToLowerInvariant();
+            string[] palette = kat.Contains("doğum") || kat.Contains("dogum")
+                ? new[] { "#0B132B", "#F97316", "#EC4899" }
+                : kat.Contains("ask") || kat.Contains("sevgi")
+                    ? new[] { "#1F2937", "#EC4899", "#8B5CF6" }
+                    : kat.Contains("teşekkür") || kat.Contains("tesekkur")
+                        ? new[] { "#0F172A", "#22C55E", "#38BDF8" }
+                        : new[] { "#111827", "#F59E0B", "#10B981" };
+
+            var fallback = new
+            {
+                renkPaleti = palette,
+                tema = "AI Onerisi",
+                yaziFontu = "Poppins",
+                arkaPlan = "Yumusak gecisli bir degrade ve hafif doku kullan.",
+                kategori = string.IsNullOrWhiteSpace(kategori) ? "kart" : kategori,
+                anaMetin = metin,
+                emojiler = new[] { "?", "??", "??" }
+            };
+
+            return System.Text.Json.JsonSerializer.Serialize(fallback);
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

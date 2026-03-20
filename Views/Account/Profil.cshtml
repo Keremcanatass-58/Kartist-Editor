@@ -3,33 +3,57 @@
 @using Microsoft.Data.SqlClient
 @using Microsoft.Extensions.Configuration
 @inject IConfiguration Config
+
+@functions {
+    public string SafeResim(string url, string defaultImg)
+    {
+        if (string.IsNullOrEmpty(url)) return defaultImg;
+        if (url.StartsWith("http")) return url;
+        try {
+            var path = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "wwwroot", url.TrimStart('/'));
+            if (System.IO.File.Exists(path)) return url;
+        } catch {}
+        return defaultImg;
+    }
+}
+
 @{
-    ViewData["Title"] = "Stüdyom";
+    ViewData["Title"] = "Profil";
     string profilResmi = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
     string email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
     string uyelikTipi = "Normal";
     int kalanKredi = 0;
     string bitisTarihiStr = "-";
+    string biyografi = "";
+    string biyografiGosterim = "";
+    bool ikiFaktorAktif = false;
+    int satisSayisi = 0;
 
     List<dynamic> tasarimlar = new List<dynamic>();
     List<dynamic> favoriler = new List<dynamic>();
+    List<dynamic> paylasimlar = new List<dynamic>();
 
     using (var db = new SqlConnection(Config.GetConnectionString("DefaultConnection")))
     {
-        var user = db.QueryFirstOrDefault("SELECT ProfilResmi, UyelikTipi, KalanKredi, UyelikBitisTarihi FROM Kullanicilar WHERE Email = @e", new { e = email });
+        var user = db.QueryFirstOrDefault("SELECT ProfilResmi, UyelikTipi, KalanKredi, UyelikBitisTarihi, Biyografi, IkiFactorAktif FROM Kullanicilar WHERE Email = @e", new { e = email });
 
         if (user != null)
         {
             if (user.ProfilResmi != null) profilResmi = user.ProfilResmi;
             if (user.UyelikTipi != null) uyelikTipi = user.UyelikTipi;
-
             if (user.KalanKredi != null) kalanKredi = user.KalanKredi;
             if (user.UyelikBitisTarihi != null) bitisTarihiStr = ((DateTime)user.UyelikBitisTarihi).ToString("dd.MM.yyyy");
+            if (user.Biyografi != null) biyografi = user.Biyografi;
+            if (user.IkiFactorAktif != null) ikiFaktorAktif = (bool)user.IkiFactorAktif;
         }
+
+        biyografiGosterim = string.IsNullOrWhiteSpace(biyografi)
+            ? "Henuz biyografi eklenmemis. Ayarlardan kendini tanitan kisa bir metin ekleyebilirsin."
+            : biyografi;
 
         string sql = @"
 SELECT k.Id, k.Tarih,
-COALESCE(k.ProjeAdi, s.Baslik, 'Adsız Proje') as GosterilecekAd,
+COALESCE(k.ProjeAdi, s.Baslik, 'Adsiz Proje') as GosterilecekAd,
 COALESCE(k.OnizlemeResmi, s.ResimUrl, 'https://placehold.co/600x400/222/fff?text=Onizleme+Yok') as ResimUrl,
 ISNULL(s.Id, 0) as SablonId
 FROM KayitliTasarimlar k
@@ -38,890 +62,455 @@ WHERE k.KullaniciEmail = @e
 ORDER BY k.Tarih DESC";
 
         tasarimlar = db.Query(sql, new { e = email }).ToList();
+
         string sqlFav = @"SELECT s.Id, s.Baslik, s.ResimUrl, s.Fiyat, s.Kategori
   FROM Favoriler f
   JOIN Sablonlar s ON f.SablonId = s.Id
   WHERE f.KullaniciEmail = @e
   ORDER BY f.Id DESC";
         favoriler = db.Query(sqlFav, new { e = email }).ToList();
+
+        try { satisSayisi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Sablonlar WHERE SaticiId = (SELECT Id FROM Kullanicilar WHERE Email = @e) AND OnayDurumu = 'Onaylandi'", new { e = email }); } catch { }
+
+        try {
+            paylasimlar = db.Query(@"SELECT k.Id, k.PaylasimKodu, k.ProjeAdi, k.OnizlemeResmi, k.Tarih
+                FROM KayitliTasarimlar k WHERE k.KullaniciEmail = @e AND k.PaylasimKodu IS NOT NULL
+                ORDER BY k.Tarih DESC", new { e = email }).ToList();
+        } catch { }
     }
 }
 
 <style>
-    .profile-wrapper {
-        max-width: 1100px;
-        margin: 40px auto;
-    }
+    /* ===== DASHBOARD LAYOUT ===== */
+    .dash-wrapper { max-width: 1200px; margin: 0 auto; padding: 0 20px 40px; }
 
-    .user-dashboard-card {
-        background: #111;
-        border: 1px solid #222;
-        border-radius: 12px;
-        padding: 15px 25px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .avatar-info-group {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-
-    .avatar-box {
+    /* ===== HERO BANNER ===== */
+    .dash-hero {
         position: relative;
-        width: 70px;
-        height: 70px;
-    }
-
-    .user-avatar {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid var(--accent-neon);
-        padding: 2px;
-    }
-
-    .avatar-btn {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        background: #fff;
-        color: #000;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 0.7rem;
-    }
-
-    .user-text h1 {
-        font-weight: 700;
-        margin: 0;
-        font-size: 1.5rem;
-        letter-spacing: -0.5px;
-    }
-
-    .user-text p {
-        color: #666;
-        margin: 0;
-        font-size: 0.8rem;
-    }
-
-    .pro-badge {
-        background: #c6ff00;
-        color: black;
-        font-size: 0.6rem;
-        padding: 3px 8px;
-        border-radius: 4px;
-        font-weight: 800;
-        vertical-align: middle;
-    }
-
-    .stats-row {
-        display: flex;
-        gap: 30px;
-    }
-
-    .stat-item {
-        text-align: center;
-        border-left: 1px solid #222;
-        padding-left: 30px;
-    }
-
-    .stat-val {
-        font-size: 1.2rem;
-        font-weight: 800;
-        color: white;
-        display: block;
-    }
-
-    .stat-lbl {
-        font-size: 0.7rem;
-        color: #555;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .custom-tabs {
-        display: flex;
-        gap: 30px;
-        border-bottom: 1px solid #222;
-        margin-bottom: 30px;
-    }
-
-    .tab-btn {
-        background: none;
-        border: none;
-        color: #666;
-        font-weight: 700;
-        padding: 15px 0;
-        font-size: 1rem;
-        position: relative;
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-        .tab-btn.active {
-            color: var(--accent-neon);
-        }
-
-            .tab-btn.active::after {
-                content: '';
-                position: absolute;
-                bottom: -1px;
-                left: 0;
-                width: 100%;
-                height: 2px;
-                background: var(--accent-neon);
-                box-shadow: 0 0 10px var(--accent-neon);
-            }
-
-    .projects-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 20px;
-    }
-
-    .design-card {
-        background: #111;
-        border-radius: 12px;
+        height: 220px;
+        border-radius: 0 0 24px 24px;
+        background: linear-gradient(135deg, #0d1117 0%, #161b22 30%, #1a1f2b 60%, #0d1117 100%);
         overflow: hidden;
-        transition: 0.3s;
-        border: 1px solid #222;
+        margin-bottom: 0;
+    }
+    .dash-hero::before {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+            radial-gradient(ellipse 600px 300px at 20% 80%, rgba(198,255,0,0.08) 0%, transparent 70%),
+            radial-gradient(ellipse 400px 200px at 80% 20%, rgba(198,255,0,0.05) 0%, transparent 70%);
+    }
+    .dash-hero::after {
+        content: '';
+        position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+        background: linear-gradient(to top, var(--bg-deep), transparent);
+    }
+    .hero-grid {
+        position: absolute; inset: 0; opacity: 0.03;
+        background-image: linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+    .hero-orb {
+        position: absolute; border-radius: 50%; animation: orbFloat 8s ease-in-out infinite;
+    }
+    .hero-orb-1 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(198,255,0,0.07) 0%, transparent 70%); top: -60px; right: 15%; }
+    .hero-orb-2 { width: 150px; height: 150px; background: radial-gradient(circle, rgba(198,255,0,0.05) 0%, transparent 70%); bottom: -40px; left: 10%; animation-delay: -3s; }
+    @@keyframes orbFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+    /* ===== PROFILE HEADER CARD ===== */
+    .profile-header-card {
         position: relative;
-    }
-
-        .design-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent-neon);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        }
-
-    .card-thumb {
-        height: 160px;
-        width: 100%;
-        object-fit: cover;
-        opacity: 0.8;
-        transition: 0.3s;
-        background: #1a1a1a;
-    }
-
-    .card-info-content {
-        padding: 15px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .card-title {
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin: 0;
-        cursor: pointer;
-    }
-
-    .project-date {
-        font-size: 0.75rem;
-        color: #666;
-        margin-top: 5px;
-    }
-
-    .card-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 5px;
-        margin-top: auto;
-    }
-
-    .btn-card-action {
-        background: #222;
-        color: white;
-        border: 1px solid #333;
-        padding: 8px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        transition: 0.2s;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-    }
-
-        .btn-card-action.edit {
-            background: #c6ff00;
-            color: black;
-            font-weight: bold;
-        }
-
-        .btn-card-action.delete {
-            background: #ff4444;
-            color: white;
-        }
-
-    .card-select {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        width: 20px;
-        height: 20px;
-        accent-color: var(--accent-neon);
-        cursor: pointer;
+        margin-top: -70px;
         z-index: 10;
+        background: #111111e0;
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        padding: 0 32px 28px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @@keyframes cardSlideUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+
+    .profile-top-row {
+        display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap;
+        padding-top: 0; margin-top: -44px; margin-bottom: 20px;
+    }
+    .avatar-wrapper { position: relative; flex-shrink: 0; }
+    .avatar-ring {
+        width: 96px; height: 96px; border-radius: 50%; padding: 3px;
+        background: linear-gradient(135deg, #c6ff00, #7ab800, #c6ff00);
+        box-shadow: 0 0 16px rgba(198,255,0,0.2);
+    }
+    .avatar-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #111; }
+    .avatar-cam-btn {
+        position: absolute; bottom: 2px; right: 2px; width: 28px; height: 28px;
+        background: #c6ff00; color: #000; border-radius: 50%; border: 2px solid #111;
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        font-size: 0.7rem; transition: 0.2s; z-index: 2;
+    }
+    .avatar-cam-btn:hover { transform: scale(1.15); }
+
+    .profile-identity { flex: 1; min-width: 200px; padding-bottom: 4px; }
+    .profile-identity h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 2px; color: #fff; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .pro-badge {
+        background: linear-gradient(135deg, #c6ff00, #a8e600);
+        color: #000; font-size: 0.6rem; padding: 3px 10px; border-radius: 999px;
+        font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+        box-shadow: 0 0 12px rgba(198,255,0,0.3);
+    }
+    .profile-identity .email-text { color: #666; font-size: 0.88rem; margin: 0; }
+    .membership-info { display: flex; gap: 16px; margin-top: 8px; font-size: 0.82rem; flex-wrap: wrap; }
+    .membership-info span { display: flex; align-items: center; gap: 5px; color: #888; }
+
+    .profile-actions { display: flex; gap: 10px; align-items: flex-end; padding-bottom: 4px; flex-wrap: wrap; }
+    .btn-pro-glow {
+        background: linear-gradient(135deg, #c6ff00, #a8e600);
+        color: #000; border: none; border-radius: 14px; padding: 10px 20px;
+        font-weight: 800; font-size: 0.85rem;
+        display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+        transition: 0.3s; box-shadow: 0 4px 15px rgba(198,255,0,0.2);
+    }
+    .btn-pro-glow:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(198,255,0,0.4); }
+    .btn-logout-pill {
+        width: 42px; height: 42px; border-radius: 14px; border: 1px solid #2a2a2a;
+        background: rgba(255,255,255,0.03); color: #ff5656;
+        display: inline-flex; align-items: center; justify-content: center;
+        text-decoration: none; transition: 0.3s; cursor: pointer;
+    }
+    .btn-logout-pill:hover { background: rgba(255,86,86,0.1); border-color: #ff5656; transform: translateY(-2px); }
+
+    /* ===== BIO SECTION ===== */
+    .bio-glass {
+        margin-top: 16px;
+        background: linear-gradient(135deg, rgba(198,255,0,0.03), rgba(255,255,255,0.01));
+        border: 1px solid rgba(198,255,0,0.08);
+        border-left: 3px solid #c6ff00;
+        border-radius: 14px; padding: 16px 20px;
+    }
+    .bio-label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .bio-label i { color: #c6ff00; font-size: 0.75rem; }
+    .bio-text { color: #bbb; font-size: 0.88rem; line-height: 1.6; margin: 0; white-space: pre-wrap; word-break: break-word; }
+
+    /* ===== STAT CARDS ===== */
+    .stats-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+        margin-top: 24px;
+        animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+    }
+    .stat-card {
+        background: #141414;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px; padding: 20px;
+        text-align: center; position: relative; overflow: hidden;
+        transition: transform 0.25s ease, border-color 0.25s ease;
+        will-change: transform;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(198,255,0,0.15);
+    }
+    .stat-card::before {
+        content: ''; position: absolute; top: 0; left: 50%; width: 60%; height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(198,255,0,0.3), transparent);
+        transform: translateX(-50%); opacity: 0; transition: 0.3s;
+    }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-icon { font-size: 1.4rem; color: #c6ff00; margin-bottom: 8px; opacity: 0.7; }
+    .stat-number { font-size: 1.8rem; font-weight: 900; color: #fff; display: block; line-height: 1; }
+    .stat-label { font-size: 0.68rem; color: #555; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+
+    /* ===== TAB NAVIGATION ===== */
+    .dash-tabs {
+        display: flex; gap: 4px; margin-top: 32px; padding: 5px;
+        background: rgba(17,17,17,0.5); border-radius: 16px; border: 1px solid rgba(255,255,255,0.04);
+        animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+        overflow-x: auto;
+    }
+    .dash-tab-btn {
+        flex: 1; background: none; border: none; color: #555; font-weight: 700;
+        padding: 14px 20px; cursor: pointer; border-radius: 12px;
+        font-size: 0.82rem; letter-spacing: 0.5px; transition: 0.3s;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        white-space: nowrap; font-family: inherit;
+    }
+    .dash-tab-btn:hover { color: #999; background: rgba(255,255,255,0.02); }
+    .dash-tab-btn.active {
+        background: rgba(198,255,0,0.08); color: #c6ff00;
+        box-shadow: 0 0 20px rgba(198,255,0,0.05);
+    }
+    .dash-tab-btn i { font-size: 0.9rem; }
+    .tab-panel {
+        margin-top: 24px;
+        animation: panelFade 0.35s ease both;
+    }
+    @@keyframes panelFade { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ===== PROJECT CARDS ===== */
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+    .project-card {
+        background: #141414; border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px; overflow: hidden; position: relative;
+        transition: transform 0.25s ease, border-color 0.25s ease;
+        will-change: transform;
+    }
+    .project-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(198,255,0,0.12);
+    }
+    .card-thumb-wrap { position: relative; height: 170px; overflow: hidden; }
+    .card-thumb-wrap img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    .project-card:hover .card-thumb-wrap img { transform: scale(1.03); }
+    .card-thumb-overlay {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+    }
+    .card-body-content { padding: 16px 18px; }
+    .card-title { font-weight: 700; color: #fff; font-size: 0.95rem; margin-bottom: 4px; }
+    .card-date { color: #555; font-size: 0.75rem; margin-bottom: 12px; display: flex; align-items: center; gap: 5px; }
+    .card-btns { display: flex; gap: 8px; }
+    .btn-card {
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 10px; padding: 9px 12px; text-decoration: none;
+        font-size: 0.76rem; font-weight: 700; transition: 0.25s;
+        border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); color: #fff;
+    }
+    .btn-card.edit { flex: 1; border-color: rgba(198,255,0,0.15); color: #c6ff00; }
+    .btn-card.edit:hover { background: rgba(198,255,0,0.08); }
+    .btn-card.copy { width: 38px; }
+    .btn-card.copy:hover { background: rgba(255,255,255,0.06); }
+    .btn-card.delete { width: 38px; color: #ff6666; border-color: rgba(255,86,86,0.15); }
+    .btn-card.delete:hover { background: rgba(255,86,86,0.08); }
+
+    /* ===== FAVORITES ===== */
+    .fav-card { position: relative; }
+    .fav-remove-btn {
+        position: absolute; top: 12px; right: 12px; z-index: 2;
+        width: 32px; height: 32px; border-radius: 10px;
+        background: rgba(0,0,0,0.7);
+        border: 1px solid rgba(255,255,255,0.1); color: #ff6666;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: 0.25s; font-size: 0.8rem;
+    }
+    .fav-remove-btn:hover { background: rgba(255,68,68,0.2); transform: scale(1.1); }
+    .fav-price { color: #c6ff00; font-weight: 800; font-size: 0.9rem; }
+    .fav-category {
+        display: inline-block; background: rgba(198,255,0,0.08);
+        color: #c6ff00; font-size: 0.65rem; padding: 2px 8px;
+        border-radius: 6px; font-weight: 700; margin-bottom: 8px;
     }
 
-    .bulk-bar {
-        background: #222;
-        border-left: 4px solid #ff4444;
-        padding: 10px 20px;
-        border-radius: 8px;
-        display: none;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
+    /* ===== EMPTY STATES ===== */
+    .empty-state-box {
+        border: 1px dashed rgba(255,255,255,0.06); border-radius: 20px;
+        background: rgba(17,17,17,0.4); min-height: 240px;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; padding: 40px 24px;
     }
-
-        .bulk-bar.show {
-            display: flex;
-        }
-
-    .empty-box {
-        text-align: center;
-        padding: 80px 0;
-        border: 1px dashed #333;
-        border-radius: 12px;
-        color: #666;
-        margin-top: 20px;
+    .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.15; color: #fff; }
+    .empty-state-box h4 { color: #444; font-weight: 700; margin-bottom: 12px; }
+    .btn-empty {
+        background: rgba(198,255,0,0.08); color: #c6ff00; border: 1px solid rgba(198,255,0,0.15);
+        padding: 10px 24px; border-radius: 12px; text-decoration: none;
+        font-weight: 700; font-size: 0.85rem; transition: 0.3s;
     }
+    .btn-empty:hover { background: rgba(198,255,0,0.15); transform: translateY(-2px); }
 
-    .btn-pro-neon {
-        background: linear-gradient(135deg, #c6ff00 0%, #b3d900 100%);
-        color: #000;
-        border: none;
-        padding: 12px 28px;
-        border-radius: 50px;
-        font-weight: 800;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 0 20px rgba(198, 255, 0, 0.3);
-        text-decoration: none;
+    /* ===== SETTINGS ===== */
+    .settings-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .setting-panel {
+        background: #141414;
+        border: 1px solid rgba(255,255,255,0.05); border-radius: 18px;
+        padding: 28px; transition: border-color 0.25s ease;
     }
-
-        .btn-pro-neon:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 0 30px rgba(198, 255, 0, 0.6);
-            color: black;
-        }
-
-        .btn-pro-neon:active {
-            transform: translateY(0);
-        }
-    /* ------------------------------------------- */
-    .btn-logout {
-        width: 45px; /* Pro butonuyla aynı yükseklik */
-        height: 45px;
-        border-radius: 50%;
-        border: 1px solid #333;
-        background: #111;
-        color: #ff4444;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-decoration: none;
-        transition: 0.2s;
-        font-size: 1.2rem;
+    .setting-panel:hover { border-color: rgba(255,255,255,0.08); }
+    .setting-panel.full-width { grid-column: 1 / -1; }
+    .setting-title {
+        font-size: 1rem; font-weight: 700; color: #fff; margin-bottom: 20px;
+        display: flex; align-items: center; gap: 10px;
     }
-
-        .btn-logout:hover {
-            background: #ff4444;
-            color: white;
-            border-color: #ff4444;
-        }
-
-    .user-status-info {
-        margin-top: 8px;
-        font-size: 0.8rem;
-        color: #aaa;
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
+    .setting-title i { color: #c6ff00; font-size: 0.9rem; }
+    .input-modern {
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        color: #fff; padding: 12px 16px; border-radius: 12px; width: 100%;
+        font-family: inherit; font-size: 0.9rem; transition: 0.3s; outline: none;
     }
-
-    /* ============================================
-       RESPONSIVE TASARIM - TÜM CİHAZLAR İÇİN
-       ============================================ */
-
-    /* Tablet ve küçük ekranlar (992px ve altı) */
-    @@media (max-width: 992px) {
-        .profile-wrapper {
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-
-        .user-dashboard-card {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
-        .stats-row {
-            width: 100%;
-            justify-content: space-around;
-            gap: 15px;
-        }
-
-        .stat-item {
-            border-left: none;
-            padding-left: 0;
-            flex: 1;
-        }
-
-        .d-flex.gap-2 {
-            width: 100%;
-            justify-content: space-between;
-        }
+    .input-modern:focus { border-color: rgba(198,255,0,0.3); box-shadow: 0 0 0 3px rgba(198,255,0,0.06); background: rgba(255,255,255,0.05); }
+    .input-modern::placeholder { color: #444; }
+    .bio-textarea {
+        resize: none; min-height: 100px;
+        background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+        color: #fff; padding: 14px 16px; border-radius: 12px; width: 100%;
+        font-family: inherit; font-size: 0.9rem; transition: 0.3s; outline: none;
     }
-
-    /* Mobil cihazlar (768px ve altı) */
-    @@media (max-width: 768px) {
-        .profile-wrapper {
-            margin: 15px auto;
-            padding: 0 10px;
-        }
-
-        .user-dashboard-card {
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .avatar-info-group {
-            width: 100%;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-
-        .avatar-box {
-            width: 60px;
-            height: 60px;
-        }
-
-        .user-text h1 {
-            font-size: 1.2rem;
-        }
-
-        .user-text p {
-            font-size: 0.75rem;
-        }
-
-        .user-status-info {
-            font-size: 0.7rem;
-            gap: 10px;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .stats-row {
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            padding-top: 15px;
-            border-top: 1px solid #222;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #222;
-        }
-
-            .stat-item:last-child {
-                border-bottom: none;
-            }
-
-        .stat-val {
-            font-size: 1.1rem;
-        }
-
-        .stat-lbl {
-            font-size: 0.7rem;
-        }
-
-        .custom-tabs {
-            flex-wrap: wrap;
-            gap: 10px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-        }
-
-            .custom-tabs::-webkit-scrollbar {
-                height: 4px;
-            }
-
-            .custom-tabs::-webkit-scrollbar-thumb {
-                background: #c6ff00;
-                border-radius: 2px;
-            }
-
-        .tab-btn {
-            font-size: 0.85rem;
-            padding: 12px 15px;
-            white-space: nowrap;
-        }
-
-        .projects-grid {
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-
-        .design-card {
-            margin-bottom: 0;
-        }
-
-        .card-thumb {
-            height: 200px;
-        }
-
-        .card-actions {
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
-        }
-
-        .btn-card-action {
-            padding: 10px;
-            font-size: 0.7rem;
-        }
-
-        .bulk-bar {
-            flex-direction: column;
-            gap: 10px;
-            padding: 15px;
-        }
-
-            .bulk-bar button {
-                width: 100%;
-            }
-
-        .d-flex.gap-2 {
-            flex-direction: column;
-            width: 100%;
-            gap: 10px;
-        }
-
-        .btn-pro-neon {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .btn-logout {
-            width: 100%;
-            height: 45px;
-            border-radius: 8px;
-        }
-
-        .empty-box {
-            padding: 40px 20px;
-        }
-
-            .empty-box h4 {
-                font-size: 1.1rem;
-            }
+    .bio-textarea:focus { border-color: rgba(198,255,0,0.3); box-shadow: 0 0 0 3px rgba(198,255,0,0.06); background: rgba(255,255,255,0.05); }
+    .btn-save {
+        background: linear-gradient(135deg, #c6ff00, #a8e600); color: #000;
+        border: none; border-radius: 12px; padding: 12px; width: 100%;
+        font-weight: 800; font-size: 0.88rem; cursor: pointer;
+        transition: 0.3s; font-family: inherit;
     }
+    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(198,255,0,0.25); }
+    .char-counter { text-align: right; font-size: 0.72rem; color: #333; margin: 6px 0 14px; }
 
-    /* Küçük telefonlar (480px ve altı) */
-    @@media (max-width: 480px) {
-        .profile-wrapper {
-            margin: 10px auto;
-            padding: 0 8px;
-        }
-
-        .user-dashboard-card {
-            padding: 12px;
-        }
-
-        .avatar-box {
-            width: 50px;
-            height: 50px;
-        }
-
-        .avatar-btn {
-            width: 18px;
-            height: 18px;
-            font-size: 0.6rem;
-        }
-
-        .user-text h1 {
-            font-size: 1rem;
-        }
-
-        .user-text p {
-            font-size: 0.7rem;
-        }
-
-        .user-status-info {
-            font-size: 0.65rem;
-            gap: 8px;
-        }
-
-        .pro-badge {
-            font-size: 0.55rem;
-            padding: 2px 6px;
-        }
-
-        .stats-row {
-            gap: 10px;
-        }
-
-        .stat-val {
-            font-size: 1rem;
-        }
-
-        .stat-lbl {
-            font-size: 0.65rem;
-        }
-
-        .custom-tabs {
-            gap: 8px;
-        }
-
-        .tab-btn {
-            font-size: 0.75rem;
-            padding: 10px 12px;
-        }
-
-        .projects-grid {
-            gap: 12px;
-        }
-
-        .card-thumb {
-            height: 180px;
-        }
-
-        .card-info-content {
-            padding: 12px;
-        }
-
-        .card-title {
-            font-size: 0.85rem;
-        }
-
-        .project-date {
-            font-size: 0.7rem;
-        }
-
-        .card-actions {
-            gap: 5px;
-        }
-
-        .btn-card-action {
-            padding: 8px;
-            font-size: 0.65rem;
-        }
-
-        .card-select {
-            width: 18px;
-            height: 18px;
-            top: 8px;
-            left: 8px;
-        }
-
-        .empty-box {
-            padding: 30px 15px;
-        }
-
-            .empty-box i {
-                font-size: 2rem !important;
-            }
-
-            .empty-box h4 {
-                font-size: 1rem;
-            }
-
-        #settings {
-            padding: 0;
-        }
-
-            #settings > div {
-                max-width: 100%;
-                padding: 20px 15px;
-            }
-
-            #settings h4 {
-                font-size: 1.1rem;
-            }
-
-        .form-control {
-            font-size: 0.9rem;
-            padding: 8px;
-        }
+    /* 2FA Toggle */
+    .tfa-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .tfa-info p { color: #555; font-size: 0.82rem; margin: 6px 0 0; }
+    .tfa-switch { position: relative; display: inline-block; width: 56px; height: 30px; flex-shrink: 0; }
+    .tfa-switch input { opacity: 0; width: 0; height: 0; }
+    .tfa-slider {
+        position: absolute; cursor: pointer; inset: 0; background: #222;
+        border-radius: 30px; transition: .3s;
     }
-
-    /* Çok küçük telefonlar (360px ve altı) */
-    @@media (max-width: 360px) {
-        .profile-wrapper {
-            padding: 0 5px;
-        }
-
-        .user-dashboard-card {
-            padding: 10px;
-        }
-
-        .avatar-box {
-            width: 45px;
-            height: 45px;
-        }
-
-        .user-text h1 {
-            font-size: 0.95rem;
-        }
-
-        .tab-btn {
-            font-size: 0.7rem;
-            padding: 8px 10px;
-        }
-
-        .card-thumb {
-            height: 160px;
-        }
-
-        .btn-card-action {
-            font-size: 0.6rem;
-            padding: 6px;
-        }
+    .tfa-slider:before {
+        content: ''; position: absolute; height: 22px; width: 22px;
+        left: 4px; bottom: 4px; background: #666; border-radius: 50%; transition: .3s;
     }
+    .tfa-switch input:checked + .tfa-slider { background: rgba(198,255,0,0.2); }
+    .tfa-switch input:checked + .tfa-slider:before { transform: translateX(26px); background: #c6ff00; }
 
-    /* Yatay mod (landscape) mobil */
-    @@media (max-width: 900px) and (orientation: landscape) {
-        .user-dashboard-card {
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-
-        .avatar-info-group {
-            flex-direction: row;
-            flex: 1;
-        }
-
-        .stats-row {
-            flex-direction: row;
-            flex: 1;
-            justify-content: space-around;
-        }
-
-        .d-flex.gap-2 {
-            flex-direction: row;
-            width: auto;
-        }
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 920px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .settings-layout { grid-template-columns: 1fr; }
+        .profile-top-row { gap: 16px; }
+        .profile-actions { width: 100%; }
     }
-
-    /* Favoriler sayfası responsive */
-    @@media (max-width: 768px) {
-        .project-card {
-            position: relative;
-        }
-
-        .remove-fav-btn {
-            width: 28px !important;
-            height: 28px !important;
-            font-size: 0.8rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-            .empty-state i {
-                font-size: 2.5rem !important;
-            }
-    }
-
-    /* Tab içerik animasyonu */
-    .tab-content {
-        animation: fadeIn 0.3s ease;
-    }
-
-    @@keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Scroll bar özelleştirme */
-    .custom-tabs {
-        scrollbar-width: thin;
-        scrollbar-color: #c6ff00 #222;
-    }
-
-    /* Touch friendly butonlar mobilde */
-    @@media (max-width: 768px) {
-        .btn-card-action,
-        .btn-pro-neon,
-        .btn-logout,
-        .tab-btn {
-            min-height: 44px; /* iOS touch target */
-            touch-action: manipulation;
-        }
+    @@media (max-width: 600px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .dash-hero { height: 160px; }
+        .profile-header-card { padding: 0 18px 20px; margin-top: -50px; }
+        .avatar-ring { width: 76px; height: 76px; }
+        .profile-top-row { margin-top: -34px; }
+        .profile-identity h1 { font-size: 1.2rem; }
+        .dash-tabs { border-radius: 12px; }
+        .dash-tab-btn { padding: 12px 14px; font-size: 0.75rem; }
+        .projects-grid { grid-template-columns: 1fr; }
     }
 </style>
 
-<div class="container profile-wrapper">
+<div class="dash-wrapper">
+    @Html.AntiForgeryToken()
 
-    <div class="user-dashboard-card">
+    <!-- HERO BANNER -->
+    <div class="dash-hero">
+        <div class="hero-grid"></div>
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+    </div>
 
-        <div class="avatar-info-group">
-            <form id="avatarForm"
-                  asp-controller="Account"
-                  asp-action="ProfilResmiGuncelle"
-                  method="post"
-                  enctype="multipart/form-data"
-                  class="avatar-group">
+    <!-- PROFILE HEADER CARD -->
+    <div class="profile-header-card">
+        <div class="profile-top-row">
+            <form id="avatarForm" asp-controller="Account" asp-action="ProfilResmiGuncelle" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
-
-                <div class="avatar-box">
-                    <img src="@profilResmi"
-                         class="user-avatar"
-                         alt="Profil"
-                         onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
-
-                    <label for="fileInput" class="avatar-btn">
-                        <i class="fa-solid fa-camera"></i>
-                    </label>
-
-                    <input type="file"
-                           id="fileInput"
-                           name="profilResmi"
-                           accept="image/*"
-                           style="display:none;"
-                           onchange="document.getElementById('avatarForm').submit()" />
+                <div class="avatar-wrapper">
+                    <div class="avatar-ring">
+                        <img src="@SafeResim(profilResmi, "https://cdn-icons-png.flaticon.com/512/149/149071.png")" alt="Profil">
+                    </div>
+                    <label for="fileInput" class="avatar-cam-btn"><i class="fa-solid fa-camera"></i></label>
+                    <input type="file" id="fileInput" name="profilResmi" accept="image/*" style="display:none;" onchange="document.getElementById('avatarForm').submit()" />
                 </div>
             </form>
 
-
-            <div class="user-text">
-                <h1 class="text-white">
-                    @User.Identity.Name @if (uyelikTipi == "Pro")
-                    {
-                        <span class="pro-badge">PRO</span>
-                    }
+            <div class="profile-identity">
+                <h1>
+                    @User.Identity.Name
+                    @if (uyelikTipi == "Pro") { <span class="pro-badge">⚡ PRO</span> }
                 </h1>
-                <p>@email</p>
-
-                <div class="user-status-info">
+                <p class="email-text">@email</p>
+                <div class="membership-info">
                     @if (uyelikTipi == "Pro")
                     {
                         <span style="color:#c6ff00"><i class="fa-solid fa-check-circle"></i> PRO Aktif</span>
-                        <span>Bitiş: @bitisTarihiStr</span>
+                        <span><i class="fa-regular fa-calendar"></i> Bitis: @bitisTarihiStr</span>
                     }
                     else
                     {
-                        <span><i class="fa-regular fa-user"></i> Başlangıç Paketi</span>
-                        <span style="color:white; font-weight:bold;">Kalan Kredi: <span style="color:#c6ff00">@kalanKredi</span></span>
+                        <span><i class="fa-regular fa-user"></i> Baslangic Paketi</span>
+                        <span>Kredi: <b style="color:#c6ff00">@kalanKredi</b></span>
                     }
                 </div>
             </div>
-        </div>
-        @if (TempData["Hata"] != null)
-        {
-            <div class="alert alert-danger fw-bold text-center">
-                <i class="fa-solid fa-circle-xmark"></i> @TempData["Hata"]
-            </div>
-        }
 
-        @if (TempData["Basarili"] != null)
-        {
-            <div class="alert alert-success fw-bold text-center">
-                <i class="fa-solid fa-check-circle"></i> @TempData["Basarili"]
+            <div class="profile-actions">
+                @if (uyelikTipi != "Pro")
+                {
+                    <button onclick="tryBecomePro()" class="btn-pro-glow"><i class="fa-solid fa-bolt"></i> PRO OL</button>
+                }
+                <a href="/Account/Cikis" class="btn-logout-pill" title="Cikis Yap"><i class="fa-solid fa-power-off"></i></a>
             </div>
-        }
-
-        <div class="stats-row">
-            <div class="stat-item"><span class="stat-val">@tasarimlar.Count</span><span class="stat-lbl">Proje</span></div>
-            <div class="stat-item"><span class="stat-val">@favoriler.Count</span><span class="stat-lbl">Favori</span></div>
-            <div class="stat-item"><span class="stat-val">0</span><span class="stat-lbl">Satış</span></div>
         </div>
 
-        <div class="d-flex gap-2">
-            @if (uyelikTipi != "Pro")
-            {
-                <button onclick="tryBecomePro()" class="btn-pro-neon">
-                    <i class="fa-solid fa-bolt"></i> PRO OL
-                </button>
-            }
-            else
-            {
-
-            }
-            <a href="/Account/Cikis" class="btn-logout" title="Çıkış Yap">
-                <i class="fa-solid fa-power-off"></i>
-            </a>
+        <!-- BIO -->
+        <div class="bio-glass">
+            <div class="bio-label"><i class="fa-solid fa-feather-pointed"></i> BİYOGRAFİ</div>
+            <p class="bio-text" id="bioPreview">@biyografiGosterim</p>
         </div>
     </div>
 
-    <div class="custom-tabs">
-        <button class="tab-btn active" onclick="openTab(event, 'projects')">📂 PROJELERİM</button>
-        <button class="tab-btn" onclick="openTab(event, 'settings')">⚙️ AYARLAR</button>
-        <button class="tab-btn" onclick="openTab(event, 'favorites')">❤️ FAVORİLER</button>
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <span class="stat-number" data-target="@tasarimlar.Count">0</span>
+            <span class="stat-label">Proje</span>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-heart"></i></div>
+            <span class="stat-number" data-target="@favoriler.Count">0</span>
+            <span class="stat-label">Favori</span>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+            <span class="stat-number" data-target="@satisSayisi">0</span>
+            <span class="stat-label">Satis</span>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fa-solid fa-share-nodes"></i></div>
+            <span class="stat-number" data-target="@paylasimlar.Count">0</span>
+            <span class="stat-label">Paylasim</span>
+        </div>
     </div>
 
-    <div id="projects" class="tab-content" style="display:block;">
+    <!-- TABS -->
+    <div class="dash-tabs">
+        <button class="dash-tab-btn active" onclick="openTab(event, 'projects')"><i class="fa-solid fa-folder-open"></i> PROJELERİM</button>
+        <button class="dash-tab-btn" onclick="openTab(event, 'favorites')"><i class="fa-solid fa-heart"></i> FAVORİLER</button>
+        <button class="dash-tab-btn" onclick="openTab(event, 'settings')"><i class="fa-solid fa-gear"></i> AYARLAR</button>
+    </div>
 
+    <!-- PROJECTS TAB -->
+    <div id="projects" class="tab-panel" style="display:block;">
         <div class="projects-grid">
             @if (tasarimlar != null && tasarimlar.Count > 0)
             {
                 @foreach (var t in tasarimlar)
                 {
-                    // GÜVENLİK KİLİDİ: Veriler null gelse bile varsayılan değer ata
                     var kayitId = t.Id != null ? t.Id : 0;
                     var sablonId = t.SablonId != null ? t.SablonId : 0;
                     var resim = t.ResimUrl != null ? t.ResimUrl : "https://placehold.co/600x400/222/555?text=Resim+Yok";
-                    var baslik = t.GosterilecekAd != null ? t.GosterilecekAd : "Adsız Proje";
-
-                    // Tarih hatasını önlemek için try-catch bloğu
+                    var baslik = t.GosterilecekAd != null ? t.GosterilecekAd : "Adsiz Proje";
                     string tarih = "-";
-                    try
-                    {
-                        if (t.Tarih != null) { tarih = ((DateTime)t.Tarih).ToString("dd MMM"); }
-                    }
-                    catch { }
+                    try { if (t.Tarih != null) tarih = ((DateTime)t.Tarih).ToString("dd MMM yyyy"); } catch { }
 
-                    <div class="design-card">
-                        <input type="checkbox" name="secilenIdler" value="@kayitId" class="card-select" onchange="updateBulkActions()">
-
+                    <div class="project-card">
                         <a href="/Home/Tasarim/@sablonId?kayitliId=@kayitId">
-                            <img src="@resim" class="card-thumb" onerror="this.src='https://placehold.co/600x400/222/555?text=Resim+Yok'">
-                        </a>
-
-                        <div class="card-info-content">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="card-title" onclick="renameProject(@kayitId, '@baslik')" title="İsmi Değiştir">@baslik</div>
-                                <i class="fa-solid fa-pencil" style="font-size:0.7rem; color:#444;"></i>
+                            <div class="card-thumb-wrap">
+                                <img src="@SafeResim(resim, "https://placehold.co/600x400/222/555?text=Resim+Yok")">
+                                <div class="card-thumb-overlay"></div>
                             </div>
-                            <div class="project-date">@tarih</div>
-                            <div class="card-actions">
-                                <a href="/Home/Tasarim/@sablonId?kayitliId=@kayitId" class="btn-card-action edit">DÜZENLE</a>
-                                <a href="/Home/ProjeKopyala/@kayitId" class="btn-card-action copy" title="Kopyala"><i class="fa-regular fa-copy"></i></a>
-                                <a href="/Home/TasarimiSil/@kayitId" class="btn-card-action delete" onclick="return confirm('Silinsin mi?')"><i class="fa-solid fa-trash"></i></a>
+                        </a>
+                        <div class="card-body-content">
+                            <div class="card-title">@baslik</div>
+                            <div class="card-date"><i class="fa-regular fa-clock"></i> @tarih</div>
+                            <div class="card-btns">
+                                <a href="/Home/Tasarim/@sablonId?kayitliId=@kayitId" class="btn-card edit">DUZENLE</a>
+                                <a href="/Home/ProjeKopyala/@kayitId" class="btn-card copy" title="Kopyala"><i class="fa-regular fa-copy"></i></a>
+                                <a href="/Home/TasarimiSil/@kayitId" class="btn-card delete" onclick="return confirm('Silinsin mi?')"><i class="fa-solid fa-trash"></i></a>
                             </div>
                         </div>
                     </div>
@@ -929,21 +518,23 @@ ORDER BY k.Tarih DESC";
             }
             else
             {
-                <div class="empty-box" style="grid-column: 1 / -1;">
-                    <i class="fa-solid fa-folder-open" style="font-size:3rem; margin-bottom:20px; opacity:0.5;"></i>
-                    <h4>Henüz projen yok</h4>
-                    <a href="/#koleksiyon" class="btn btn-outline-light mt-3 px-4 rounded-pill">Şablon Seç</a>
+                <div class="empty-state-box" style="grid-column: 1 / -1;">
+                    <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+                    <h4>Henuz projen yok</h4>
+                    <a href="/#koleksiyon" class="btn-empty">Sablon Sec</a>
                 </div>
             }
         </div>
     </div>
-    <div id="favorites" class="tab-content" style="display:none;">
+
+    <!-- FAVORITES TAB -->
+    <div id="favorites" class="tab-panel" style="display:none;">
         @if (favoriler.Count == 0)
         {
-            <div class="empty-state">
-                <i class="fa-solid fa-heart-crack mb-3" style="font-size:3rem; color:#444;"></i>
-                <p>Henüz favori eklemedin.</p>
-                <a href="/" class="btn btn-sm btn-outline-light rounded-pill px-4 mt-2">Keşfet</a>
+            <div class="empty-state-box">
+                <div class="empty-icon"><i class="fa-solid fa-heart-crack"></i></div>
+                <h4>Henuz favori eklemedin</h4>
+                <a href="/" class="btn-empty">Kesfet</a>
             </div>
         }
         else
@@ -951,14 +542,18 @@ ORDER BY k.Tarih DESC";
             <div class="projects-grid">
                 @foreach (var f in favoriler)
                 {
-                    <div class="project-card" id="fav-card-@f.Id">
-                        <button onclick="removeFav(@f.Id)" class="remove-fav-btn" style="position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.7); color:#ff4444; border:1px solid #ff4444; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10;"><i class="fa-solid fa-xmark"></i></button>
-
-                        <img src="@f.ResimUrl" class="card-thumb">
-                        <div class="card-info-content">
-                            <h5 class="card-title text-white">@f.Baslik</h5>
-                            <p class="project-date" style="color:#c6ff00">@f.Fiyat ₺</p>
-                            <a href="/Home/Tasarim/@f.Id" class="btn btn-sm btn-light w-100 mt-2 fw-bold">TASARLA</a>
+                    <div class="project-card fav-card" id="fav-card-@f.Id">
+                        <button onclick="removeFav(@f.Id)" class="fav-remove-btn"><i class="fa-solid fa-xmark"></i></button>
+                        <div class="card-thumb-wrap">
+                            <img src="@SafeResim((string)f.ResimUrl, "https://placehold.co/600x400/222/555?text=Resim+Yok")">
+                            <div class="card-thumb-overlay"></div>
+                        </div>
+                        <div class="card-body-content">
+                            @if (f.Kategori != null) { <span class="fav-category">@f.Kategori</span> }
+                            <div class="card-title">@f.Baslik</div>
+                            <div class="fav-price">@f.Fiyat ₺</div>
+                            <div style="height:10px"></div>
+                            <a href="/Home/Tasarim/@f.Id" class="btn-card edit" style="width:100%">TASARLA</a>
                         </div>
                     </div>
                 }
@@ -966,150 +561,197 @@ ORDER BY k.Tarih DESC";
         }
     </div>
 
-    <div id="settings" class="tab-content" style="display:none;">
-        <div style="max-width:500px; background:#111; padding:30px; border-radius:12px; border:1px solid #222;">
-            <h4 style="color:white; margin-bottom:20px;">Şifre Değiştir</h4>
-            <input type="password" class="form-control mb-3 bg-black border-secondary text-light" placeholder="Mevcut Şifre" style="background:#222; border:1px solid #333; color:white; padding:10px;">
-            <input type="password" class="form-control mb-3 bg-black border-secondary text-light" placeholder="Yeni Şifre" style="background:#222; border:1px solid #333; color:white; padding:10px;">
-            <button class="btn-studio btn-primary-studio w-100">GÜNCELLE</button>
+    <!-- SETTINGS TAB -->
+    <div id="settings" class="tab-panel" style="display:none;">
+        <div class="settings-layout">
+            <div class="setting-panel">
+                <div class="setting-title"><i class="fa-solid fa-lock"></i> Sifre Degistir</div>
+                <input type="password" id="mevcutSifre" class="input-modern" placeholder="Mevcut Sifre">
+                <div style="height:12px"></div>
+                <input type="password" id="yeniSifre" class="input-modern" placeholder="Yeni Sifre (min 6 karakter)">
+                <div style="height:14px"></div>
+                <button onclick="sifreDegistir()" class="btn-save">GUNCELLE</button>
+                <div id="sifreSonuc" style="margin-top:10px; font-size:0.85rem;"></div>
+            </div>
+
+            <div class="setting-panel">
+                <div class="setting-title"><i class="fa-solid fa-user-pen"></i> Biyografi</div>
+                <textarea id="biyografiInput" maxlength="500" rows="4" class="bio-textarea" placeholder="Kendini kisa bir cumleyle anlat...">@biyografi</textarea>
+                <div class="char-counter"><span id="bioCount">@biyografi.Length</span>/500</div>
+                <button onclick="biyografiKaydet()" class="btn-save">KAYDET</button>
+                <div id="bioSonuc" style="margin-top:10px; font-size:0.85rem;"></div>
+            </div>
+
+            <div class="setting-panel full-width">
+                <div class="tfa-row">
+                    <div class="tfa-info">
+                        <div class="setting-title" style="margin-bottom:0;"><i class="fa-solid fa-shield-halved"></i> Iki Faktorlu Dogrulama (2FA)</div>
+                        <p>Giris yaparken e-postana tek kullanimlik kod gonderilir.</p>
+                    </div>
+                    <label class="tfa-switch">
+                        <input type="checkbox" id="tfaToggle" @(ikiFaktorAktif ? "checked" : "") onchange="toggle2FA(this)">
+                        <span class="tfa-slider"></span>
+                    </label>
+                </div>
+                <div id="tfaSonuc" style="margin-top:10px; font-size:0.85rem;"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<script>
-    function openTab(evt, tabName) {
-        document.querySelectorAll(".tab-content").forEach(x => x.style.display = "none");
-        document.querySelectorAll(".tab-btn").forEach(x => x.className = x.className.replace(" active", ""));
-        document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.className += " active";
-        document.getElementById('bulkActions').classList.remove('show');
-    }
-    function updateBulkActions() {
-        var count = document.querySelectorAll('.card-select:checked').length;
-        var bar = document.getElementById('bulkActions');
-        document.getElementById('selectedCount').innerText = count;
-        if (count > 0) bar.classList.add('show'); else bar.classList.remove('show');
-    }
-    function renameProject(id, eskiAd) {
-        var yeniAd = prompt("Yeni isim:", eskiAd);
-        if (yeniAd && yeniAd !== eskiAd) {
-            var fd = new FormData(); fd.append("id", id); fd.append("yeniAd", yeniAd); fd.append("__RequestVerificationToken", getCSRFToken());
-            fetch('/Home/ProjeAdDegistir', { method: 'POST', body: fd }).then(r => r.json()).then(d => { if (d.success) location.reload(); });
-        }
-    }
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
     function getCSRFToken() {
         return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
     }
 
+    // Tab system
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.tab-panel').forEach(x => x.style.display = 'none');
+        document.querySelectorAll('.dash-tab-btn').forEach(x => x.classList.remove('active'));
+        document.getElementById(tabName).style.display = 'block';
+        evt.currentTarget.classList.add('active');
+    }
+
+    // Counter animation
+    function animateCounters() {
+        document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+            const target = parseInt(el.dataset.target);
+            if (target === 0) { el.textContent = '0'; return; }
+            let current = 0;
+            const increment = Math.max(1, Math.ceil(target / 30));
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) { current = target; clearInterval(timer); }
+                el.textContent = current;
+            }, 40);
+        });
+    }
+
+    // Trigger counter animation when page loads
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) { animateCounters(); observer.disconnect(); }
+        });
+    }, { threshold: 0.3 });
+    const statsGrid = document.querySelector('.stats-grid');
+    if (statsGrid) observer.observe(statsGrid);
+
+    // Password change
+    function sifreDegistir() {
+        var mevcut = document.getElementById('mevcutSifre').value;
+        var yeni = document.getElementById('yeniSifre').value;
+        if (!mevcut || !yeni) { document.getElementById('sifreSonuc').innerHTML = '<span style="color:#ff4444;">Tum alanlari doldurun.</span>'; return; }
+        if (yeni.length < 6) { document.getElementById('sifreSonuc').innerHTML = '<span style="color:#ff4444;">Sifre en az 6 karakter olmali.</span>'; return; }
+
+        var fd = new FormData();
+        fd.append('mevcutSifre', mevcut);
+        fd.append('yeniSifre', yeni);
+        fd.append('__RequestVerificationToken', getCSRFToken());
+
+        fetch('/Account/SifreDegistir', { method: 'POST', body: fd })
+            .then(r => r.json()).then(d => {
+                document.getElementById('sifreSonuc').innerHTML = d.success
+                    ? '<span style="color:#c6ff00;">' + d.message + '</span>'
+                    : '<span style="color:#ff4444;">' + d.message + '</span>';
+                if (d.success) {
+                    document.getElementById('mevcutSifre').value = '';
+                    document.getElementById('yeniSifre').value = '';
+                }
+            });
+    }
+
+    // Bio save
+    function biyografiKaydet() {
+        var bio = document.getElementById('biyografiInput').value;
+        var fd = new FormData();
+        fd.append('biyografi', bio);
+        fd.append('__RequestVerificationToken', getCSRFToken());
+
+        fetch('/Account/BiyografiGuncelle', { method: 'POST', body: fd })
+            .then(r => r.json()).then(d => {
+                document.getElementById('bioSonuc').innerHTML = d.success
+                    ? '<span style="color:#c6ff00;">' + d.message + '</span>'
+                    : '<span style="color:#ff4444;">' + d.message + '</span>';
+                if (d.success) {
+                    var val = (bio || '').trim();
+                    document.getElementById('bioPreview').textContent = val.length > 0
+                        ? val
+                        : 'Henuz biyografi eklenmemis. Ayarlardan kendini tanitan kisa bir metin ekleyebilirsin.';
+                }
+            });
+    }
+
+    // Bio live preview
+    document.getElementById('biyografiInput')?.addEventListener('input', function () {
+        document.getElementById('bioCount').textContent = this.value.length;
+        var val = this.value.trim();
+        document.getElementById('bioPreview').textContent = val.length > 0
+            ? val
+            : 'Henuz biyografi eklenmemis. Ayarlardan kendini tanitan kisa bir metin ekleyebilirsin.';
+    });
+
+    // 2FA toggle
+    function toggle2FA(el) {
+        var aktif = el.checked;
+        var url = aktif ? '/Account/IkiFactorAktifEt' : '/Account/IkiFactorKapat';
+        var fd = new FormData();
+        fd.append('__RequestVerificationToken', getCSRFToken());
+
+        fetch(url, { method: 'POST', body: fd })
+            .then(r => r.json()).then(d => {
+                document.getElementById('tfaSonuc').innerHTML = d.success
+                    ? '<span style="color:#c6ff00;">' + d.message + '</span>'
+                    : '<span style="color:#ff4444;">' + d.message + '</span>';
+                if (!d.success) el.checked = !aktif;
+            });
+    }
+
+    // Remove favorite
+    function removeFav(id) {
+        fetch('/Home/Favorile/' + id, { method: 'POST' })
+            .then(r => r.json()).then(d => {
+                if (d.success) {
+                    var el = document.getElementById('fav-card-' + id);
+                    if (el) { el.style.transform = 'scale(0.8)'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
+                }
+            });
+    }
+
+    // PRO upgrade
     function tryBecomePro() {
         Swal.fire({
-            title: 'PRO Olmak İstiyor musun?',
-            text: "Hesabından 50 Kredi düşülecek.",
+            title: 'PRO Olmak Istiyor musun?',
+            text: 'Hesabindan 50 Kredi dusulecek.',
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#c6ff00',
             cancelButtonColor: '#333',
-            confirmButtonText: '<span style="color:black; font-weight:bold;">Evet, Yükselt!</span>',
-            cancelButtonText: 'Vazgeç',
-            background: '#1e1e1e', color: '#fff'
+            confirmButtonText: '<span style="color:black; font-weight:bold;">Evet, Yukselt!</span>',
+            cancelButtonText: 'Vazgec',
+            background: '#1e1e1e',
+            color: '#fff'
         }).then((result) => {
             if (result.isConfirmed) {
                 var fd = new FormData();
-                fd.append("__RequestVerificationToken", getCSRFToken());
-                fetch("/Account/ProOlAjax", { method: "POST", body: fd })
-                .then(response => response.json())
-                .then(res => {
-                    if (res.success) {
-                        Swal.fire({
-                            title: 'Harika! 🌟',
-                            text: res.message,
-                            icon: 'success',
-                            confirmButtonColor: '#c6ff00',
-                            confirmButtonText: '<span style="color:black; font-weight:bold;">Tamam</span>',
-                            background: '#1e1e1e', color: '#fff'
-                        }).then(() => location.reload());
-                    } else {
-                        Swal.fire({
-                            title: 'Olamadı...',
-                            text: res.message,
-                            icon: 'error',
-                            confirmButtonColor: '#d33',
-                            background: '#1e1e1e', color: '#fff'
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Hata:', error);
-                    Swal.fire({ icon: 'error', title: 'Sunucu Hatası', text: 'İşlem yapılamadı.' });
-                });
-            }
-        });
-    }
-
-    function openDeleteModal(id) {
-        Swal.fire({
-            title: 'Emin misin?',
-            text: "Bu proje kalıcı olarak silinecek!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#333',
-            confirmButtonText: 'Evet, Sil',
-            cancelButtonText: 'Vazgeç',
-            background: '#1e1e1e', color: '#fff'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = "/Home/TasarimiSil/" + id;
-            }
-        });
-    }
-
-    var userEmail = "@email";
-    if (userEmail) {
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/adminHub")
-            .withAutomaticReconnect()
-            .build();
-
-        connection.start().then(function () {
-            connection.invoke("KullaniciBaglan", userEmail);
-        }).catch(err => console.error(err));
-
-        connection.on("SayfayiYenile", function () {
-            const Toast = Swal.mixin({
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-                didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
-            });
-            Toast.fire({ icon: 'success', title: 'Hesabınız güncellendi! 🔄' });
-            setTimeout(() => { location.reload(); }, 1500);
-        });
-    }
-        function removeFav(id) {
-        Swal.fire({
-            title: 'Favorilerden çıkarılsın mı?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ff4444',
-            cancelButtonColor: '#333',
-            confirmButtonText: 'Evet, Çıkar',
-            background: '#1e1e1e', color: '#fff'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.post('/Home/Favorile/' + id, { __RequestVerificationToken: getCSRFToken() }, function(res) {
-                    if(res.success) {
-                        $('#fav-card-' + id).fadeOut(300, function() { $(this).remove(); });
-                        var countEl = $('.stat-item:nth-child(2) .stat-val');
-                        var current = parseInt(countEl.text());
-                        if(current > 0) countEl.text(current - 1);
-                    }
-                });
+                fd.append('__RequestVerificationToken', getCSRFToken());
+                fetch('/Account/ProOlAjax', { method: 'POST', body: fd })
+                    .then(response => response.json())
+                    .then(res => {
+                        if (res.success) {
+                            Swal.fire({
+                                title: 'Harika!', text: res.message, icon: 'success',
+                                confirmButtonColor: '#c6ff00',
+                                confirmButtonText: '<span style="color:black; font-weight:bold;">Tamam</span>',
+                                background: '#1e1e1e', color: '#fff'
+                            }).then(() => location.reload());
+                        } else {
+                            Swal.fire({
+                                title: 'Olamadi', text: res.message, icon: 'error',
+                                confirmButtonColor: '#d33', background: '#1e1e1e', color: '#fff'
+                            });
+                        }
+                    });
             }
         });
     }

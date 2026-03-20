@@ -555,6 +555,66 @@
         .table-responsive::-webkit-scrollbar-track {
             background: #222;
         }
+
+
+@@media (max-width: 1200px) {
+}
+            .support-admin {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .support-admin-list {
+            background: #0f1013;
+            border: 1px solid #2c2d33;
+            border-radius: 12px;
+            height: 220px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .support-admin-msg {
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            line-height: 1.35;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+        }
+
+        .support-admin-msg.from-user {
+            background: rgba(198, 255, 0, 0.12);
+            color: #d7ff5c;
+            border: 1px solid rgba(198, 255, 0, 0.25);
+            align-self: flex-start;
+        }
+
+        .support-admin-msg.from-admin {
+            background: #1f2025;
+            color: #eee;
+            border: 1px solid #2c2d33;
+            align-self: flex-end;
+        }
+
+        .support-admin-meta {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 2px;
+            word-break: break-word;
+        }
+
+        @@media (max-width: 1200px) {
+            .support-admin-list {
+                height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -578,7 +638,7 @@
         </div>
 
         <div class="row mb-5">
-            <div class="col-md-8 col-12 mb-4 mb-md-0"><div class="card-custom"><h5 class="mb-4">Haftalık Satış Analizi</h5><canvas id="satisGrafigi" height="120"></canvas></div></div>
+            <div class="col-md-8 col-12 mb-4"><div class="card-custom"><h5 class="mb-4">Haftalık Satış Analizi</h5><canvas id="satisGrafigi" height="120"></canvas></div></div>
             <div class="col-md-4 col-12"><div class="card-custom"><h5 class="mb-4">Kategori Dağılımı</h5><canvas id="kategoriGrafigi" height="260"></canvas></div></div>
         </div>
 
@@ -611,8 +671,8 @@
             </div>
         }
 
-        <div class="row">
-            <div class="col-md-8 col-12 mb-4 mb-md-0" id="urunler">
+                        <div class="row">
+            <div class="col-md-8 col-12 mb-4" id="urunler">
                 <div class="card-custom">
                     <h5 class="mb-4">Vitrin Ürünleri</h5>
                     <div class="table-responsive">
@@ -631,6 +691,24 @@
                                 }
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <div class="card-custom" id="supportCard">
+                    <h5>Canlı Destek</h5>
+                    <div class="support-admin mt-3">
+                        <div class="support-admin-list" id="supportAdminList"></div>
+                        <div>
+                            <label class="form-label small text-muted">Kullanıcı E-Posta</label>
+                            <input type="email" id="supportTargetEmail" class="form-control mb-2" placeholder="ornek@mail.com">
+
+                            <label class="form-label small text-muted">Mesaj</label>
+                            <textarea id="supportAdminMessage" class="form-control mb-2" rows="3" placeholder="Kullanıcıya yaz..."></textarea>
+
+                            <button type="button" class="btn btn-neon w-100" onclick="sendAdminMessage()">
+                                Gönder
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -710,17 +788,66 @@
             .withUrl("/adminHub")
             .build();
 
+        const supportList = document.getElementById('supportAdminList');
+        const supportEmailInput = document.getElementById('supportTargetEmail');
+        const supportMessageInput = document.getElementById('supportAdminMessage');
+
+        function addSupportAdminMessage(data) {
+            if (!supportList || !data || !data.message) return;
+            const wrapper = document.createElement('div');
+            const meta = document.createElement('div');
+            meta.className = 'support-admin-meta';
+            meta.textContent = `${data.email || 'Bilinmeyen'} • ${data.from === 'admin' ? 'Admin' : 'Kullanıcı'}`;
+
+            const msg = document.createElement('div');
+            msg.className = `support-admin-msg ${data.from === 'admin' ? 'from-admin' : 'from-user'}`;
+            msg.textContent = data.message;
+
+            wrapper.appendChild(meta);
+            wrapper.appendChild(msg);
+            supportList.appendChild(wrapper);
+            supportList.scrollTop = supportList.scrollHeight;
+        }
+
         connection.on("VeriDegisti", function () {
             const Toast = Swal.mixin({
                 toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-                didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
             });
             Toast.fire({ icon: 'info', title: 'Yeni bir işlem yapıldı! Sayfa yenileniyor...' });
 
             setTimeout(() => { location.reload(); }, 1500);
         });
 
-        connection.start().catch(err => console.error(err.toString()));
+        connection.on('SupportMessage', function (data) {
+            addSupportAdminMessage(data);
+            if (data?.from === 'user' && supportEmailInput && !supportEmailInput.value) {
+                supportEmailInput.value = data.email || '';
+            }
+        });
+
+        function sendAdminMessage() {
+            if (!supportEmailInput || !supportMessageInput) return;
+            const email = supportEmailInput.value.trim();
+            const message = supportMessageInput.value.trim();
+            if (!email || !message) {
+                Swal.fire("E-posta ve mesaj gerekli", "", "warning");
+                return;
+            }
+
+            supportMessageInput.value = '';
+            connection.invoke('SendAdminMessage', email, message)
+                .then(() => addSupportAdminMessage({ from: 'admin', email: email, message: message }))
+                .catch(err => console.error(err));
+        }
+
+        connection.start()
+            .then(() => connection.invoke('JoinAdmin'))
+            .catch(err => console.error(err.toString()));
+
         new Chart(document.getElementById('satisGrafigi'), { type: 'line', data: { labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'], datasets: [{ label: 'Satışlar (₺)', data: [150, 230, 180, 320, 290, 450, 600], borderColor: '#c6ff00', backgroundColor: 'rgba(198, 255, 0, 0.1)', tension: 0.4, fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#333' } } } } });
         new Chart(document.getElementById('kategoriGrafigi'), { type: 'doughnut', data: { labels: ['Doğum Günü', 'Düğün', 'Parti', 'Kurumsal'], datasets: [{ data: [30, 20, 40, 10], backgroundColor: ['#ff6384', '#36a2eb', '#c6ff00', '#ffce56'], borderWidth: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } } });
 
@@ -750,9 +877,22 @@
                 Swal.fire({ icon: 'error', title: 'Hata!', text: 'İşlem başarısız.' });
             });
         }
-
-
     </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
