@@ -29,7 +29,6 @@ x86/
 appsettings.Production.json
 appsettings.*.json
 !appsettings.json
-!appsettings.Development.json
 
 ## Environment Variables
 .env

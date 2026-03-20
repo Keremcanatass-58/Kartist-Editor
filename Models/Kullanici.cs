@@ -12,5 +12,11 @@ namespace Kartist.Models
         public int KalanKredi { get; set; } = 5;
         public DateTime? UyelikBitisTarihi { get; set; }
         public string ProfilResmi { get; set; }
+        public int BasarisizGirisSayisi { get; set; } = 0;
+        public bool HesapKilitliMi { get; set; } = false;
+        public DateTime? KilitBitisTarihi { get; set; }
+        public bool IkiFactorAktif { get; set; } = false;
+        public string Biyografi { get; set; }
+        public string SosyalMedya { get; set; }
     }
 }
