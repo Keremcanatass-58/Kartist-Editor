@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Kartist.Helpers
 {
@@ -7,9 +8,20 @@ namespace Kartist.Helpers
         public static string SanitizeHtml(string input)
         {
             if (string.IsNullOrEmpty(input)) return string.Empty;
-            
-            string pattern = @"<[^>]+>";
-            return Regex.Replace(input, pattern, string.Empty);
+
+            input = Regex.Replace(input, @"<script[^>]*>[\s\S]*?</script>", string.Empty, RegexOptions.IgnoreCase);
+            input = Regex.Replace(input, @"<iframe[^>]*>[\s\S]*?</iframe>", string.Empty, RegexOptions.IgnoreCase);
+            input = Regex.Replace(input, @"on\w+\s*=\s*""[^""]*""", string.Empty, RegexOptions.IgnoreCase);
+            input = Regex.Replace(input, @"on\w+\s*=\s*'[^']*'", string.Empty, RegexOptions.IgnoreCase);
+            input = Regex.Replace(input, @"javascript\s*:", string.Empty, RegexOptions.IgnoreCase);
+            input = Regex.Replace(input, @"<[^>]+>", string.Empty);
+            return input.Trim();
+        }
+
+        public static string SanitizeForDisplay(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            return HttpUtility.HtmlEncode(input);
         }
 
         public static bool IsValidInput(string input)
@@ -27,6 +39,20 @@ namespace Kartist.Helpers
                 }
             }
             
+            return true;
+        }
+
+        public static bool IsValidPrompt(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return false;
+            if (input.Length > 1000) return false;
+
+            string[] xssPatterns = { "<script", "javascript:", "onerror=", "onload=", "<iframe" };
+            string lower = input.ToLower();
+            foreach (var p in xssPatterns)
+            {
+                if (lower.Contains(p)) return false;
+            }
             return true;
         }
 

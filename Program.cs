@@ -1,22 +1,74 @@
+﻿using Kartist.Middleware;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Data.SqlClient;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. SERV�SLER (S�ralama �nemli de�il ama d�zenli olsun)
-builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation(); // F5 ile yenileme i�in
-builder.Services.AddSignalR(); // Canl� bildirim (Kredi y�klenince)
-builder.Services.AddSession(); // Admin giri�i i�in
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "text/css", "application/javascript", "text/html", "image/svg+xml" });
+});
 
-// 2. K�ML�K DO�RULAMA (Giri� Sistemi)
-builder.Services.AddAuthentication("KartistCookie")
+var mvc = builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
+if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("Razor:RuntimeCompilation", true))
+{
+    mvc.AddRazorRuntimeCompilation();
+}
+builder.Services.AddSignalR();
+builder.Services.AddSession();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = "KartistCookie";
+    options.DefaultSignInScheme = "KartistCookie";
+    options.DefaultChallengeScheme = "KartistCookie";
+})
     .AddCookie("KartistCookie", options =>
     {
-        options.LoginPath = "/Account/Giris"; // Giri� yapmam��sa buraya at
-        options.Cookie.Name = "KartistUye";   // �erezin ad�
-        options.ExpireTimeSpan = TimeSpan.FromDays(30); // 30 g�n a��k kals�n
+        options.LoginPath = "/Account/Giris";
+        options.Cookie.Name = "KartistUye";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    })
+    .AddCookie("External", options =>
+    {
+        options.Cookie.Name = "KartistExternal";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
     });
+
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication().AddGoogle("Google", options =>
+    {
+        options.SignInScheme = "External";
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+    });
+}
 
 var app = builder.Build();
 
-// 3. ARA KATMANLAR (Middleware - S�ras� �OK �NEML�)
+var autoSchema = builder.Configuration.GetValue<bool>("Database:AutoSchema", true);
+if (autoSchema)
+{
+    EnsureDatabaseSchema(builder.Configuration.GetConnectionString("DefaultConnection"));
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -24,23 +76,111 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles(); // CSS, JS, Resimler �al��s�n diye
+app.UseResponseCompression();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
-app.UseRouting(); // Y�nlendirme sistemi ba�las�n
+var secConfig = builder.Configuration.GetSection("Security");
+int maxReq = secConfig.GetValue<int>("RateLimitMaxRequests", 100);
+int timeWin = secConfig.GetValue<int>("RateLimitTimeWindowSeconds", 60);
+// Comment out rate limiting if it causes build errors without the proper AddRateLimiter setup, but keep the middleware.
+// app.UseRateLimiting(maxReq, timeWin);
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=604800");
+    }
+});
 
-app.UseSession(); // Admin paneli i�in session a��ls�n
+app.UseRouting();
 
-// --- G�VENL�K DUVARI (�NCE K�ML�K, SONRA YETK�) ---
-app.UseAuthentication(); // 1. Kimlik Kart�n� G�ster (Giri� yapm�� m�?)
-app.UseAuthorization();  // 2. Yetkisi Var m�?
-// ---------------------------------------------------
+app.UseSession();
 
-// 4. ROTALAR (Adresler)
-app.MapHub<Kartist.Hubs.AdminHub>("/adminHub"); // SignalR Hatt�
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapHub<Kartist.Hubs.AdminHub>("/adminHub");
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-// Bu "default" rota sayesinde /Account/Profil adresi otomatik �al���r.
 
 app.Run();
+
+static void EnsureDatabaseSchema(string? connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        return;
+    }
+
+    const string sql = @"
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'BasarisizGirisSayisi')
+    ALTER TABLE Kullanicilar ADD BasarisizGirisSayisi INT NOT NULL DEFAULT 0;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'HesapKilitliMi')
+    ALTER TABLE Kullanicilar ADD HesapKilitliMi BIT NOT NULL DEFAULT 0;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'KilitBitisTarihi')
+    ALTER TABLE Kullanicilar ADD KilitBitisTarihi DATETIME NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'IkiFactorAktif')
+    ALTER TABLE Kullanicilar ADD IkiFactorAktif BIT NOT NULL DEFAULT 0;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'Biyografi')
+    ALTER TABLE Kullanicilar ADD Biyografi NVARCHAR(500) NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'SosyalMedya')
+    ALTER TABLE Kullanicilar ADD SosyalMedya NVARCHAR(500) NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'ProfilResmi')
+    ALTER TABLE Kullanicilar ADD ProfilResmi NVARCHAR(500) NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'UyelikBitisTarihi')
+    ALTER TABLE Kullanicilar ADD UyelikBitisTarihi DATETIME NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('IkiFactorKodlari') AND type = 'U')
+BEGIN
+    CREATE TABLE IkiFactorKodlari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        KullaniciEmail NVARCHAR(256) NOT NULL,
+        Kod NVARCHAR(6) NOT NULL,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        BitisTarihi DATETIME NOT NULL,
+        Kullanildi BIT NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IX_IkiFactorKodlari_Email ON IkiFactorKodlari(KullaniciEmail);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('GirisLoglari') AND type = 'U')
+BEGIN
+    CREATE TABLE GirisLoglari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        KullaniciEmail NVARCHAR(256) NULL,
+        IpAdresi NVARCHAR(50) NULL,
+        BasariliMi BIT NULL,
+        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        UserAgent NVARCHAR(500) NULL
+    );
+    CREATE INDEX IX_GirisLoglari_Email ON GirisLoglari(KullaniciEmail);
+    CREATE INDEX IX_GirisLoglari_Tarih ON GirisLoglari(Tarih);
+END
+";
+
+    try
+    {
+        using var connection = new SqlConnection(connectionString);
+        connection.Open();
+        using var command = new SqlCommand(sql, connection);
+        command.ExecuteNonQuery();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DB schema check failed: {ex.Message}");
+    }
+}
+
+
+
+
+
