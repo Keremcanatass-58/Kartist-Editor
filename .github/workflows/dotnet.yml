@@ -35,3 +35,55 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
         retention-days: 30
+
+  deploy:
+    name: Deploy to Server
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: kartist-build-${{ github.run_number }}
+        path: ./publish
+
+    - name: Install lftp
+      run: sudo apt-get install -y lftp
+
+    - name: Enable Maintenance Mode
+      run: |
+        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
+        cd httpdocs
+        put app_offline.htm
+        bye
+        EOF
+
+    - name: Wait for maintenance page to activate
+      run: sleep 5
+
+    - name: Deploy files to server
+      run: |
+        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
+        set ftp:ssl-allow no
+        set mirror:parallel-transfer-count 5
+        mirror --reverse --delete --verbose --exclude .git/ --exclude .github/ --exclude appsettings.Development.json --exclude app_offline.htm ./publish/ httpdocs/
+        bye
+        EOF
+
+    - name: Disable Maintenance Mode
+      run: |
+        lftp -u "${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }}" ${{ secrets.FTP_SERVER }} <<EOF
+        cd httpdocs
+        rm -f app_offline.htm
+        bye
+        EOF
+
+    - name: Verify deployment
+      run: |
+        echo "Deployment completed successfully!"
+        echo "Site should be back online at https://kartistt.com.tr"
