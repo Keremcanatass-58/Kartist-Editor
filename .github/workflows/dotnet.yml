@@ -37,7 +37,7 @@ jobs:
         retention-days: 30
 
   deploy:
-    name: Deploy to Server
+    name: Deploy to Server (WebDeploy)
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -52,30 +52,14 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
 
-    - name: Enable Maintenance Mode
-      run: |
-        curl -T app_offline.htm --ftp-create-dirs ftp://${{ secrets.FTP_SERVER }}/httpdocs/app_offline.htm --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" --ftp-ssl -k
-      continue-on-error: true
-
-    - name: Wait for maintenance page to activate
-      run: sleep 5
-
-    - name: Deploy files to server
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+    - name: Deploy to IIS/Plesk via WebDeploy
+      uses: azure/webapps-deploy@v3
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        local-dir: ./publish/
-        server-dir: httpdocs/
-        dangerous-clean-slate: false
-        timeout: 120000
-
-    - name: Disable Maintenance Mode
-      run: |
-        curl ftp://${{ secrets.FTP_SERVER }}/httpdocs/ -X "DELE app_offline.htm" --user "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" --ftp-ssl -k
-      continue-on-error: true
+        app-name: 'kartistt.com.tr'
+        publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+        package: ./publish
 
     - name: Verify deployment
       run: |
-        echo "Deployment completed successfully! Site should be back online at https://kartistt.com.tr"
+        echo "Deployment completed successfully via WebDeploy!"
+        echo "Site should be back online at https://kartistt.com.tr"
