@@ -57,9 +57,9 @@ jobs:
         cd publish
         zip -r ../release.zip ./*
 
-    - name: Deploy via Custom PHP Webhook
+    - name: Deploy via Native C# API Webhook
       run: |
-        curl -X POST -F "secret=${{ secrets.DEPLOY_SECRET }}" -F "file=@release.zip" https://kartistt.com.tr/deploy.php
+        curl -X POST -f -S -s -F "secret=${{ secrets.DEPLOY_SECRET }}" -F "file=@release.zip" https://kartistt.com.tr/api/deploy
 
     - name: Verify deployment
       run: |
