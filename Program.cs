@@ -1,4 +1,4 @@
-﻿using Kartist.Middleware;
+using Kartist.Middleware;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
@@ -101,9 +101,50 @@ app.UseAuthorization();
 
 app.MapHub<Kartist.Hubs.AdminHub>("/adminHub");
 
+app.MapControllers();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context) =>
+{
+    var form = await context.Request.ReadFormAsync();
+    if (form["secret"] != "kartist-deploy-secret-2026") return Microsoft.AspNetCore.Http.Results.Unauthorized();
+    if (form.Files.Count == 0) return Microsoft.AspNetCore.Http.Results.BadRequest("No file");
+
+    var file = form.Files[0];
+    var zipPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "release.zip");
+    using (var stream = new System.IO.FileStream(zipPath, System.IO.FileMode.Create))
+    {
+        await file.CopyToAsync(stream);
+    }
+
+    var batPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "update.bat");
+    var batContent = @"@echo off
+timeout /t 2 /nobreak > nul
+echo ^<html^>^<body^>^<h2^>Kartist Guncelleniyor...^</h2^>^</body^>^</html^> > app_offline.htm
+timeout /t 3 /nobreak > nul
+tar -xf release.zip
+del app_offline.htm
+del release.zip
+del update.bat";
+                
+    await System.IO.File.WriteAllTextAsync(batPath, batContent);
+    var process = new System.Diagnostics.Process
+    {
+        StartInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            Arguments = $"/c {batPath}",
+            UseShellExecute = true,
+            CreateNoWindow = true,
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+        }
+    };
+    process.Start();
+    return Microsoft.AspNetCore.Http.Results.Ok("Deployment initiated successfully.");
+}).DisableAntiforgery();
 
 app.Run();
 
