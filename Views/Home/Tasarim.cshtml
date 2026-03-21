@@ -3947,149 +3947,153 @@
                 if (kategoriSlug.includes("ozur")) return "Kalbini kırdıysam özür dilerim. Beni affet.";
                 return promptText || (name ? `Senin için özel bir mesajım var, ${name}.` : "Sana özel bir kart hazırladım.");
             }
-            function pickTheme(kategoriSlug, palette) {
+            function pickTheme(palette) {
                 const p0 = normalizeHex(palette?.[0], "#0f172a");
                 const p1 = normalizeHex(palette?.[1], "#22d3ee");
                 const p2 = normalizeHex(palette?.[2], "#c6ff00");
 
                 let theme = {
                     bg1: p0,
-                    bg2: "#020617",
+                    bg2: "#000000",
                     accent: p1,
                     soft: p2,
-                    panel: "rgba(10,15,28,0.88)",
-                    text: "#f8fafc",
-                    muted: "#a3b1c6"
+                    text: "#ffffff",
+                    muted: "rgba(255,255,255,0.6)"
                 };
 
-                if (kategoriSlug.includes("dogum")) {
-                    theme = { ...theme, bg1: p0, bg2: "#1f1130", accent: "#f97316", soft: "#ec4899" };
-                } else if (kategoriSlug.includes("ask") || kategoriSlug.includes("sevgili")) {
-                    theme = { ...theme, bg1: "#1a1023", bg2: "#0b1022", accent: "#ec4899", soft: "#a78bfa" };
-                } else if (kategoriSlug.includes("tesekkur") || kategoriSlug.includes("tebrik")) {
-                    theme = { ...theme, bg1: "#0b1c1a", bg2: "#0a1020", accent: "#22c55e", soft: "#38bdf8" };
-                } else if (kategoriSlug.includes("ozur")) {
-                    theme = { ...theme, bg1: "#1b1020", bg2: "#0b0f1f", accent: "#fb7185", soft: "#93c5fd" };
-                }
                 return theme;
             }
 
             const palette = Array.isArray(aiData.renkPaleti) ? aiData.renkPaleti : [];
-            const kategori = (aiData.kategori || selectedCategory || "kart").toString();
-            const kategoriSlug = kategori.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ");
-            const temaRaw = (aiData.tema || "").toString().trim();
-            const anaRaw = (aiData.anaMetin || "").toString().trim();
-            const yaziFontu = (aiData.yaziFontu || "Poppins").toString().trim() || "Poppins";
-            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler.filter(Boolean) : [];
-            const arkaPlanAciklama = (aiData.arkaPlan || "").toString().trim();
-            const cleanedPrompt = cleanPromptText(prompt);
-            const normalizedPrompt = cleanedPrompt.toLowerCase();
-            const nameMatch = normalizedPrompt.match(/([\\p{L}]+)\\s*için/iu);
-            const name = nameMatch ? capitalizeTR(nameMatch[1]) : "";
-            const finalTema = (temaRaw && temaRaw.toLowerCase() !== "ai onerisi") ? temaRaw : buildTitle(kategoriSlug, name);
-            const fallbackMetin = buildMessage(kategoriSlug, name, cleanedPrompt);
-            const finalMetin = (anaRaw && anaRaw.length > 3 && anaRaw !== prompt) ? anaRaw : fallbackMetin;
+            const theme = pickTheme(palette);
+            const style = (aiData.layoutStyle || 'modern').toLowerCase();
+            const yaziFontu = (aiData.yaziFontu || "Poppins");
+            const finalTema = aiData.tema || "Özel Tasarım";
+            const finalMetin = aiData.anaMetin || prompt;
+            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler : [];
 
             if (yaziFontu) loadGoogleFont(yaziFontu);
 
-            const theme = pickTheme(kategoriSlug, palette);
+            const theme = pickTheme(palette);
+            const style = (aiData.layoutStyle || 'modern').toLowerCase();
+            const yaziFontu = (aiData.yaziFontu || "Poppins");
+            const finalTema = aiData.tema || "Özel Tasarım";
+            const finalMetin = aiData.anaMetin || prompt;
+            const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler : [];
+
+            if (yaziFontu) loadGoogleFont(yaziFontu);
             canvas.clear();
 
             const cw = canvas.getWidth();
             const ch = canvas.getHeight();
 
+            // 1. ARKA PLAN
             const bg = new fabric.Rect({
                 left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
                 fill: new fabric.Gradient({
-                    type: "linear", gradientUnits: "percentage", coords: { x1: 0, y1: 0, x2: 1, y2: 1 },
+                    type: "linear", coords: { x1: 0, y1: 0, x2: cw, y2: ch },
                     colorStops: [{ offset: 0, color: theme.bg1 }, { offset: 1, color: theme.bg2 }]
                 })
             });
             canvas.add(bg);
 
-            for (let i = 0; i < 10; i++) {
-                const y = (ch / 10) * i;
-                canvas.add(new fabric.Line([0, y, cw, y], { stroke: "rgba(255,255,255,0.03)", strokeWidth: 1, selectable: false, evented: false }));
-            }
+            // 2. LAYOUT ÇİZİMİ
+            if (style === 'minimal') {
+                canvas.add(new fabric.Rect({
+                    left: cw/2, top: ch/2, width: cw*0.7, height: ch*0.6,
+                    fill: 'transparent', stroke: theme.accent, strokeWidth: 1,
+                    originX: 'center', originY: 'center', selectable: false
+                }));
 
-            canvas.add(new fabric.Circle({ left: -120, top: -80, radius: 170, fill: theme.soft, opacity: 0.14, selectable: false, evented: false }));
-            canvas.add(new fabric.Circle({ left: cw - 230, top: ch - 200, radius: 190, fill: theme.accent, opacity: 0.14, selectable: false, evented: false }));
-
-            const panelW = cw * 0.84;
-            const panelH = ch * 0.78;
-            const panelX = (cw - panelW) / 2;
-            const panelY = (ch - panelH) / 2;
-
-            const panel = new fabric.Rect({
-                left: panelX, top: panelY, width: panelW, height: panelH, rx: 28, ry: 28,
-                fill: theme.panel, stroke: "rgba(255,255,255,0.14)", strokeWidth: 1.2,
-                selectable: false, evented: false,
-                shadow: { color: "rgba(0,0,0,0.7)", blur: 28, offsetX: 0, offsetY: 16 }
-            });
-            canvas.add(panel);
-
-            canvas.add(new fabric.Rect({
-                left: panelX + 20, top: panelY + 20, width: 6, height: panelH - 40, rx: 4, ry: 4,
-                fill: theme.accent, opacity: 0.85, selectable: false, evented: false
-            }));
-
-            const contentLeft = panelX + 46;
-            const contentRight = panelX + panelW - 30;
-            const contentWidth = contentRight - contentLeft;
-
-            const badge = new fabric.Textbox((kategori || "kart").toUpperCase(), {
-                left: contentLeft, top: panelY + 24, width: Math.min(contentWidth, 260),
-                fontFamily: "Poppins", fontSize: 12, fontWeight: 700, fill: theme.soft, charSpacing: 40
-            });
-            canvas.add(badge);
-
-            const title = new fabric.Textbox(finalTema || "Kart Tasarımı", {
-                left: contentLeft, top: panelY + 52, width: contentWidth - 20,
-                fontFamily: yaziFontu, fontSize: 52, fontWeight: 800, fill: theme.text, lineHeight: 1.08
-            });
-            fitTextboxToHeight(title, 24, panelH * 0.28);
-            canvas.add(title);
-
-            let subtitleTop = title.top + title.calcTextHeight() + 10;
-            if (arkaPlanAciklama) {
-                const subtitle = new fabric.Textbox(arkaPlanAciklama, {
-                    left: contentLeft, top: subtitleTop, width: contentWidth - 24,
-                    fontFamily: "Poppins", fontSize: 14, fill: theme.muted, lineHeight: 1.35
+                const txTitle = new fabric.Textbox(finalTema, {
+                    left: cw/2, top: ch/2 - 40, width: cw*0.6, originX: 'center',
+                    fontFamily: yaziFontu, fontSize: 36, fontWeight: 300, fill: theme.accent, textAlign: 'center'
                 });
-                fitTextboxToHeight(subtitle, 12, 52);
-                canvas.add(subtitle);
-                subtitleTop = subtitle.top + subtitle.calcTextHeight() + 18;
-            }
+                canvas.add(txTitle);
 
-            const body = new fabric.Textbox(finalMetin || prompt, {
-                left: contentLeft + 18, top: subtitleTop + 16, width: contentWidth - 36,
-                fontFamily: yaziFontu, fontSize: 26, fontWeight: 500, fill: "#eef2ff", lineHeight: 1.34
-            });
-            fitTextboxToHeight(body, 15, panelY + panelH - (subtitleTop + 84));
-            canvas.add(body);
+                const txBody = new fabric.Textbox(finalMetin, {
+                    left: cw/2, top: ch/2 + 20, width: cw*0.6, originX: 'center',
+                    fontFamily: 'Inter', fontSize: 16, fill: theme.muted, textAlign: 'center', lineHeight: 1.5
+                });
+                canvas.add(txBody);
+            } 
+            else if (style === 'bold') {
+                canvas.add(new fabric.Rect({
+                    left: 0, top: 0, width: 40, height: ch, fill: theme.accent, selectable: false
+                }));
+
+                const txTitle = new fabric.Textbox(finalTema.toUpperCase(), {
+                    left: 70, top: 60, width: cw - 100,
+                    fontFamily: yaziFontu, fontSize: 64, fontWeight: 900, fill: theme.soft, charSpacing: -20
+                });
+                canvas.add(txTitle);
+
+                const txBody = new fabric.Textbox(finalMetin, {
+                    left: 70, top: txTitle.top + txTitle.calcTextHeight() + 20, width: cw - 150,
+                    fontFamily: 'Montserrat', fontSize: 22, fontWeight: 600, fill: theme.text, backgroundColor: 'rgba(0,0,0,0.5)'
+                });
+                canvas.add(txBody);
+            }
+            else if (style === 'elegant') {
+                canvas.add(new fabric.Rect({
+                    left: 20, top: 20, width: cw-40, height: ch-40,
+                    fill: 'transparent', stroke: theme.soft, strokeWidth: 2, rx: 10, ry: 10, selectable: false
+                }));
+
+                const txTitle = new fabric.Textbox(finalTema, {
+                    left: cw/2, top: 80, width: cw-100, originX: 'center',
+                    fontFamily: yaziFontu, fontSize: 48, fontWeight: 'italic', fill: theme.soft, textAlign: 'center'
+                });
+                canvas.add(txTitle);
+
+                const txBody = new fabric.Textbox(finalMetin, {
+                    left: cw/2, top: ch/2 + 20, width: cw-140, originX: 'center',
+                    fontFamily: 'Playfair Display', fontSize: 20, fill: theme.text, textAlign: 'center', lineHeight: 1.4
+                });
+                canvas.add(txBody);
+                
+                canvas.add(new fabric.Line([cw/2 - 50, ch/2 - 20, cw/2 + 50, ch/2 - 20], {
+                    stroke: theme.accent, strokeWidth: 1, originX: 'center'
+                }));
+            }
+            else {
+                const panel = new fabric.Rect({
+                    left: cw * 0.08, top: ch * 0.1, width: cw * 0.84, height: ch * 0.8,
+                    fill: 'rgba(10,10,15,0.85)', rx: 20, ry: 20,
+                    stroke: theme.accent, strokeWidth: 0.5, selectable: false
+                });
+                canvas.add(panel);
+
+                const txTitle = new fabric.Textbox(finalTema, {
+                    left: cw * 0.15, top: ch * 0.2, width: cw * 0.7,
+                    fontFamily: yaziFontu, fontSize: 42, fontWeight: 800, fill: theme.text
+                });
+                canvas.add(txTitle);
+
+                const txBody = new fabric.Textbox(finalMetin, {
+                    left: cw * 0.15, top: txTitle.top + txTitle.calcTextHeight() + 15, width: cw * 0.7,
+                    fontFamily: 'Poppins', fontSize: 20, fill: theme.muted, lineHeight: 1.4
+                });
+                canvas.add(txBody);
+            }
 
             if (emojiler.length > 0) {
-                const chips = emojiler.slice(0, 4);
-                let x = contentLeft;
-                const y = panelY + panelH - 34;
-                chips.forEach(em => {
-                    const chip = new fabric.Text(em, { left: x, top: y, fontSize: 22, selectable: true });
-                    canvas.add(chip);
-                    x += 28;
+                let ex = 50;
+                emojiler.slice(0, 5).forEach(em => {
+                   const t = new fabric.Text(em, { left: ex, top: ch - 60, fontSize: 30 });
+                   canvas.add(t);
+                   ex += 45;
                 });
             }
 
-            const signature = new fabric.Text("Kartist AI Studio", {
-                left: panelX + panelW - 140, top: panelY + panelH - 20,
-                fontFamily: "Poppins", fontSize: 11, fill: "rgba(255,255,255,0.45)", selectable: false, evented: false
+            const signature = new fabric.Text("KARTIST AI", {
+                left: cw - 120, top: ch - 30, fontSize: 12, fill: 'rgba(255,255,255,0.3)', fontFamily: 'Inter'
             });
             canvas.add(signature);
 
-            canvas.setActiveObject(body);
             canvas.renderAll();
             if (typeof saveHistory === "function") saveHistory();
-
-            showToast("AI kart tasarımı profesyonel olarak hazırlandı.");
+            showToast("AI Tasarımı Başarıyla Oluşturuldu ✨");
         }
 
         // --- PAYLAŞ BUTONU ---
