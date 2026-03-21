@@ -745,52 +745,54 @@ Kurallar:
                 if (string.IsNullOrWhiteSpace(prompt))
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                // Groq'dan gelen kelimelerle arama yapıyoruz
-                string query = Uri.EscapeDataString(prompt.Replace(",", " ").Trim());
-                var searchUrl = $"https://unsplash.com/napi/search/photos?query={query}&per_page=1&page=1";
+                string query = Uri.EscapeDataString(prompt.Replace(",", " ") + " ultra high quality");
+                var searchUrl = $"https://www.bing.com/images/search?q={query}&form=HDRSC2&first=1";
 
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(30);
-                
-                // Unsplash NAPI için standart tarayıcı başlıkları (bot olarak algılanmamak için)
+                using var handler = new HttpClientHandler { AllowAutoRedirect = true };
+                using var client = new HttpClient(handler);
+                client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
 
                 var searchResp = await client.GetAsync(searchUrl);
                 if (!searchResp.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "Arama servisi yanıt vermedi." });
+                    return Json(new { success = false, error = "Bing arama servisi yanıt vermedi." });
 
-                var searchJson = await searchResp.Content.ReadAsStringAsync();
-                using var jsonDoc = System.Text.Json.JsonDocument.Parse(searchJson);
-                var results = jsonDoc.RootElement.GetProperty("results");
+                var html = await searchResp.Content.ReadAsStringAsync();
+                
+                // Murl (Media URL) ayıklama
+                var matches = System.Text.RegularExpressions.Regex.Matches(html, @"murl&quot;:&quot;(.*?)&quot;");
+                if (matches.Count == 0)
+                    return Json(new { success = false, error = "Görsel bulunamadı." });
 
-                if (results.GetArrayLength() == 0)
+                byte[] imageBytes = null;
+                string contentType = "image/jpeg";
+
+                // İlk 5 görselden çalışanı bulmaya çalış (bazı siteler bot korumalı olabilir)
+                for (int i = 0; i < Math.Min(5, matches.Count); i++)
                 {
-                    // Unsplash'da bulunamazsa genel bir estetik resim getir
-                    searchUrl = $"https://unsplash.com/napi/search/photos?query=beautiful+aesthetic+background&per_page=1&page=1";
-                    searchResp = await client.GetAsync(searchUrl);
-                    searchJson = await searchResp.Content.ReadAsStringAsync();
-                    using var fallbackDoc = System.Text.Json.JsonDocument.Parse(searchJson);
-                    results = fallbackDoc.RootElement.GetProperty("results");
-                    if (results.GetArrayLength() == 0)
-                        return Json(new { success = false, error = "Hiçbir sonuç bulunamadı." });
+                    string imgUrl = matches[i].Groups[1].Value;
+                    try
+                    {
+                        var imgResp = await client.GetAsync(imgUrl);
+                        if (imgResp.IsSuccessStatusCode && imgResp.Content.Headers.ContentType != null && imgResp.Content.Headers.ContentType.MediaType.StartsWith("image/"))
+                        {
+                            imageBytes = await imgResp.Content.ReadAsByteArrayAsync();
+                            contentType = imgResp.Content.Headers.ContentType.MediaType;
+                            break;
+                        }
+                    }
+                    catch { continue; }
                 }
 
-                string imageUrl = results[0].GetProperty("urls").GetProperty("regular").GetString();
+                if (imageBytes == null)
+                    return Json(new { success = false, error = "Hiçbir görsel kaynağına erişilemedi." });
 
-                var imageResp = await client.GetAsync(imageUrl);
-                if (!imageResp.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "Resim indirilemedi." });
-
-                var bytes = await imageResp.Content.ReadAsByteArrayAsync();
-                var contentType = imageResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-                var base64 = Convert.ToBase64String(bytes);
-
+                var base64 = Convert.ToBase64String(imageBytes);
                 return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Görsel işlenemedi: " + ex.Message });
+                return Json(new { success = false, error = "Sistem Hatası: " + ex.Message });
             }
         }
 
