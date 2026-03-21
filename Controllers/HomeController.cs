@@ -675,17 +675,27 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AiGorselOlustur(string kategori)
+        public async Task<IActionResult> AiGorselOlustur(string kategori, string bgPrompt = "")
         {
             try
             {
                 var cat = (kategori ?? "genel").ToLowerInvariant();
                 string imgKeywords = "greeting card background, elegant, beautiful colors, digital art";
-                if (cat.Contains("dogum")) imgKeywords = "birthday celebration, colorful balloons confetti, festive vibrant, digital art";
-                else if (cat.Contains("ask") || cat.Contains("sevgi")) imgKeywords = "romantic love, hearts roses soft pink, dreamy, digital art";
-                else if (cat.Contains("tesekkur")) imgKeywords = "thank you appreciation, warm golden light flowers, elegant, digital art";
-                else if (cat.Contains("ozur")) imgKeywords = "forgiveness, soft blue gentle sky, emotional, digital art";
-                else if (cat.Contains("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
+                
+                if (!string.IsNullOrWhiteSpace(bgPrompt))
+                {
+                    // Kullanıcı özel bir arka plan prompt'u girdiyse onu kullanalım
+                    imgKeywords = bgPrompt.Trim() + ", beautiful, aesthetic, digital art, no text, background only";
+                }
+                else
+                {
+                    // Özel prompt yoksa, kategori bazlı anahtar kelimeler
+                    if (cat.Contains("dogum")) imgKeywords = "birthday celebration, colorful balloons confetti, festive vibrant, digital art";
+                    else if (cat.Contains("ask") || cat.Contains("sevgi")) imgKeywords = "romantic love, hearts roses soft pink, dreamy, digital art";
+                    else if (cat.Contains("tesekkur")) imgKeywords = "thank you appreciation, warm golden light flowers, elegant, digital art";
+                    else if (cat.Contains("ozur")) imgKeywords = "forgiveness, soft blue gentle sky, emotional, digital art";
+                    else if (cat.Contains("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
+                }
 
                 var encodedPrompt = Uri.EscapeDataString(imgKeywords);
                 var url = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=700&height=500&nologo=true&seed={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
