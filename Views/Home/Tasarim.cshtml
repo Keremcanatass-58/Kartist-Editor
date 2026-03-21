@@ -4027,9 +4027,9 @@
                         finalEngPrompt = translateData.prompt;
                     }
 
-                    // 2. Pollinations üzerinden çevrilmiş İngilizce prompt ile görsel oluştur
+                    // 2. Çevrilmiş İngilizce prompt ile görsel oluştur (Daha stabil bir servis kullanıyoruz)
                     const imgPrompt = encodeURIComponent(finalEngPrompt.trim());
-                    const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true&seed=${Date.now()}`;
+                    const imgUrl = `https://api.airforce/v1/imagine2?prompt=${imgPrompt}`;
 
                     const controller = new AbortController();
                     const timeout = setTimeout(() => controller.abort(), 60000);
