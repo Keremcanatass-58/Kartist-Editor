@@ -2296,6 +2296,11 @@
                               placeholder="Örn: pastel ve romantik doğum günü kartı, kısa ama duygusal bir mesaj olsun.">
 					</textarea>
 
+                    <label style="display:flex; align-items:center; gap:8px; margin-bottom:10px; cursor:pointer; font-size:0.82rem; color:#ccc;">
+                        <input type="checkbox" id="aiImageToggle" style="accent-color:#c6ff00; width:16px; height:16px;">
+                        <span>🖼️ AI Görsel Arka Plan Oluştur</span>
+                    </label>
+
                     <button onclick="generateDesignFromPrompt()" class="sidebar-btn" style="margin-bottom:6px;">
                         PROMPT İLE TASARLA 🎨
                     </button>
@@ -3981,19 +3986,61 @@
             const cw = canvas.getWidth();
             const ch = canvas.getHeight();
 
-            // ARKA PLAN - Zengin degrade
-            const bg = new fabric.Rect({
-                left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
-                fill: new fabric.Gradient({
-                    type: "linear", coords: { x1: 0, y1: 0, x2: cw * 0.4, y2: ch },
-                    colorStops: [
-                        { offset: 0, color: theme.bg1 },
-                        { offset: 0.5, color: theme.bg2 },
-                        { offset: 1, color: theme.bg1 }
-                    ]
-                })
-            });
-            canvas.add(bg);
+            // AI GÖRSEL ARKA PLAN
+            const useAiImage = document.getElementById('aiImageToggle')?.checked;
+
+            if (useAiImage) {
+                showToast("AI görsel oluşturuluyor... 🖼️");
+                const imgPrompt = encodeURIComponent(prompt + ", digital art, card design, beautiful colors, high quality");
+                const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true`;
+
+                try {
+                    await new Promise((resolve, reject) => {
+                        fabric.Image.fromURL(imgUrl, function(img) {
+                            if (!img || !img.width) { reject("Görsel yüklenemedi"); return; }
+                            img.scaleToWidth(cw);
+                            img.scaleToHeight(ch);
+                            img.set({ left: 0, top: 0, selectable: false, evented: false });
+                            canvas.add(img);
+
+                            // Okunabilirlik için karanlık overlay
+                            canvas.add(new fabric.Rect({
+                                left: 0, top: 0, width: cw, height: ch,
+                                fill: 'rgba(0,0,0,0.5)', selectable: false, evented: false
+                            }));
+                            resolve();
+                        }, { crossOrigin: 'anonymous' });
+                    });
+                } catch (e) {
+                    console.warn("AI görsel yüklenemedi, degrade kullanılıyor:", e);
+                    const bg = new fabric.Rect({
+                        left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
+                        fill: new fabric.Gradient({
+                            type: "linear", coords: { x1: 0, y1: 0, x2: cw * 0.4, y2: ch },
+                            colorStops: [
+                                { offset: 0, color: theme.bg1 },
+                                { offset: 0.5, color: theme.bg2 },
+                                { offset: 1, color: theme.bg1 }
+                            ]
+                        })
+                    });
+                    canvas.add(bg);
+                }
+            } else {
+                // Normal degrade arka plan
+                const bg = new fabric.Rect({
+                    left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
+                    fill: new fabric.Gradient({
+                        type: "linear", coords: { x1: 0, y1: 0, x2: cw * 0.4, y2: ch },
+                        colorStops: [
+                            { offset: 0, color: theme.bg1 },
+                            { offset: 0.5, color: theme.bg2 },
+                            { offset: 1, color: theme.bg1 }
+                        ]
+                    })
+                });
+                canvas.add(bg);
+            }
 
             // Dekoratif ışık efektleri
             canvas.add(new fabric.Circle({
