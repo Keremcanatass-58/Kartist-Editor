@@ -1,4 +1,4 @@
-﻿namespace Kartist.Middleware
+namespace Kartist.Middleware
 {
     public class SecurityHeadersMiddleware
     {
@@ -30,7 +30,7 @@
             string permissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()";
             context.Response.Headers.Append("Permissions-Policy", permissionsPolicy);
 
-            string connectSrc = "'self' https://api.groq.com https://open.spotify.com https://www.youtube.com https://cdn.jsdelivr.net https://accounts.google.com";
+            string connectSrc = "'self' https://api.groq.com https://open.spotify.com https://www.youtube.com https://cdn.jsdelivr.net https://accounts.google.com https://image.pollinations.ai";
             if (_environment.IsDevelopment())
             {
                 connectSrc += " ws://localhost:* wss://localhost:* http://localhost:*";
