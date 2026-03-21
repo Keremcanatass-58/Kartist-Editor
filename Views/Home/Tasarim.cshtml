@@ -4027,26 +4027,17 @@
                         finalEngPrompt = translateData.prompt;
                     }
 
-                    // 2. Çevrilmiş İngilizce prompt ile görsel oluştur (Daha stabil bir servis kullanıyoruz)
-                    const imgPrompt = encodeURIComponent(finalEngPrompt.trim());
-                    const imgUrl = `https://api.airforce/v1/imagine2?prompt=${imgPrompt}`;
+                    // 2. Çevrilmiş İngilizce prompt ile backend proxy üzerinden görsel indir (CORS ve Redirect Aşımı)
+                    const fdProxy = new FormData();
+                    fdProxy.append("prompt", finalEngPrompt.trim());
+                    fdProxy.append("__RequestVerificationToken", getCSRFToken());
 
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 60000);
+                    const imgResp = await fetch("/Home/FetchAiImageBase64", { method: "POST", body: fdProxy });
+                    const imgData = await imgResp.json();
 
-                    const imgResp = await fetch(imgUrl, { signal: controller.signal });
-                    clearTimeout(timeout);
-
-                    if (imgResp.ok) {
-                        const blob = await imgResp.blob();
-                        const dataUrl = await new Promise(resolve => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-
+                    if (imgData && imgData.success && imgData.dataUrl) {
                         await new Promise((resolve) => {
-                            fabric.Image.fromURL(dataUrl, function(img) {
+                            fabric.Image.fromURL(imgData.dataUrl, function(img) {
                                 if (img && img.width) {
                                     img.scaleToWidth(cw);
                                     img.scaleToHeight(ch);
@@ -4062,7 +4053,7 @@
                             });
                         });
                     } else {
-                        throw new Error(`Pollinations API Error: ${imgResp.status}`);
+                        throw new Error(imgData?.error || "Görsel backend üzerinden indirilemedi");
                     }
                 } catch (e) {
                     console.warn("AI görsel yüklenemedi:", e);
