@@ -742,15 +742,30 @@ Kurallar:
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(prompt))
-                    return Json(new { success = false, error = "Prompt boş olamaz." });
+                // Cloudflare bot korumasını aşmak için gerçekçi tarayıcı başlıkları ve api.airforce servisi
+                var url = $"https://api.airforce/v1/imagine2?prompt={Uri.EscapeDataString(prompt.Trim())}";
 
-                // Groq'dan gelen virgüllü anahtar kelimeleri Flickr'a gönderiyoruz
-                string keywords = prompt.Replace(" ", "");
-                var url = $"https://loremflickr.com/700/500/{Uri.EscapeDataString(keywords)}/all";
-
-                using var handler = new HttpClientHandler { AllowAutoRedirect = true };
+                using var handler = new HttpClientHandler 
+                { 
+                    AllowAutoRedirect = true,
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+                };
+                
                 using var client = new HttpClient(handler);
+                client.Timeout = TimeSpan.FromSeconds(60);
+                
+                // Gerçek bir Chrome tarayıcı taklidi yapıyoruz
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+                client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,tr;q=0.8");
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"122\"");
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
+                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
+                client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
+                client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
                 client.Timeout = TimeSpan.FromSeconds(60);
 
                 var response = await client.GetAsync(url);
