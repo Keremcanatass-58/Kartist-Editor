@@ -3994,35 +3994,18 @@
             if (useAiImage) {
                 showToast("AI görsel oluşturuluyor... (10-30 sn sürebilir) 🖼️");
 
-                // Görsel modeller İngilizce ile daha iyi çalışır
-                const catSlug = (document.getElementById("aiCategorySelect")?.value || "genel").toLowerCase();
-                let imgKeywords = "greeting card background, elegant, beautiful colors, high quality, digital art";
-                if (catSlug.includes("dogum")) imgKeywords = "birthday celebration background, colorful balloons confetti cake, festive, vibrant, digital art";
-                else if (catSlug.includes("ask") || catSlug.includes("sevgi")) imgKeywords = "romantic love background, hearts roses soft pink red, dreamy, digital art";
-                else if (catSlug.includes("tesekkur")) imgKeywords = "thank you appreciation background, warm golden light flowers, elegant, digital art";
-                else if (catSlug.includes("ozur")) imgKeywords = "apology forgiveness background, soft blue rain drops gentle, emotional, digital art";
-                else if (catSlug.includes("motiv")) imgKeywords = "motivation inspiration background, sunrise mountain peak clouds, powerful, digital art";
-
-                const imgPrompt = encodeURIComponent(imgKeywords);
-                const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true&seed=${Date.now()}`;
-
                 try {
-                    const controller = new AbortController();
-                    const timeout = setTimeout(() => controller.abort(), 60000);
+                    const catSlug = document.getElementById("aiCategorySelect")?.value || "genel";
+                    const fd2 = new FormData();
+                    fd2.append("kategori", catSlug);
+                    fd2.append("__RequestVerificationToken", getCSRFToken());
 
-                    const resp = await fetch(imgUrl, { signal: controller.signal });
-                    clearTimeout(timeout);
+                    const imgResp = await fetch("/Home/AiGorselOlustur", { method: "POST", body: fd2 });
+                    const imgData = await imgResp.json();
 
-                    if (resp.ok) {
-                        const blob = await resp.blob();
-                        const dataUrl = await new Promise(resolve => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.readAsDataURL(blob);
-                        });
-
+                    if (imgData && imgData.success && imgData.dataUrl) {
                         await new Promise((resolve) => {
-                            fabric.Image.fromURL(dataUrl, function(img) {
+                            fabric.Image.fromURL(imgData.dataUrl, function(img) {
                                 if (img && img.width) {
                                     img.scaleToWidth(cw);
                                     img.scaleToHeight(ch);
@@ -4037,6 +4020,8 @@
                                 resolve();
                             });
                         });
+                    } else {
+                        showToast(imgData?.error || "Görsel oluşturulamadı, degrade kullanılıyor");
                     }
                 } catch (e) {
                     console.warn("AI görsel yüklenemedi:", e);

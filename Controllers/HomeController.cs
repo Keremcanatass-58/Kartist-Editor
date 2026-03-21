@@ -675,6 +675,41 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> AiGorselOlustur(string kategori)
+        {
+            try
+            {
+                var cat = (kategori ?? "genel").ToLowerInvariant();
+                string imgKeywords = "greeting card background, elegant, beautiful colors, digital art";
+                if (cat.Contains("dogum")) imgKeywords = "birthday celebration, colorful balloons confetti, festive vibrant, digital art";
+                else if (cat.Contains("ask") || cat.Contains("sevgi")) imgKeywords = "romantic love, hearts roses soft pink, dreamy, digital art";
+                else if (cat.Contains("tesekkur")) imgKeywords = "thank you appreciation, warm golden light flowers, elegant, digital art";
+                else if (cat.Contains("ozur")) imgKeywords = "forgiveness, soft blue gentle sky, emotional, digital art";
+                else if (cat.Contains("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
+
+                var encodedPrompt = Uri.EscapeDataString(imgKeywords);
+                var url = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=700&height=500&nologo=true&seed={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(45);
+                var response = await client.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return Json(new { success = false, error = "Görsel oluşturulamadı." });
+
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(bytes);
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+
+                return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = "Görsel zaman aşımına uğradı: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null)
         {
             try
