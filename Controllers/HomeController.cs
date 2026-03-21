@@ -691,14 +691,12 @@ namespace Kartist.Controllers
                     return Json(new { success = false, data = "API anahtarı bulunamadı." });
                 }
 
-                string systemPrompt = @"You are an expert AI image prompt generator.
-The user wants an image background for a digital greeting card.
-Task: Take the Turkish prompt, translate it, and output ONLY a highly optimized English prompt.
-Rules:
-1. Translate to English.
-2. Add enhancement keywords: beautiful, highly detailed, aesthetic, digital art, cinematic lighting, 8k.
-3. Add constraints: no text, clean empty space.
-4. Output ONLY the final comma-separated prompt string. NO explanations, NO intro, NO quotes.";
+                string systemPrompt = @"Bir arka plan görseli arama motoru için kullanıcı isteğini işleyeceğiz.
+Görevin: Kullanıcının girdiği isteği (Prompt ve Kategori) yansıtacak en estetik, en önemli 3-5 arası İngilizce anahtar kelimeyi (keyword) bulmak.
+Kurallar:
+1. Kelimeleri SADECE virgülle ayırarak yaz (aralarına boşluk koyma).
+2. Sonuç örneği harfiyen şöyle olmalı: 'paris,night,lights,aesthetic,background' veya 'forest,nature,green,beautiful'.
+3. BAŞKA HİÇBİR AÇIKLAMA YAZMA. SADECE virgüllü metni döndür.";
 
                 var messages = new[]
                 {
@@ -708,10 +706,10 @@ Rules:
 
                 var requestBody = new
                 {
-                    model = aiConfig.Model,
+                    model = "llama3-8b-8192",
                     messages = messages,
-                    temperature = 0.7,
-                    max_tokens = 150
+                    temperature = 0.5,
+                    max_tokens = 50
                 };
 
                 using var client = new HttpClient();
@@ -747,7 +745,9 @@ Rules:
                 if (string.IsNullOrWhiteSpace(prompt))
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                var url = $"https://api.airforce/v1/imagine2?prompt={Uri.EscapeDataString(prompt.Trim())}";
+                // Groq'dan gelen virgüllü anahtar kelimeleri Flickr'a gönderiyoruz
+                string keywords = prompt.Replace(" ", "");
+                var url = $"https://loremflickr.com/700/500/{Uri.EscapeDataString(keywords)}/all";
 
                 using var handler = new HttpClientHandler { AllowAutoRedirect = true };
                 using var client = new HttpClient(handler);
