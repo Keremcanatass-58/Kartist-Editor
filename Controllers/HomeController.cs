@@ -898,28 +898,102 @@ Kurallar:
 
         private string BuildFallbackDesignJson(string prompt, string kategori)
         {
-            var metin = string.IsNullOrWhiteSpace(prompt)
-                ? "Bugün senin için özel bir kart hazırladım."
-                : (prompt.Length > 220 ? prompt.Substring(0, 220) : prompt);
-
             var kat = string.IsNullOrWhiteSpace(kategori) ? "genel" : kategori.ToLowerInvariant();
-            string[] palette = kat.Contains("doğum") || kat.Contains("dogum")
-                ? new[] { "#0B132B", "#F97316", "#EC4899" }
-                : kat.Contains("ask") || kat.Contains("sevgi")
-                    ? new[] { "#1F2937", "#EC4899", "#8B5CF6" }
-                    : kat.Contains("teşekkür") || kat.Contains("tesekkur")
-                        ? new[] { "#0F172A", "#22C55E", "#38BDF8" }
-                        : new[] { "#111827", "#F59E0B", "#10B981" };
+            var promptLower = (prompt ?? "").ToLowerInvariant();
+
+            // İsim tespiti
+            string name = null;
+            var patterns = new[] { " için ", " icin " };
+            foreach (var p in patterns)
+            {
+                var idx = promptLower.IndexOf(p);
+                if (idx > 0)
+                {
+                    var before = prompt.Substring(0, idx).Trim();
+                    var words = before.Split(' ');
+                    var lastWord = words[words.Length - 1].Trim();
+                    if (lastWord.Length >= 2 && lastWord.Length <= 20)
+                    {
+                        name = char.ToUpper(lastWord[0]) + lastWord.Substring(1).ToLower();
+                    }
+                    break;
+                }
+            }
+
+            // Kategori bazlı akıllı içerik
+            string tema, anaMetin, layoutStyle;
+            string[] palette, emojiler;
+
+            if (kat.Contains("dogum") || kat.Contains("doğum") || promptLower.Contains("doğum") || promptLower.Contains("dogum"))
+            {
+                tema = name != null ? $"İyi ki Doğdun {name}! 🎂" : "Mutlu Yıllar! 🎂";
+                anaMetin = name != null
+                    ? $"Sevgili {name}, yeni yaşın sana sağlık, mutluluk ve başarı getirsin. İyi ki bu dünyaya geldin! 🎉"
+                    : "Yeni yaşın kutlu olsun! Hayatın hep güzelliklerle dolsun. 🎉";
+                palette = new[] { "#1a0533", "#ff6b35", "#ff1493" };
+                emojiler = new[] { "🎂", "🎉", "🎈", "🥳", "✨" };
+                layoutStyle = "bold";
+            }
+            else if (kat.Contains("ask") || kat.Contains("aşk") || kat.Contains("sevgi") || promptLower.Contains("sevgili"))
+            {
+                tema = name != null ? $"Sana Özel, {name} ❤️" : "Seni Seviyorum ❤️";
+                anaMetin = name != null
+                    ? $"{name}, seninle geçen her an hayatımın en güzel sayfası. Seni çok seviyorum. 💕"
+                    : "İyi ki varsın, iyi ki hayatımdasın. Seni çok seviyorum. 💕";
+                palette = new[] { "#1a0a2e", "#ff1493", "#8b5cf6" };
+                emojiler = new[] { "❤️", "💕", "🌹", "💖", "✨" };
+                layoutStyle = "elegant";
+            }
+            else if (kat.Contains("tesekkur") || kat.Contains("teşekkür"))
+            {
+                tema = name != null ? $"Teşekkürler {name} 🙏" : "Teşekkür Ederim 🙏";
+                anaMetin = name != null
+                    ? $"{name}, her şey için çok teşekkür ederim. Senin gibi birine sahip olduğum için kendimi şanslı hissediyorum."
+                    : "Her şey için teşekkür ederim. İyi ki varsın. 💚";
+                palette = new[] { "#0a1628", "#22c55e", "#38bdf8" };
+                emojiler = new[] { "🙏", "💚", "🌟", "😊", "✨" };
+                layoutStyle = "minimal";
+            }
+            else if (kat.Contains("tebrik"))
+            {
+                tema = name != null ? $"Tebrikler {name}! 🏆" : "Tebrikler! 🏆";
+                anaMetin = name != null
+                    ? $"{name}, başarınla gurur duyuyorum. Bu sadece bir başlangıç, en iyisi hep senin olacak! 🎉"
+                    : "Başarınla gurur duyuyorum. Tebrik ederim! 🎉";
+                palette = new[] { "#0f172a", "#f59e0b", "#10b981" };
+                emojiler = new[] { "🏆", "🎉", "⭐", "🥇", "✨" };
+                layoutStyle = "bold";
+            }
+            else if (kat.Contains("ozur") || kat.Contains("özür"))
+            {
+                tema = name != null ? $"Özür Dilerim {name} 💙" : "Özür Dilerim 💙";
+                anaMetin = name != null
+                    ? $"{name}, kalbini kırdıysam çok özür dilerim. Senin için ne kadar önemli olduğunu asla unutma."
+                    : "Kalbini kırdıysam özür dilerim. Lütfen beni affet. 💙";
+                palette = new[] { "#1b1030", "#6366f1", "#93c5fd" };
+                emojiler = new[] { "💙", "🙏", "😔", "💐", "✨" };
+                layoutStyle = "elegant";
+            }
+            else
+            {
+                tema = name != null ? $"{name} İçin Özel 💫" : "Sana Özel 💫";
+                anaMetin = name != null
+                    ? $"Sevgili {name}, senin için özel bir kart hazırladım. İyi ki hayatımdasın! ✨"
+                    : (string.IsNullOrWhiteSpace(prompt) ? "Bugün senin için özel bir kart hazırladım. ✨" : prompt);
+                palette = new[] { "#0f172a", "#06b6d4", "#c6ff00" };
+                emojiler = new[] { "💫", "✨", "🌟", "💖", "🎨" };
+                layoutStyle = "modern";
+            }
 
             var fallback = new
             {
                 renkPaleti = palette,
-                tema = "AI Onerisi",
-                yaziFontu = "Poppins",
-                arkaPlan = "Yumusak gecisli bir degrade ve hafif doku kullan.",
+                tema = tema,
+                yaziFontu = layoutStyle == "elegant" ? "Playfair Display" : layoutStyle == "bold" ? "Montserrat" : "Poppins",
+                layoutStyle = layoutStyle,
                 kategori = string.IsNullOrWhiteSpace(kategori) ? "kart" : kategori,
-                anaMetin = metin,
-                emojiler = new[] { "?", "??", "??" }
+                anaMetin = anaMetin,
+                emojiler = emojiler
             };
 
             return System.Text.Json.JsonSerializer.Serialize(fallback);
