@@ -740,6 +740,36 @@ Rules:
         }
 
         [HttpPost]
+        public async Task<IActionResult> FetchAiImageBase64(string prompt)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(prompt))
+                    return Json(new { success = false, error = "Prompt boş olamaz." });
+
+                var url = $"https://api.airforce/v1/imagine2?prompt={Uri.EscapeDataString(prompt.Trim())}";
+
+                using var handler = new HttpClientHandler { AllowAutoRedirect = true };
+                using var client = new HttpClient(handler);
+                client.Timeout = TimeSpan.FromSeconds(60);
+
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                    return Json(new { success = false, error = "Görsel sağlayıcı (api.airforce) yanıt vermedi." });
+
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var base64 = Convert.ToBase64String(bytes);
+
+                return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = "Görsel indirilemedi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null)
         {
             try
