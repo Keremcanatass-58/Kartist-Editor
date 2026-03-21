@@ -3963,17 +3963,8 @@
 
                 return theme;
             }
-
-
-
-
-
-
-
-
-
-
-
+ 
+            const palette = Array.isArray(aiData.renkPaleti) ? aiData.renkPaleti : [];
             const theme = pickTheme(palette);
             const style = (aiData.layoutStyle || 'modern').toLowerCase();
             const yaziFontu = (aiData.yaziFontu || "Poppins");
