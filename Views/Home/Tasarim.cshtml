@@ -3972,119 +3972,207 @@
             const finalMetin = aiData.anaMetin || prompt;
             const emojiler = Array.isArray(aiData.emojiler) ? aiData.emojiler : [];
 
-            if (yaziFontu) loadGoogleFont(yaziFontu);
+            loadGoogleFont(yaziFontu);
+            loadGoogleFont('Inter');
+            loadGoogleFont('Montserrat');
+            loadGoogleFont('Playfair Display');
             canvas.clear();
 
             const cw = canvas.getWidth();
             const ch = canvas.getHeight();
 
-            // 1. ARKA PLAN
+            // ARKA PLAN - Zengin degrade
             const bg = new fabric.Rect({
                 left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
                 fill: new fabric.Gradient({
-                    type: "linear", coords: { x1: 0, y1: 0, x2: cw, y2: ch },
-                    colorStops: [{ offset: 0, color: theme.bg1 }, { offset: 1, color: theme.bg2 }]
+                    type: "linear", coords: { x1: 0, y1: 0, x2: cw * 0.4, y2: ch },
+                    colorStops: [
+                        { offset: 0, color: theme.bg1 },
+                        { offset: 0.5, color: theme.bg2 },
+                        { offset: 1, color: theme.bg1 }
+                    ]
                 })
             });
             canvas.add(bg);
 
-            // 2. LAYOUT ÇİZİMİ
+            // Dekoratif ışık efektleri
+            canvas.add(new fabric.Circle({
+                left: -80, top: -60, radius: 200,
+                fill: theme.accent, opacity: 0.08, selectable: false, evented: false
+            }));
+            canvas.add(new fabric.Circle({
+                left: cw - 150, top: ch - 180, radius: 220,
+                fill: theme.soft, opacity: 0.06, selectable: false, evented: false
+            }));
+            canvas.add(new fabric.Circle({
+                left: cw * 0.5, top: -100, radius: 130,
+                fill: theme.soft, opacity: 0.05, selectable: false, evented: false
+            }));
+
+            // LAYOUT STİLLERİ
             if (style === 'minimal') {
+                // İnce çerçeve
                 canvas.add(new fabric.Rect({
-                    left: cw/2, top: ch/2, width: cw*0.7, height: ch*0.6,
-                    fill: 'transparent', stroke: theme.accent, strokeWidth: 1,
-                    originX: 'center', originY: 'center', selectable: false
+                    left: 40, top: 40, width: cw - 80, height: ch - 80,
+                    fill: 'transparent', stroke: theme.accent, strokeWidth: 0.5,
+                    rx: 4, ry: 4, selectable: false, evented: false
                 }));
 
-                const txTitle = new fabric.Textbox(finalTema, {
-                    left: cw/2, top: ch/2 - 40, width: cw*0.6, originX: 'center',
-                    fontFamily: yaziFontu, fontSize: 36, fontWeight: 300, fill: theme.accent, textAlign: 'center'
-                });
-                canvas.add(txTitle);
+                // Üst dekoratif çizgi
+                canvas.add(new fabric.Line([cw / 2 - 40, 65, cw / 2 + 40, 65], {
+                    stroke: theme.accent, strokeWidth: 2, selectable: false, evented: false
+                }));
 
-                const txBody = new fabric.Textbox(finalMetin, {
-                    left: cw/2, top: ch/2 + 20, width: cw*0.6, originX: 'center',
-                    fontFamily: 'Inter', fontSize: 16, fill: theme.muted, textAlign: 'center', lineHeight: 1.5
-                });
-                canvas.add(txBody);
-            } 
+                canvas.add(new fabric.Textbox(finalTema, {
+                    left: cw / 2, top: ch * 0.3, width: cw * 0.7, originX: 'center',
+                    fontFamily: yaziFontu, fontSize: 32, fontWeight: 300, fill: theme.text, textAlign: 'center',
+                    charSpacing: 50
+                }));
+
+                canvas.add(new fabric.Textbox(finalMetin, {
+                    left: cw / 2, top: ch * 0.48, width: cw * 0.65, originX: 'center',
+                    fontFamily: 'Inter', fontSize: 15, fill: theme.muted, textAlign: 'center', lineHeight: 1.6
+                }));
+
+                // Alt dekoratif çizgi
+                canvas.add(new fabric.Line([cw / 2 - 30, ch - 65, cw / 2 + 30, ch - 65], {
+                    stroke: theme.accent, strokeWidth: 1, selectable: false, evented: false
+                }));
+            }
             else if (style === 'bold') {
+                // Sol şerit
                 canvas.add(new fabric.Rect({
-                    left: 0, top: 0, width: 40, height: ch, fill: theme.accent, selectable: false
+                    left: 0, top: 0, width: 8, height: ch,
+                    fill: theme.accent, selectable: false, evented: false
                 }));
+                // Üst aksanlı blok
+                canvas.add(new fabric.Rect({
+                    left: 0, top: 0, width: cw, height: 8,
+                    fill: theme.accent, selectable: false, evented: false
+                }));
+
+                // Büyük emoji arka planı
+                if (emojiler.length > 0) {
+                    canvas.add(new fabric.Text(emojiler[0], {
+                        left: cw - 140, top: 30, fontSize: 100,
+                        opacity: 0.12, selectable: false, evented: false
+                    }));
+                }
 
                 const txTitle = new fabric.Textbox(finalTema.toUpperCase(), {
-                    left: 70, top: 60, width: cw - 100,
-                    fontFamily: yaziFontu, fontSize: 64, fontWeight: 900, fill: theme.soft, charSpacing: -20
+                    left: 40, top: 50, width: cw - 80,
+                    fontFamily: 'Montserrat', fontSize: 52, fontWeight: 900,
+                    fill: theme.text, charSpacing: -10, lineHeight: 1.0
                 });
                 canvas.add(txTitle);
 
-                const txBody = new fabric.Textbox(finalMetin, {
-                    left: 70, top: txTitle.top + txTitle.calcTextHeight() + 20, width: cw - 150,
-                    fontFamily: 'Montserrat', fontSize: 22, fontWeight: 600, fill: theme.text, backgroundColor: 'rgba(0,0,0,0.5)'
-                });
-                canvas.add(txBody);
-            }
-            else if (style === 'elegant') {
+                const bodyTop = txTitle.top + txTitle.calcTextHeight() + 25;
                 canvas.add(new fabric.Rect({
-                    left: 20, top: 20, width: cw-40, height: ch-40,
-                    fill: 'transparent', stroke: theme.soft, strokeWidth: 2, rx: 10, ry: 10, selectable: false
+                    left: 40, top: bodyTop - 8, width: 50, height: 3,
+                    fill: theme.accent, selectable: false, evented: false
                 }));
 
-                const txTitle = new fabric.Textbox(finalTema, {
-                    left: cw/2, top: 80, width: cw-100, originX: 'center',
-                    fontFamily: yaziFontu, fontSize: 48, fontWeight: 'italic', fill: theme.soft, textAlign: 'center'
-                });
-                canvas.add(txTitle);
+                canvas.add(new fabric.Textbox(finalMetin, {
+                    left: 40, top: bodyTop + 5, width: cw - 100,
+                    fontFamily: 'Montserrat', fontSize: 18, fontWeight: 400,
+                    fill: theme.muted, lineHeight: 1.5
+                }));
+            }
+            else if (style === 'elegant') {
+                // Dış çerçeve
+                canvas.add(new fabric.Rect({
+                    left: 15, top: 15, width: cw - 30, height: ch - 30,
+                    fill: 'transparent', stroke: theme.soft, strokeWidth: 1,
+                    rx: 16, ry: 16, selectable: false, evented: false
+                }));
+                // İç çerçeve
+                canvas.add(new fabric.Rect({
+                    left: 25, top: 25, width: cw - 50, height: ch - 50,
+                    fill: 'transparent', stroke: theme.soft, strokeWidth: 0.5,
+                    rx: 12, ry: 12, selectable: false, evented: false,
+                    opacity: 0.4
+                }));
 
-                const txBody = new fabric.Textbox(finalMetin, {
-                    left: cw/2, top: ch/2 + 20, width: cw-140, originX: 'center',
-                    fontFamily: 'Playfair Display', fontSize: 20, fill: theme.text, textAlign: 'center', lineHeight: 1.4
-                });
-                canvas.add(txBody);
-                
-                canvas.add(new fabric.Line([cw/2 - 50, ch/2 - 20, cw/2 + 50, ch/2 - 20], {
-                    stroke: theme.accent, strokeWidth: 1, originX: 'center'
+                // Üst dekoratif motif
+                canvas.add(new fabric.Text("✦", {
+                    left: cw / 2, top: 45, fontSize: 20, originX: 'center',
+                    fill: theme.accent, selectable: false, evented: false
+                }));
+
+                canvas.add(new fabric.Textbox(finalTema, {
+                    left: cw / 2, top: ch * 0.2, width: cw - 100, originX: 'center',
+                    fontFamily: 'Playfair Display', fontSize: 40, fontStyle: 'italic',
+                    fill: theme.soft, textAlign: 'center', lineHeight: 1.1
+                }));
+
+                // Ortadaki dekoratif ayraç çizgisi
+                canvas.add(new fabric.Line([cw / 2 - 60, ch * 0.42, cw / 2 + 60, ch * 0.42], {
+                    stroke: theme.accent, strokeWidth: 1, selectable: false, evented: false
+                }));
+                canvas.add(new fabric.Text("♦", {
+                    left: cw / 2, top: ch * 0.42 - 8, fontSize: 14, originX: 'center',
+                    fill: theme.accent, selectable: false, evented: false
+                }));
+
+                canvas.add(new fabric.Textbox(finalMetin, {
+                    left: cw / 2, top: ch * 0.5, width: cw - 120, originX: 'center',
+                    fontFamily: 'Playfair Display', fontSize: 17, fill: theme.text,
+                    textAlign: 'center', lineHeight: 1.5
                 }));
             }
             else {
+                // MODERN - Panel tabanlı
                 const panel = new fabric.Rect({
-                    left: cw * 0.08, top: ch * 0.1, width: cw * 0.84, height: ch * 0.8,
-                    fill: 'rgba(10,10,15,0.85)', rx: 20, ry: 20,
-                    stroke: theme.accent, strokeWidth: 0.5, selectable: false
+                    left: cw * 0.06, top: ch * 0.08, width: cw * 0.88, height: ch * 0.84,
+                    fill: 'rgba(8,8,16,0.9)', rx: 24, ry: 24,
+                    stroke: theme.accent, strokeWidth: 0.5,
+                    selectable: false, evented: false,
+                    shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.6)', blur: 30, offsetY: 10 })
                 });
                 canvas.add(panel);
 
-                const txTitle = new fabric.Textbox(finalTema, {
-                    left: cw * 0.15, top: ch * 0.2, width: cw * 0.7,
-                    fontFamily: yaziFontu, fontSize: 42, fontWeight: 800, fill: theme.text
-                });
-                canvas.add(txTitle);
+                // Sol vurgu çizgisi
+                canvas.add(new fabric.Rect({
+                    left: cw * 0.06 + 18, top: ch * 0.08 + 20,
+                    width: 4, height: ch * 0.84 - 40,
+                    rx: 2, ry: 2, fill: theme.accent, opacity: 0.7,
+                    selectable: false, evented: false
+                }));
 
-                const txBody = new fabric.Textbox(finalMetin, {
-                    left: cw * 0.15, top: txTitle.top + txTitle.calcTextHeight() + 15, width: cw * 0.7,
-                    fontFamily: 'Poppins', fontSize: 20, fill: theme.muted, lineHeight: 1.4
-                });
-                canvas.add(txBody);
+                const cLeft = cw * 0.06 + 40;
+                const cWidth = cw * 0.88 - 60;
+
+                canvas.add(new fabric.Textbox(finalTema, {
+                    left: cLeft, top: ch * 0.18, width: cWidth,
+                    fontFamily: yaziFontu, fontSize: 40, fontWeight: 800,
+                    fill: theme.text, lineHeight: 1.1
+                }));
+
+                canvas.add(new fabric.Textbox(finalMetin, {
+                    left: cLeft, top: ch * 0.42, width: cWidth,
+                    fontFamily: 'Poppins', fontSize: 18, fill: theme.muted, lineHeight: 1.45
+                }));
             }
 
+            // EMOJİLER - Dekoratif alt bant
             if (emojiler.length > 0) {
-                let ex = 50;
-                emojiler.slice(0, 5).forEach(em => {
-                   const t = new fabric.Text(em, { left: ex, top: ch - 60, fontSize: 30 });
-                   canvas.add(t);
-                   ex += 45;
-                });
+                const emojiStr = emojiler.slice(0, 5).join("  ");
+                canvas.add(new fabric.Text(emojiStr, {
+                    left: cw / 2, top: ch - 55, fontSize: 26,
+                    originX: 'center', selectable: true
+                }));
             }
 
-            const signature = new fabric.Text("KARTIST AI", {
-                left: cw - 120, top: ch - 30, fontSize: 12, fill: 'rgba(255,255,255,0.3)', fontFamily: 'Inter'
-            });
-            canvas.add(signature);
+            // İMZA
+            canvas.add(new fabric.Text("KARTIST AI", {
+                left: cw - 110, top: ch - 28, fontSize: 10,
+                fill: 'rgba(255,255,255,0.25)', fontFamily: 'Inter',
+                charSpacing: 200, selectable: false, evented: false
+            }));
 
             canvas.renderAll();
             if (typeof saveHistory === "function") saveHistory();
-            showToast("AI Tasarımı Başarıyla Oluşturuldu ✨");
+            showToast("AI tasarımınız hazır ✨");
         }
 
         // --- PAYLAŞ BUTONU ---
