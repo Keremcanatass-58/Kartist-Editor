@@ -742,45 +742,55 @@ Kurallar:
         {
             try
             {
-                // Cloudflare bot korumasını aşmak için gerçekçi tarayıcı başlıkları ve api.airforce servisi
-                var url = $"https://api.airforce/v1/imagine2?prompt={Uri.EscapeDataString(prompt.Trim())}";
+                if (string.IsNullOrWhiteSpace(prompt))
+                    return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                using var handler = new HttpClientHandler 
-                { 
-                    AllowAutoRedirect = true,
-                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
-                };
+                // Groq'dan gelen kelimelerle arama yapıyoruz
+                string query = Uri.EscapeDataString(prompt.Replace(",", " ").Trim());
+                var searchUrl = $"https://unsplash.com/napi/search/photos?query={query}&per_page=1&page=1";
+
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
                 
-                using var client = new HttpClient(handler);
-                client.Timeout = TimeSpan.FromSeconds(60);
-                
-                // Gerçek bir Chrome tarayıcı taklidi yapıyoruz
+                // Unsplash NAPI için standart tarayıcı başlıkları (bot olarak algılanmamak için)
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-                client.DefaultRequestHeaders.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-                client.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.9,tr;q=0.8");
-                client.DefaultRequestHeaders.Add("Sec-Ch-Ua", "\"Chromium\";v=\"122\", \"Not(A:Brand\";v=\"24\", \"Google Chrome\";v=\"122\"");
-                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Mobile", "?0");
-                client.DefaultRequestHeaders.Add("Sec-Ch-Ua-Platform", "\"Windows\"");
-                client.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "document");
-                client.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "navigate");
-                client.DefaultRequestHeaders.Add("Sec-Fetch-Site", "none");
-                client.DefaultRequestHeaders.Add("Sec-Fetch-User", "?1");
-                client.DefaultRequestHeaders.Add("Upgrade-Insecure-Requests", "1");
-                client.Timeout = TimeSpan.FromSeconds(60);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                var response = await client.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "Görsel sağlayıcı (api.airforce) yanıt vermedi." });
+                var searchResp = await client.GetAsync(searchUrl);
+                if (!searchResp.IsSuccessStatusCode)
+                    return Json(new { success = false, error = "Arama servisi yanıt vermedi." });
 
-                var bytes = await response.Content.ReadAsByteArrayAsync();
-                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var searchJson = await searchResp.Content.ReadAsStringAsync();
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(searchJson);
+                var results = jsonDoc.RootElement.GetProperty("results");
+
+                if (results.GetArrayLength() == 0)
+                {
+                    // Unsplash'da bulunamazsa genel bir estetik resim getir
+                    searchUrl = $"https://unsplash.com/napi/search/photos?query=beautiful+aesthetic+background&per_page=1&page=1";
+                    searchResp = await client.GetAsync(searchUrl);
+                    searchJson = await searchResp.Content.ReadAsStringAsync();
+                    using var fallbackDoc = System.Text.Json.JsonDocument.Parse(searchJson);
+                    results = fallbackDoc.RootElement.GetProperty("results");
+                    if (results.GetArrayLength() == 0)
+                        return Json(new { success = false, error = "Hiçbir sonuç bulunamadı." });
+                }
+
+                string imageUrl = results[0].GetProperty("urls").GetProperty("regular").GetString();
+
+                var imageResp = await client.GetAsync(imageUrl);
+                if (!imageResp.IsSuccessStatusCode)
+                    return Json(new { success = false, error = "Resim indirilemedi." });
+
+                var bytes = await imageResp.Content.ReadAsByteArrayAsync();
+                var contentType = imageResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
                 var base64 = Convert.ToBase64String(bytes);
 
                 return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Görsel indirilemedi: " + ex.Message });
+                return Json(new { success = false, error = "Görsel işlenemedi: " + ex.Message });
             }
         }
 
