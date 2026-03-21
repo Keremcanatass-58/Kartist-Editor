@@ -745,7 +745,8 @@ Kurallar:
                 if (string.IsNullOrWhiteSpace(prompt))
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                string query = Uri.EscapeDataString(prompt.Replace(",", " ") + " ultra high quality");
+                string queryText = prompt.Replace(",", " ") + " scenery landscape empty background wallpaper no humans -person -woman -girl -human -boy -man -portrait";
+                string query = Uri.EscapeDataString(queryText);
                 var searchUrl = $"https://www.bing.com/images/search?q={query}&form=HDRSC2&first=1";
 
                 using var handler = new HttpClientHandler { AllowAutoRedirect = true };
