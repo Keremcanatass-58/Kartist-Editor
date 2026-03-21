@@ -4012,18 +4012,42 @@
                 try {
                     const catSlug = document.getElementById("aiCategorySelect")?.value || "genel";
                     const bgPromptText = document.getElementById("aiBgPrompt")?.value || "";
+                    
+                    let imgKeywords = "greeting card background, elegant, beautiful colors, digital art";
+                    if (bgPromptText.trim() !== "") {
+                        imgKeywords = bgPromptText.trim() + ", beautiful, aesthetic, digital art, no text, background only";
+                    } else {
+                        if (catSlug.includes("dogum")) imgKeywords = "birthday celebration, colorful balloons confetti, festive vibrant, digital art";
+                        else if (catSlug.includes("ask") || catSlug.includes("sevgi")) imgKeywords = "romantic love, hearts roses soft pink, dreamy, digital art";
+                        else if (catSlug.includes("tesekkur")) imgKeywords = "thank you appreciation, warm golden light flowers, elegant, digital art";
+                        else if (catSlug.includes("ozur")) imgKeywords = "forgiveness, soft blue gentle sky, emotional, digital art";
+                        else if (catSlug.includes("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
+                    }
 
-                    const fd2 = new FormData();
-                    fd2.append("kategori", catSlug);
-                    fd2.append("bgPrompt", bgPromptText);
-                    fd2.append("__RequestVerificationToken", getCSRFToken());
+                    // Türkçe karakterleri temizle (Pollinations 500 hatasını önlemek için)
+                    const normalizedKeywords = imgKeywords
+                        .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+                        .replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
 
-                    const imgResp = await fetch("/Home/AiGorselOlustur", { method: "POST", body: fd2 });
-                    const imgData = await imgResp.json();
+                    const imgPrompt = encodeURIComponent(normalizedKeywords);
+                    const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true&seed=${Date.now()}`;
 
-                    if (imgData && imgData.success && imgData.dataUrl) {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 60000);
+
+                    const imgResp = await fetch(imgUrl, { signal: controller.signal });
+                    clearTimeout(timeout);
+
+                    if (imgResp.ok) {
+                        const blob = await imgResp.blob();
+                        const dataUrl = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+
                         await new Promise((resolve) => {
-                            fabric.Image.fromURL(imgData.dataUrl, function(img) {
+                            fabric.Image.fromURL(dataUrl, function(img) {
                                 if (img && img.width) {
                                     img.scaleToWidth(cw);
                                     img.scaleToHeight(ch);
