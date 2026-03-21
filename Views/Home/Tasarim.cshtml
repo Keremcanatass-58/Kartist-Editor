@@ -3451,14 +3451,7 @@
             }
         }
 
-		function deleteObject() {
-			var o = canvas.getActiveObject();
-			if (o) {
-				canvas.remove(o);
-				canvas.discardActiveObject();
-				updateUI();
-			}
-		}
+
 
 		function setBackgroundFromURL(u) {
 			fabric.Image.fromURL(u, function (i) {
@@ -4522,16 +4515,33 @@
 
         // --- 2. TUVALİ KOMPLE TEMİZLEME ---
         function clearCanvas() {
-            // Yanlışlıkla basmaya karşı onay alalım
-            if (confirm('Tüm çalışmayı silmek istediğine emin misin?')) {
-                canvas.clear(); // Her şeyi siler
-                canvas.setBackgroundColor(null, canvas.renderAll.bind(canvas)); // Arka planı sıfırla
-                canvas.requestRenderAll();
-                saveHistory();
-
-                // Grid veya temel ayarları geri getirmek istersen buraya ekleyebilirsin
-                // fitCanvasToWorkspace();
-            }
+            Swal.fire({
+                title: 'Emin misin?',
+                text: "Tüm çalışman silinecek, bu işlem geri alınamaz!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#c6ff00',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Evet, temizle!',
+                cancelButtonText: 'Hayır, vazgeç',
+                background: '#1e1e1e',
+                color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    canvas.clear();
+                    canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+                    canvas.backgroundImage = null;
+                    canvas.requestRenderAll();
+                    
+                    // Geçmişi temizle (Opsiyonel, ama temiz başlangıç iyidir)
+                    historyStack = [];
+                    saveHistory();
+                    
+                    updateLayers();
+                    updateUI();
+                    showToast("Tuval temizlendi");
+                }
+            });
         }
 
         // --- 3. KLAVYE KISAYOLLARI (CTRL+A ve DELETE) ---
