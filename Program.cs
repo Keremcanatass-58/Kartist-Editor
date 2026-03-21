@@ -120,7 +120,6 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
         await file.CopyToAsync(stream);
     }
 
-    // Harika tasarlanmış bir bakım sayfası (app_offline.htm) şablonu oluştur
     var offlineHtml = @"<!DOCTYPE html>
 <html lang='tr'>
 <head>
@@ -140,7 +139,6 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
         @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(198, 255, 0, 0.3); } 100% { opacity: 0.6; } }
     </style>
     <script>
-        // Her 2 saniyede bir sitenin ayağa kalkıp kalkmadığını kontrol et
         setInterval(() => {
             fetch('/').then(response => {
                 if(response.ok) { window.location.reload(); }
@@ -188,7 +186,7 @@ del update.bat";
 
 app.Run();
 
-static void EnsureDatabaseSchema(string? connectionString)
+static void EnsureDatabaseSchema(string connectionString)
 {
     if (string.IsNullOrWhiteSpace(connectionString))
     {
