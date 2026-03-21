@@ -673,6 +673,12 @@ namespace Kartist.Controllers
                 return Json(list);
             }
         }
+        private string RemoveTurkishChars(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            return text.Replace("ı", "i").Replace("ğ", "g").Replace("ü", "u").Replace("ş", "s").Replace("ö", "o").Replace("ç", "c")
+                       .Replace("İ", "I").Replace("Ğ", "G").Replace("Ü", "U").Replace("Ş", "S").Replace("Ö", "O").Replace("Ç", "C");
+        }
 
         [HttpPost]
         public async Task<IActionResult> AiGorselOlustur(string kategori, string bgPrompt = "")
@@ -697,7 +703,7 @@ namespace Kartist.Controllers
                     else if (cat.Contains("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
                 }
 
-                var encodedPrompt = Uri.EscapeDataString(imgKeywords);
+                var encodedPrompt = Uri.EscapeDataString(RemoveTurkishChars(imgKeywords));
                 var url = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=700&height=500&nologo=true&seed={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 
                 using var client = new HttpClient();
