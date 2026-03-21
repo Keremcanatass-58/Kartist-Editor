@@ -120,13 +120,53 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
         await file.CopyToAsync(stream);
     }
 
+    // Harika tasarlanmış bir bakım sayfası (app_offline.htm) şablonu oluştur
+    var offlineHtml = @"<!DOCTYPE html>
+<html lang='tr'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Sistem Güncelleniyor | Kartist</title>
+    <link href='https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;800&display=swap' rel='stylesheet'>
+    <style>
+        body { margin: 0; padding: 0; background-color: #050505; color: white; font-family: 'Space Grotesk', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; overflow: hidden; }
+        .logo-text { font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 30px; }
+        .logo-text span { color: #c6ff00; }
+        .spinner { width: 60px; height: 60px; border: 4px solid rgba(198, 255, 0, 0.1); border-top-color: #c6ff00; border-radius: 50%; animation: spin 1s infinite linear; margin: 0 auto 30px auto; box-shadow: 0 0 20px rgba(198, 255, 0, 0.4); }
+        .title { font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; }
+        .subtitle { font-size: 1rem; color: #888; max-width: 400px; line-height: 1.5; }
+        .pulse { animation: pulse 2s infinite ease-in-out; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(198, 255, 0, 0.3); } 100% { opacity: 0.6; } }
+    </style>
+    <script>
+        // Her 2 saniyede bir sitenin ayağa kalkıp kalkmadığını kontrol et
+        setInterval(() => {
+            fetch('/').then(response => {
+                if(response.ok) { window.location.reload(); }
+            }).catch(() => {});
+        }, 2000);
+    </script>
+</head>
+<body>
+    <div class='logo-text'>KART<span>IST</span></div>
+    <div class='spinner'></div>
+    <div class='title pulse'>Sistem Güncelleniyor</div>
+    <div class='subtitle'>Kartist'i yepyeni özelliklerle donatıyoruz. Lütfen sayfayı kapatmayın, güncelleme tamamlandığında sayfa otomatik olarak yenilenecektir.</div>
+</body>
+</html>";
+
+    var templatePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "offline_template.htm");
+    await System.IO.File.WriteAllTextAsync(templatePath, offlineHtml);
+
     var batPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "update.bat");
     var batContent = @"@echo off
 timeout /t 2 /nobreak > nul
-echo ^<html^>^<body^>^<h2^>Kartist Guncelleniyor...^</h2^>^</body^>^</html^> > app_offline.htm
+copy /y offline_template.htm app_offline.htm > nul
 timeout /t 3 /nobreak > nul
 tar -xf release.zip
 del app_offline.htm
+del offline_template.htm
 del release.zip
 del update.bat";
                 
