@@ -694,9 +694,10 @@ namespace Kartist.Controllers
                 string systemPrompt = @"Bir arka plan görseli arama motoru için kullanıcı isteğini işleyeceğiz.
 Görevin: Kullanıcının girdiği isteği (Prompt ve Kategori) yansıtacak en estetik, en önemli 3-5 arası İngilizce anahtar kelimeyi (keyword) bulmak.
 Kurallar:
-1. Kelimeleri SADECE virgülle ayırarak yaz (aralarına boşluk koyma).
-2. Sonuç örneği harfiyen şöyle olmalı: 'paris,night,lights,aesthetic,background' veya 'forest,nature,green,beautiful'.
-3. BAŞKA HİÇBİR AÇIKLAMA YAZMA. SADECE virgüllü metni döndür.";
+1. Görsel KESİNLİKLE bir MANZARA, DOĞA veya SOYUT ARKA PLAN olmalı. İNSAN VEYA YÜZ KESİNLİKLE OLMAMALI.
+2. Aşk/Sevgili kategorisi olsa bile romantik 'insan' çizmeyi ima eden kelimeler (woman, girl, couple, romance) KULLANMA. Onun yerine soyut romantik manzaralar (sunset, warm lights, heart, aesthetic scenery) kullan.
+3. Kelimeleri SADECE virgülle ayırarak yaz (aralarına boşluk koyma). Örnek: 'paris,sunset,aesthetic,scenery,background'.
+4. BAŞKA HİÇBİR AÇIKLAMA YAZMA. SADECE virgüllü metni döndür.";
 
                 var messages = new[]
                 {
