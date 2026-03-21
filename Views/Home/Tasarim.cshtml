@@ -4063,7 +4063,7 @@
                             });
                         });
                     } else {
-                        showToast(imgData?.error || "Görsel oluşturulamadı, degrade kullanılıyor");
+                        throw new Error(`Pollinations API Error: ${imgResp.status}`);
                     }
                 } catch (e) {
                     console.warn("AI görsel yüklenemedi:", e);
