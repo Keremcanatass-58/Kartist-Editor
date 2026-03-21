@@ -3993,7 +3993,17 @@
 
             if (useAiImage) {
                 showToast("AI görsel oluşturuluyor... (10-30 sn sürebilir) 🖼️");
-                const imgPrompt = encodeURIComponent(prompt + ", digital art, card design, beautiful, aesthetic");
+
+                // Görsel modeller İngilizce ile daha iyi çalışır
+                const catSlug = (document.getElementById("aiCategorySelect")?.value || "genel").toLowerCase();
+                let imgKeywords = "greeting card background, elegant, beautiful colors, high quality, digital art";
+                if (catSlug.includes("dogum")) imgKeywords = "birthday celebration background, colorful balloons confetti cake, festive, vibrant, digital art";
+                else if (catSlug.includes("ask") || catSlug.includes("sevgi")) imgKeywords = "romantic love background, hearts roses soft pink red, dreamy, digital art";
+                else if (catSlug.includes("tesekkur")) imgKeywords = "thank you appreciation background, warm golden light flowers, elegant, digital art";
+                else if (catSlug.includes("ozur")) imgKeywords = "apology forgiveness background, soft blue rain drops gentle, emotional, digital art";
+                else if (catSlug.includes("motiv")) imgKeywords = "motivation inspiration background, sunrise mountain peak clouds, powerful, digital art";
+
+                const imgPrompt = encodeURIComponent(imgKeywords);
                 const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true&seed=${Date.now()}`;
 
                 try {
