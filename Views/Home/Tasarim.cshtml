@@ -3986,48 +3986,55 @@
             const cw = canvas.getWidth();
             const ch = canvas.getHeight();
 
+
             // AI GÖRSEL ARKA PLAN
             const useAiImage = document.getElementById('aiImageToggle')?.checked;
+            let aiImageLoaded = false;
 
             if (useAiImage) {
-                showToast("AI görsel oluşturuluyor... 🖼️");
-                const imgPrompt = encodeURIComponent(prompt + ", digital art, card design, beautiful colors, high quality");
-                const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true`;
+                showToast("AI görsel oluşturuluyor... (10-30 sn sürebilir) 🖼️");
+                const imgPrompt = encodeURIComponent(prompt + ", digital art, card design, beautiful, aesthetic");
+                const imgUrl = `https://image.pollinations.ai/prompt/${imgPrompt}?width=${Math.round(cw)}&height=${Math.round(ch)}&nologo=true&seed=${Date.now()}`;
 
                 try {
-                    await new Promise((resolve, reject) => {
-                        fabric.Image.fromURL(imgUrl, function(img) {
-                            if (!img || !img.width) { reject("Görsel yüklenemedi"); return; }
-                            img.scaleToWidth(cw);
-                            img.scaleToHeight(ch);
-                            img.set({ left: 0, top: 0, selectable: false, evented: false });
-                            canvas.add(img);
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 60000);
 
-                            // Okunabilirlik için karanlık overlay
-                            canvas.add(new fabric.Rect({
-                                left: 0, top: 0, width: cw, height: ch,
-                                fill: 'rgba(0,0,0,0.5)', selectable: false, evented: false
-                            }));
-                            resolve();
-                        }, { crossOrigin: 'anonymous' });
-                    });
+                    const resp = await fetch(imgUrl, { signal: controller.signal });
+                    clearTimeout(timeout);
+
+                    if (resp.ok) {
+                        const blob = await resp.blob();
+                        const dataUrl = await new Promise(resolve => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+
+                        await new Promise((resolve) => {
+                            fabric.Image.fromURL(dataUrl, function(img) {
+                                if (img && img.width) {
+                                    img.scaleToWidth(cw);
+                                    img.scaleToHeight(ch);
+                                    img.set({ left: 0, top: 0, selectable: false, evented: false });
+                                    canvas.add(img);
+                                    canvas.add(new fabric.Rect({
+                                        left: 0, top: 0, width: cw, height: ch,
+                                        fill: 'rgba(0,0,0,0.45)', selectable: false, evented: false
+                                    }));
+                                    aiImageLoaded = true;
+                                }
+                                resolve();
+                            });
+                        });
+                    }
                 } catch (e) {
-                    console.warn("AI görsel yüklenemedi, degrade kullanılıyor:", e);
-                    const bg = new fabric.Rect({
-                        left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
-                        fill: new fabric.Gradient({
-                            type: "linear", coords: { x1: 0, y1: 0, x2: cw * 0.4, y2: ch },
-                            colorStops: [
-                                { offset: 0, color: theme.bg1 },
-                                { offset: 0.5, color: theme.bg2 },
-                                { offset: 1, color: theme.bg1 }
-                            ]
-                        })
-                    });
-                    canvas.add(bg);
+                    console.warn("AI görsel yüklenemedi:", e);
+                    showToast("Görsel yüklenemedi, degrade kullanılıyor");
                 }
-            } else {
-                // Normal degrade arka plan
+            }
+
+            if (!aiImageLoaded) {
                 const bg = new fabric.Rect({
                     left: 0, top: 0, width: cw, height: ch, selectable: false, evented: false,
                     fill: new fabric.Gradient({
