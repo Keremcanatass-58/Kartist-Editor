@@ -2296,10 +2296,24 @@
                               placeholder="Örn: pastel ve romantik doğum günü kartı, kısa ama duygusal bir mesaj olsun.">
 					</textarea>
 
-                    <label style="display:flex; align-items:center; gap:8px; margin-bottom:10px; cursor:pointer; font-size:0.82rem; color:#ccc;">
-                        <input type="checkbox" id="aiImageToggle" style="accent-color:#c6ff00; width:16px; height:16px;">
-                        <span>🖼️ AI Görsel Arka Plan Oluştur</span>
-                    </label>
+                    <p style="font-size:0.8rem; color:#888; font-weight:bold; margin-top:10px; margin-bottom:5px;">Arka Plan Seçimi</p>
+                    <select id="aiBackgroundType" class="sidebar-input" onchange="toggleAiBgPrompt()" style="margin-bottom:8px;">
+                        <option value="none">Kendim Ekleyeceğim (Standart Renkler)</option>
+                        <option value="ai">AI Görsel Arka Plan Oluştur</option>
+                    </select>
+
+                    <div id="aiBgPromptContainer" style="display:none; margin-bottom:10px;">
+                        <textarea id="aiBgPrompt" class="sidebar-input"
+                                  style="height:60px; resize:none; margin-bottom:0;"
+                                  placeholder="Arka plan nasıl olsun? (Örn: şelale, gökyüzü, şato, karanlık orman)"></textarea>
+                    </div>
+
+                    <script>
+                        function toggleAiBgPrompt() {
+                            const type = document.getElementById('aiBackgroundType').value;
+                            document.getElementById('aiBgPromptContainer').style.display = type === 'ai' ? 'block' : 'none';
+                        }
+                    </script>
 
                     <button onclick="generateDesignFromPrompt()" class="sidebar-btn" style="margin-bottom:6px;">
                         PROMPT İLE TASARLA 🎨
@@ -3988,16 +4002,20 @@
 
 
             // AI GÖRSEL ARKA PLAN
-            const useAiImage = document.getElementById('aiImageToggle')?.checked;
+            const aiBgType = document.getElementById('aiBackgroundType')?.value || 'none';
+            const useAiImage = (aiBgType === 'ai');
             let aiImageLoaded = false;
 
             if (useAiImage) {
-                showToast("AI görsel oluşturuluyor... (10-30 sn sürebilir) 🖼️");
+                showToast("AI görsel arka plan oluşturuluyor... (10-30 sn sürebilir) 🖼️");
 
                 try {
                     const catSlug = document.getElementById("aiCategorySelect")?.value || "genel";
+                    const bgPromptText = document.getElementById("aiBgPrompt")?.value || "";
+
                     const fd2 = new FormData();
                     fd2.append("kategori", catSlug);
+                    fd2.append("bgPrompt", bgPromptText);
                     fd2.append("__RequestVerificationToken", getCSRFToken());
 
                     const imgResp = await fetch("/Home/AiGorselOlustur", { method: "POST", body: fd2 });
