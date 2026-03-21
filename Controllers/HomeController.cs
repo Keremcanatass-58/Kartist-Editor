@@ -681,47 +681,61 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AiGorselOlustur(string kategori, string bgPrompt = "")
+        public async Task<IActionResult> TranslateImagePrompt(string prompt, string kategori)
         {
             try
             {
-                var cat = (kategori ?? "genel").ToLowerInvariant();
-                string imgKeywords = "greeting card background, elegant, beautiful colors, digital art";
-                
-                if (!string.IsNullOrWhiteSpace(bgPrompt))
+                var aiConfig = ResolveAiConfig();
+                if (string.IsNullOrWhiteSpace(aiConfig.ApiKey))
                 {
-                    // Kullanıcı özel bir arka plan prompt'u girdiyse onu kullanalım
-                    imgKeywords = bgPrompt.Trim() + ", beautiful, aesthetic, digital art, no text, background only";
-                }
-                else
-                {
-                    // Özel prompt yoksa, kategori bazlı anahtar kelimeler
-                    if (cat.Contains("dogum")) imgKeywords = "birthday celebration, colorful balloons confetti, festive vibrant, digital art";
-                    else if (cat.Contains("ask") || cat.Contains("sevgi")) imgKeywords = "romantic love, hearts roses soft pink, dreamy, digital art";
-                    else if (cat.Contains("tesekkur")) imgKeywords = "thank you appreciation, warm golden light flowers, elegant, digital art";
-                    else if (cat.Contains("ozur")) imgKeywords = "forgiveness, soft blue gentle sky, emotional, digital art";
-                    else if (cat.Contains("motiv")) imgKeywords = "motivation inspiration, sunrise mountain peak, powerful, digital art";
+                    return Json(new { success = false, data = "API anahtarı bulunamadı." });
                 }
 
-                var encodedPrompt = Uri.EscapeDataString(RemoveTurkishChars(imgKeywords));
-                var url = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=700&height=500&nologo=true&seed={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                string systemPrompt = @"You are an expert AI image prompt generator.
+The user wants an image background for a digital greeting card.
+Task: Take the Turkish prompt, translate it, and output ONLY a highly optimized English prompt.
+Rules:
+1. Translate to English.
+2. Add enhancement keywords: beautiful, highly detailed, aesthetic, digital art, cinematic lighting, 8k.
+3. Add constraints: no text, clean empty space.
+4. Output ONLY the final comma-separated prompt string. NO explanations, NO intro, NO quotes.";
+
+                var messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = $"Category: {kategori}\nRequest: {prompt}" }
+                };
+
+                var requestBody = new
+                {
+                    model = aiConfig.Model,
+                    messages = messages,
+                    temperature = 0.7,
+                    max_tokens = 150
+                };
 
                 using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(45);
-                var response = await client.GetAsync(url);
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", aiConfig.ApiKey);
+                var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(requestBody), System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await client.PostAsync("https://api.groq.com/openai/v1/chat/completions", jsonContent);
 
                 if (!response.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "Görsel oluşturulamadı." });
+                    return Json(new { success = false, data = "Groq servisi yanıt vermedi." });
 
-                var bytes = await response.Content.ReadAsByteArrayAsync();
-                var base64 = Convert.ToBase64String(bytes);
-                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(responseString);
+                var content = jsonDoc.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString()?.Trim().Replace("\"", "");
 
-                return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+                return Json(new { success = true, prompt = content });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Görsel zaman aşımına uğradı: " + ex.Message });
+                return Json(new { success = false, data = ex.Message });
             }
         }
 
