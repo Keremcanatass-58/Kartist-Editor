@@ -4215,30 +4215,38 @@
                         finalEngPrompt = translateData.prompt;
                     }
 
-                    // 2. Pollinations.ai ile Doğrudan AI Görseli Oluştur (Proxy'e gerek yok, CORS dostu)
-                    const seed = Math.floor(Math.random() * 1000000);
-                    const aiImageUrl = `https://pollinations.ai/p/${encodeURIComponent(finalEngPrompt)}?width=${cw}&height=${ch}&seed=${seed}`;
+                    // 2. Çevrilmiş İngilizce prompt ile backend proxy üzerinden görsel indir (CORS ve Redirect Aşımı için Proxy Şart)
+                    const fdProxy = new FormData();
+                    fdProxy.append("prompt", finalEngPrompt.trim());
+                    fdProxy.append("__RequestVerificationToken", getCSRFToken());
 
-                    await new Promise((resolve, reject) => {
-                        fabric.Image.fromURL(aiImageUrl, function(img) {
-                            if (img && img.width) {
-                                img.scaleToWidth(cw);
-                                img.scaleToHeight(ch);
-                                img.set({ left: 0, top: 0, selectable: false, evented: false });
-                                canvas.add(img);
-                                
-                                // Okunabilirlik için hafif bir karanlık katman
-                                canvas.add(new fabric.Rect({
-                                    left: 0, top: 0, width: cw, height: ch,
-                                    fill: 'rgba(0,0,0,0.3)', selectable: false, evented: false
-                                }));
-                                aiImageLoaded = true;
-                                resolve();
-                            } else {
-                                reject(new Error("Görsel nesnesi oluşturulamadı"));
-                            }
-                        }, { crossOrigin: 'anonymous' });
-                    });
+                    const imgResp = await fetch("/Home/FetchAiImageBase64", { method: "POST", body: fdProxy });
+                    const imgData = await imgResp.json();
+
+                    if (imgData && imgData.success && imgData.dataUrl) {
+                        await new Promise((resolve, reject) => {
+                            fabric.Image.fromURL(imgData.dataUrl, function(img) {
+                                if (img && img.width) {
+                                    img.scaleToWidth(cw);
+                                    img.scaleToHeight(ch);
+                                    img.set({ left: 0, top: 0, selectable: false, evented: false });
+                                    canvas.add(img);
+                                    
+                                    // Okunabilirlik için hafif bir karanlık katman
+                                    canvas.add(new fabric.Rect({
+                                        left: 0, top: 0, width: cw, height: ch,
+                                        fill: 'rgba(0,0,0,0.3)', selectable: false, evented: false
+                                    }));
+                                    aiImageLoaded = true;
+                                    resolve();
+                                } else {
+                                    reject(new Error("Görsel nesnesi oluşturulamadı"));
+                                }
+                            });
+                        });
+                    } else {
+                        throw new Error(imgData?.error || "Görsel backend üzerinden indirilemedi");
+                    }
                 } catch (e) {
                     console.warn("AI görsel yüklenemedi:", e);
                 }
