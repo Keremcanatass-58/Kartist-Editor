@@ -759,14 +759,19 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
 
                 using var client = new HttpClient();
                 client.Timeout = TimeSpan.FromSeconds(30);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/*"));
                 
                 var response = await client.GetAsync(aiUrl);
                 if (!response.IsSuccessStatusCode)
                     return Json(new { success = false, error = "AI görsel motoru yanıt vermedi." });
 
+                string contentType = response.Content.Headers.ContentType?.MediaType ?? "";
+                if (!contentType.StartsWith("image/"))
+                {
+                    return Json(new { success = false, error = "AI motoru görsel yerine geçersiz bir içerik (HTML/Text) döndürdü. Lütfen tekrar deneyin." });
+                }
+
                 byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
-                string contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-                
                 var base64 = Convert.ToBase64String(imageBytes);
                 return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
             }
