@@ -1007,7 +1007,7 @@
         .music-wrapper {
             position: fixed;
             bottom: 30px;
-            right: 30px;
+            right: 250px;
             z-index: 9000;
             display: flex;
             flex-direction: column;
@@ -3323,7 +3323,16 @@
 			var objs = canvas.getObjects().slice().reverse();
 
 			objs.forEach((o, i) => {
-				var name = (o.type && o.type.includes('text')) ? (o.text || '').toString().substring(0, 10) : 'Şekil';
+				let name = 'Şekil';
+				if (o.type && o.type.includes('text')) {
+					name = (o.text || '').toString().substring(0, 10);
+				} else if (o.type === 'image') {
+					name = 'Görsel';
+				} else if (o.type === 'rect') {
+					name = 'Kutu';
+				} else if (o.type === 'path') {
+					name = 'Çizim';
+				}
 				var div = document.createElement('div');
 				div.className = 'layer-item ' + (o === canvas.getActiveObject() ? 'selected' : '');
 				div.innerHTML =
@@ -4203,9 +4212,10 @@
             }
             else {
                 // MODERN - Panel tabanlı
+                const panelFill = useAiImage ? 'rgba(8,8,16,0.4)' : 'rgba(8,8,16,0.9)';
                 const panel = new fabric.Rect({
                     left: cw * 0.06, top: ch * 0.08, width: cw * 0.88, height: ch * 0.84,
-                    fill: 'rgba(8,8,16,0.9)', rx: 24, ry: 24,
+                    fill: panelFill, rx: 24, ry: 24,
                     stroke: theme.accent, strokeWidth: 0.5,
                     selectable: false, evented: false,
                     shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.6)', blur: 30, offsetY: 10 })
