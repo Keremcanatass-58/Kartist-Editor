@@ -691,19 +691,19 @@ namespace Kartist.Controllers
                     return Json(new { success = false, data = "API anahtarı bulunamadı." });
                 }
 
-                string systemPrompt = $@"You are a professional image prompt engineer for a background search engine.
-Your goal is to translate and expand the user's request into 4-7 high-quality English keywords for a background search.
-The requested aesthetic style is: {style ?? "Standard"}. 
+                string systemPrompt = $@"You are an expert background scenery analyst. 
+Your task is to extract ONLY the visual landscape/scenery keywords from the user's request for a background search.
+The style is: {style ?? "Standard"}.
 
 STRICT RULES:
-1. OUTPUT ONLY keywords separated by commas. No sentences.
-2. NO HUMANS, NO FACES, NO PORTRAITS. The output MUST be a scenery, landscape, or abstract background.
-3. If style is 'Cyberpunk', use keywords like: neon, futuristic, synthwave, night city, glowing.
-4. If style is 'Sulu Boya', use: watercolor, artistic, painted, soft textures, pastel.
-5. If style is 'Anime', use: anime style, makoto shinkai vibes, vibrant colors, clear sky.
-6. If style is '3D Render', use: octane render, 4k, volumetric lighting, unreal engine 5, professional 3d.
-7. If style is 'Gerçekçi', use: realistic, photorealistic, raw photo, high detail, 8k.
-8. Example output: 'mountains,sunset,mystical,foggy,aesthetic scenery'.";
+1. IGNORE names of people (e.g., Mustafa, Ayşe), recipients (e.g., annem için), and the fact that it's a 'card' or 'design'.
+2. FOCUS ONLY on the location (e.g., Paris, Eiffel Tower), elements (e.g., sunset, roses, sea), and aesthetic.
+3. OUTPUT ONLY 3-6 English keywords separated by commas.
+4. MANDATORY: Include 'no text' and 'no letters' as the last keywords to avoid text in images.
+5. NO HUMANS, NO FACES. Scenery only.
+
+Example: 'Mustafa için parisli doğum günü kartı' -> 'Paris, Eiffel Tower, city view, sunset, no text, no letters'
+Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light, nature, no text, no letters'";
 
                 var messages = new[]
                 {
@@ -713,9 +713,9 @@ STRICT RULES:
 
                 var requestBody = new
                 {
-                    model = "llama-3.1-8b-instant",
+                    model = "llama-3.3-70b-versatile",
                     messages = messages,
-                    temperature = 0.6,
+                    temperature = 0.3,
                     max_tokens = 60
                 };
 
@@ -752,7 +752,9 @@ STRICT RULES:
                 if (string.IsNullOrWhiteSpace(prompt))
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                string queryText = prompt.Replace(",", " ") + " scenery landscape empty background wallpaper no humans -person -woman -girl -human -boy -man -portrait";
+                // YENİ: 'empty' kelimesini çıkardık çünkü şehir manzaralarında (Paris vb.) sorun yaratabiliyordu.
+                // Negatif filtreleri artırdık (-text, -font, -letters).
+                string queryText = prompt.Replace(",", " ") + " scenery landscape background wallpaper no humans -person -woman -girl -human -boy -man -portrait -text -font -letters";
                 string query = Uri.EscapeDataString(queryText);
                 var searchUrl = $"https://www.bing.com/images/search?q={query}&form=HDRSC2&first=1";
 
