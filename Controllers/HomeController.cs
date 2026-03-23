@@ -744,6 +744,24 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
             }
         }
 
+        [HttpGet]
+        public IActionResult GetAiDebugLog()
+        {
+            try
+            {
+                string path = Path.Combine(Path.GetTempPath(), "kartist_ai_error.html");
+                if (!System.IO.File.Exists(path))
+                    return Content("No log found.");
+                
+                string content = System.IO.File.ReadAllText(path);
+                return Content(content, "text/html");
+            }
+            catch (Exception ex)
+            {
+                return Content("Error reading log: " + ex.Message);
+            }
+        }
+
         [HttpPost]
         public async Task<IActionResult> FetchAiImageBase64(string prompt)
         {
@@ -757,23 +775,76 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                 int seed = new Random().Next(100000, 999999);
                 string aiUrl = $"https://pollinations.ai/p/{encodedPrompt}?width=1024&height=1024&seed={seed}";
 
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(30);
-                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/*"));
-                
-                var response = await client.GetAsync(aiUrl);
-                if (!response.IsSuccessStatusCode)
-                    return Json(new { success = false, error = "AI görsel motoru yanıt vermedi." });
+                // Pollinations.ai URL'i oluşturuluyor
+                string encodedPrompt = Uri.EscapeDataString(prompt);
+                int seed = new Random().Next(100000, 999999);
+                string aiUrl = $"https://pollinations.ai/p/{encodedPrompt}?width=1024&height=1024&seed={seed}";
 
-                string contentType = response.Content.Headers.ContentType?.MediaType ?? "";
-                if (!contentType.StartsWith("image/"))
+                using var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(25);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/*"));
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
+                
+                bool pollinationFailed = false;
+                try
                 {
-                    return Json(new { success = false, error = "AI motoru görsel yerine geçersiz bir içerik (HTML/Text) döndürdü. Lütfen tekrar deneyin." });
+                    var response = await client.GetAsync(aiUrl);
+                    if (response.IsSuccessStatusCode && response.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
+                    {
+                        byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
+                        string contentType = response.Content.Headers.ContentType.MediaType;
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+                    }
+                    else
+                    {
+                        pollinationFailed = true;
+                        var errorSnippet = await response.Content.ReadAsStringAsync();
+                        System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), errorSnippet);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    pollinationFailed = true;
+                    System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), ex.Message);
                 }
 
-                byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
-                var base64 = Convert.ToBase64String(imageBytes);
-                return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+                // FALLBACK: Pollinations başarısız olursa Bing Fotoğraf Arşivini dene
+                if (pollinationFailed)
+                {
+                    try
+                    {
+                        string queryText = prompt.Replace(",", " ") + " landscape background wallpaper -text -font -letters";
+                        string query = Uri.EscapeDataString(queryText);
+                        var searchUrl = $"https://www.bing.com/images/search?q={query}&form=HDRSC2&first=1";
+                        
+                        client.DefaultRequestHeaders.Clear();
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
+
+                        var searchResp = await client.GetAsync(searchUrl);
+                        if (searchResp.IsSuccessStatusCode)
+                        {
+                            var html = await searchResp.Content.ReadAsStringAsync();
+                            var matches = System.Text.RegularExpressions.Regex.Matches(html, @"murl&quot;:&quot;(.*?)&quot;");
+                            
+                            for (int i = 0; i < Math.Min(3, matches.Count); i++)
+                            {
+                                string imgUrl = matches[i].Groups[1].Value;
+                                var imgResp = await client.GetAsync(imgUrl);
+                                if (imgResp.IsSuccessStatusCode && imgResp.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
+                                {
+                                    byte[] imageBytes = await imgResp.Content.ReadAsByteArrayAsync();
+                                    string contentType = imgResp.Content.Headers.ContentType.MediaType;
+                                    var base64 = Convert.ToBase64String(imageBytes);
+                                    return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "fallback" });
+                                }
+                            }
+                        }
+                    }
+                    catch { /* Fallback de patlarsa en sona git */ }
+                }
+
+                return Json(new { success = false, error = "Şu an tüm görsel motorlarımız çok yoğun. Lütfen 10 sn sonra tekrar deneyin." });
             }
             catch (Exception ex)
             {
