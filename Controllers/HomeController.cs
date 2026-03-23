@@ -754,7 +754,7 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                     return Content("No log found.");
                 
                 string content = System.IO.File.ReadAllText(path);
-                return Content(content, "text/html");
+                return Content("Captured Content Start:\n" + content + "\nCaptured Content End", "text/plain");
             }
             catch (Exception ex)
             {
@@ -770,16 +770,16 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                 if (string.IsNullOrWhiteSpace(prompt))
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
-                // Pollinations.ai URL'i oluşturuluyor
+                // LAYER 1: Pollinations.ai (True AI)
                 string encodedPromptIdx = Uri.EscapeDataString(prompt);
                 int seedIdx = new Random().Next(100000, 999999);
-                string aiUrl = $"https://pollinations.ai/p/{encodedPromptIdx}?width=1024&height=1024&seed={seedIdx}";
-
+                string aiUrl = $"https://pollinations.ai/p/{encodedPromptIdx}?width=1024&height=1024&seed={seedIdx}&model=flux&nologo=true";
 
                 using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(25);
+                client.Timeout = TimeSpan.FromSeconds(20);
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/*"));
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
+                client.DefaultRequestHeaders.Add("Referer", "https://pollinations.ai/");
                 
                 bool pollinationFailed = false;
                 try
@@ -790,63 +790,95 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                         byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
                         string contentType = response.Content.Headers.ContentType.MediaType;
                         var base64 = Convert.ToBase64String(imageBytes);
-                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}" });
+                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "pollinations" });
                     }
                     else
                     {
                         pollinationFailed = true;
                         var errorSnippet = await response.Content.ReadAsStringAsync();
-                        System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), errorSnippet);
+                        System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), "Pollinations Error:\n" + errorSnippet);
                     }
                 }
                 catch (Exception ex)
                 {
                     pollinationFailed = true;
-                    System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), ex.Message);
+                    System.IO.File.WriteAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), "Pollinations Exception:\n" + ex.Message);
                 }
 
-                // FALLBACK: Pollinations başarısız olursa Bing Fotoğraf Arşivini dene
+                // LAYER 2: Bing Photo Archive (Scraper Fallback)
                 if (pollinationFailed)
                 {
                     try
                     {
-                        string queryText = prompt.Replace(",", " ") + " landscape background wallpaper -text -font -letters";
+                        string queryText = prompt.Replace(",", " ") + " landscape background wallpaper hd -text -font";
                         string query = Uri.EscapeDataString(queryText);
-                        var searchUrl = $"https://www.bing.com/images/search?q={query}&form=HDRSC2&first=1";
+                        var searchUrl = $"https://www.bing.com/images/search?q={query}&qft=+filterui:imagesize-large&form=IRFLTR&first=1";
                         
                         client.DefaultRequestHeaders.Clear();
-                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
 
                         var searchResp = await client.GetAsync(searchUrl);
                         if (searchResp.IsSuccessStatusCode)
                         {
                             var html = await searchResp.Content.ReadAsStringAsync();
-                            var matches = System.Text.RegularExpressions.Regex.Matches(html, @"murl&quot;:&quot;(.*?)&quot;");
+                            var matches = System.Text.RegularExpressions.Regex.Matches(html, @"(https?://[^\s""']+?\.(jpg|jpeg|png|webp))");
                             
-                            for (int i = 0; i < Math.Min(3, matches.Count); i++)
+                            int count = 0;
+                            foreach (System.Text.RegularExpressions.Match match in matches)
                             {
-                                string imgUrl = matches[i].Groups[1].Value;
-                                var imgResp = await client.GetAsync(imgUrl);
-                                if (imgResp.IsSuccessStatusCode && imgResp.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
+                                if (count >= 15) break;
+                                string imgUrl = match.Value;
+                                if (imgUrl.Contains("bing.com") || imgUrl.Contains("mm.bing.net") || imgUrl.Contains("gstatic.com") || imgUrl.Contains("m.microsoft.com")) continue;
+
+                                try
                                 {
-                                    byte[] imageBytes = await imgResp.Content.ReadAsByteArrayAsync();
-                                    string contentType = imgResp.Content.Headers.ContentType.MediaType;
-                                    var base64 = Convert.ToBase64String(imageBytes);
-                                    return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "fallback" });
+                                    var imgResp = await client.GetAsync(imgUrl);
+                                    if (imgResp.IsSuccessStatusCode && imgResp.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
+                                    {
+                                        byte[] imageBytes = await imgResp.Content.ReadAsByteArrayAsync();
+                                        string contentType = imgResp.Content.Headers.ContentType.MediaType;
+                                        var base64 = Convert.ToBase64String(imageBytes);
+                                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "bing" });
+                                    }
                                 }
+                                catch { }
+                                count++;
                             }
                         }
                     }
-                    catch { /* Fallback de patlarsa en sona git */ }
+                    catch (Exception ex)
+                    {
+                        System.IO.File.AppendAllText(Path.Combine(Path.GetTempPath(), "kartist_ai_error.html"), "\nBing Error:\n" + ex.Message);
+                    }
                 }
 
-                return Json(new { success = false, error = "Şu an tüm görsel motorlarımız çok yoğun. Lütfen 10 sn sonra tekrar deneyin." });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, error = "Sistem Hatası: " + ex.Message });
+                // LAYER 3: Curated High-Quality Safe Guard
+                string curatedUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop"; 
+                if (prompt.ToLower().Contains("şehir") || prompt.ToLower().Contains("city") || prompt.ToLower().Contains("istanbul"))
+                    curatedUrl = "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?q=80&w=1000&auto=format&fit=crop";
+                else if (prompt.ToLower().Contains("anime") || prompt.ToLower().Contains("çizim"))
+                    curatedUrl = "https://images.unsplash.com/photo-1578632738981-4330c7091f35?q=80&w=1000&auto=format&fit=crop";
+
+                try
+                {
+                    client.DefaultRequestHeaders.Clear();
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
+                    var finalResp = await client.GetAsync(curatedUrl);
+                    if (finalResp.IsSuccessStatusCode)
+                    {
+                        byte[] imageBytes = await finalResp.Content.ReadAsByteArrayAsync();
+                        string contentType = finalResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "curated" });
+                    }
+                }
+                catch { }
+
+                return Json(new { success = false, error = "Şu an tasarım motorumuzda bir yoğunluk var, lütfen bir süre sonra tekrar deneyin." });
             }
         }
+
+
 
         [HttpPost]
         public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null)
