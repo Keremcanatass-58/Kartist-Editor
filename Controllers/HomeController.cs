@@ -771,14 +771,10 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                     return Json(new { success = false, error = "Prompt boş olamaz." });
 
                 // Pollinations.ai URL'i oluşturuluyor
-                string encodedPrompt = Uri.EscapeDataString(prompt);
-                int seed = new Random().Next(100000, 999999);
-                string aiUrl = $"https://pollinations.ai/p/{encodedPrompt}?width=1024&height=1024&seed={seed}";
+                string encodedPromptIdx = Uri.EscapeDataString(prompt);
+                int seedIdx = new Random().Next(100000, 999999);
+                string aiUrl = $"https://pollinations.ai/p/{encodedPromptIdx}?width=1024&height=1024&seed={seedIdx}";
 
-                // Pollinations.ai URL'i oluşturuluyor
-                string encodedPrompt = Uri.EscapeDataString(prompt);
-                int seed = new Random().Next(100000, 999999);
-                string aiUrl = $"https://pollinations.ai/p/{encodedPrompt}?width=1024&height=1024&seed={seed}";
 
                 using var client = new HttpClient();
                 client.Timeout = TimeSpan.FromSeconds(25);
