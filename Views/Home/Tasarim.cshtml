@@ -4043,7 +4043,7 @@
             appendChatMessage("user", prompt);
             if (promptEl) promptEl.value = "";
 
-            appendChatMessage("bot", "Tasarımını analiz ediyorum ve stüdyoyu hazırlıyorum... (Yaklaşık 10-20 sn)", true);
+            appendChatMessage("bot", "Tasarımını analiz ediyorum ve stüdyoyu hazırlıyorum...", true);
 
             const fd = new FormData();
             fd.append("prompt", prompt);
@@ -4198,10 +4198,12 @@
 
             if (useAiImage) {
                 try {
+                    removeTypingIndicator();
+                    appendChatMessage("bot", "Yapay zeka arka planını senin için hayal ediyor ve çiziyor... ✨", true);
+
                     // 1. Türkçe promptu Groq ile İngilizce Stable Diffusion promptuna çevir
                     const fdTranslate = new FormData();
                     fdTranslate.append("prompt", prompt);
-                    // YENİ: Seçilen UI tarzını (Sulu Boya, Cyberpunk vs.) bildir.
                     fdTranslate.append("style", activeAiStyle); 
                     fdTranslate.append("__RequestVerificationToken", getCSRFToken());
 
@@ -4213,37 +4215,30 @@
                         finalEngPrompt = translateData.prompt;
                     }
 
-                    // 2. Çevrilmiş İngilizce prompt ile backend proxy üzerinden görsel indir (CORS ve Redirect Aşımı)
-                    const fdProxy = new FormData();
-                    fdProxy.append("prompt", finalEngPrompt.trim());
-                    fdProxy.append("__RequestVerificationToken", getCSRFToken());
+                    // 2. Pollinations.ai ile Doğrudan AI Görseli Oluştur (Proxy'e gerek yok, CORS dostu)
+                    const seed = Math.floor(Math.random() * 1000000);
+                    const aiImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalEngPrompt)}?width=${cw}&height=${ch}&seed=${seed}&nologo=true`;
 
-                    const imgResp = await fetch("/Home/FetchAiImageBase64", { method: "POST", body: fdProxy });
-                    const imgData = await imgResp.json();
-
-                    if (imgData && imgData.success && imgData.dataUrl) {
-                        await new Promise((resolve) => {
-                            fabric.Image.fromURL(imgData.dataUrl, function(img) {
-                                if (img && img.width) {
-                                    img.scaleToWidth(cw);
-                                    img.scaleToHeight(ch);
-                                    img.set({ left: 0, top: 0, selectable: false, evented: false });
-                                    canvas.add(img);
-                                    canvas.add(new fabric.Rect({
-                                        left: 0, top: 0, width: cw, height: ch,
-                                        fill: 'rgba(0,0,0,0.45)', selectable: false, evented: false
-                                    }));
-                                    aiImageLoaded = true;
-                                }
-                                resolve();
-                            });
-                        });
-                    } else {
-                        throw new Error(imgData?.error || "Görsel backend üzerinden indirilemedi");
-                    }
+                    await new Promise((resolve) => {
+                        fabric.Image.fromURL(aiImageUrl, function(img) {
+                            if (img && img.width) {
+                                img.scaleToWidth(cw);
+                                img.scaleToHeight(ch);
+                                img.set({ left: 0, top: 0, selectable: false, evented: false });
+                                canvas.add(img);
+                                
+                                // Okunabilirlik için hafif bir karanlık katman
+                                canvas.add(new fabric.Rect({
+                                    left: 0, top: 0, width: cw, height: ch,
+                                    fill: 'rgba(0,0,0,0.3)', selectable: false, evented: false
+                                }));
+                                aiImageLoaded = true;
+                            }
+                            resolve();
+                        }, { crossOrigin: 'anonymous' });
+                    });
                 } catch (e) {
                     console.warn("AI görsel yüklenemedi:", e);
-                    showToast("Görsel yüklenemedi, degrade kullanılıyor");
                 }
             }
 
@@ -4260,21 +4255,17 @@
                     })
                 });
                 canvas.add(bg);
-            }
 
-            // Dekoratif ışık efektleri
-            canvas.add(new fabric.Circle({
-                left: -80, top: -60, radius: 200,
-                fill: theme.accent, opacity: 0.08, selectable: false, evented: false
-            }));
-            canvas.add(new fabric.Circle({
-                left: cw - 150, top: ch - 180, radius: 220,
-                fill: theme.soft, opacity: 0.06, selectable: false, evented: false
-            }));
-            canvas.add(new fabric.Circle({
-                left: cw * 0.5, top: -100, radius: 130,
-                fill: theme.soft, opacity: 0.05, selectable: false, evented: false
-            }));
+                // Dekoratif ışık efektleri (Sadece resim yüklenemezse)
+                canvas.add(new fabric.Circle({
+                    left: -80, top: -60, radius: 200,
+                    fill: theme.accent, opacity: 0.08, selectable: false, evented: false
+                }));
+                canvas.add(new fabric.Circle({
+                    left: cw - 150, top: ch - 180, radius: 220,
+                    fill: theme.soft, opacity: 0.06, selectable: false, evented: false
+                }));
+            }
 
             // LAYOUT STİLLERİ
             if (style === 'minimal') {
