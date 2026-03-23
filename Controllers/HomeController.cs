@@ -681,7 +681,7 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> TranslateImagePrompt(string prompt, string kategori)
+        public async Task<IActionResult> TranslateImagePrompt(string prompt, string style)
         {
             try
             {
@@ -691,26 +691,32 @@ namespace Kartist.Controllers
                     return Json(new { success = false, data = "API anahtarı bulunamadı." });
                 }
 
-                string systemPrompt = @"Bir arka plan görseli arama motoru için kullanıcı isteğini işleyeceğiz.
-Görevin: Kullanıcının girdiği isteği (Prompt ve Kategori) yansıtacak en estetik, en önemli 3-5 arası İngilizce anahtar kelimeyi (keyword) bulmak.
-Kurallar:
-1. Görsel KESİNLİKLE bir MANZARA, DOĞA veya SOYUT ARKA PLAN olmalı. İNSAN VEYA YÜZ KESİNLİKLE OLMAMALI.
-2. Aşk/Sevgili kategorisi olsa bile romantik 'insan' çizmeyi ima eden kelimeler (woman, girl, couple, romance) KULLANMA. Onun yerine soyut romantik manzaralar (sunset, warm lights, heart, aesthetic scenery) kullan.
-3. Kelimeleri SADECE virgülle ayırarak yaz (aralarına boşluk koyma). Örnek: 'paris,sunset,aesthetic,scenery,background'.
-4. BAŞKA HİÇBİR AÇIKLAMA YAZMA. SADECE virgüllü metni döndür.";
+                string systemPrompt = $@"You are a professional image prompt engineer for a background search engine.
+Your goal is to translate and expand the user's request into 4-7 high-quality English keywords for a background search.
+The requested aesthetic style is: {style ?? "Standard"}. 
+
+STRICT RULES:
+1. OUTPUT ONLY keywords separated by commas. No sentences.
+2. NO HUMANS, NO FACES, NO PORTRAITS. The output MUST be a scenery, landscape, or abstract background.
+3. If style is 'Cyberpunk', use keywords like: neon, futuristic, synthwave, night city, glowing.
+4. If style is 'Sulu Boya', use: watercolor, artistic, painted, soft textures, pastel.
+5. If style is 'Anime', use: anime style, makoto shinkai vibes, vibrant colors, clear sky.
+6. If style is '3D Render', use: octane render, 4k, volumetric lighting, unreal engine 5, professional 3d.
+7. If style is 'Gerçekçi', use: realistic, photorealistic, raw photo, high detail, 8k.
+8. Example output: 'mountains,sunset,mystical,foggy,aesthetic scenery'.";
 
                 var messages = new[]
                 {
                     new { role = "system", content = systemPrompt },
-                    new { role = "user", content = $"Category: {kategori}\nRequest: {prompt}" }
+                    new { role = "user", content = $"User Request: {prompt}" }
                 };
 
                 var requestBody = new
                 {
-                    model = "llama3-8b-8192",
+                    model = "llama-3.1-8b-instant",
                     messages = messages,
-                    temperature = 0.5,
-                    max_tokens = 50
+                    temperature = 0.6,
+                    max_tokens = 60
                 };
 
                 using var client = new HttpClient();
@@ -799,7 +805,7 @@ Kurallar:
         }
 
         [HttpPost]
-        public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null)
+        public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null)
         {
             try
             {
@@ -829,27 +835,28 @@ Kurallar:
                 client.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", aiConfig.ApiKey);
 
-                var systemPrompt = @"
+                var systemPrompt = $@"
 Sen, Kartist platformu için çalışan, dünyaca ünlü bir Baş Tasarımcısın.
 Görevin, kullanıcının girdiği prompt'a göre duygusal derinliği olan, estetik ve kişiselleştirilmiş bir kart tasarımı kurgulamak.
 
+Kullanıcı şu görsel tarzı tercih etti: {style ?? "Modern"}. 
+Bu tarza uygun font ve renk seçimleri yap (Örn: Cyberpunk için neon pembe-mavi, Anime için canlı sıcak tonlar).
+
 Kullanıcı bir isim (örn: Mustafa) veya bir ilişki (örn: sevgilim) belirtirse, bunu mutlaka anaMetin veya tema içerisinde doğal ve samimi bir şekilde kullan. 
-Sadece kuru bir metin değil, o kişiye özel hissettirecek bir selamlama üret.
 
 Sadece geçerli JSON döndür:
-{
+{{
   ""renkPaleti"": [""#ArkaPlan"", ""#Panel"", ""#Vurgu""],
-  ""tema"": ""Vurucu bir başlık (örn: İyi ki Doğdun Mustafa!)"",
-  ""yaziFontu"": ""Poppins, Montserrat veya Playfair Display gibi kaliteli bir font seç"",
+  ""tema"": ""Vurucu bir başlık"",
+  ""yaziFontu"": ""Poppins, Montserrat, Roboto, Playfair Display veya Inter arasından seç"",
   ""layoutStyle"": ""'minimal', 'bold', 'elegant' veya 'modern' arasından seç"",
-  ""kategori"": ""Kullanıcı isteğine en yakın kategori adı"",
   ""anaMetin"": ""Kullanıcının duygusuna tercüman olan, 1-3 cümlelik etkileyici mesaj"",
   ""emojiler"": [""??"", ""??"", ""??""]
-}
+}}
 
 Kurallar:
 - Sadece JSON ver.
-- Renk paleti 3 renkli olsun: 1. Baskın Koyu/Zemin, 2. Panel/Kart, 3. Yazı/Vurgu (Neon tonları severiz).
+- Renk paleti 3 renkli olsun: 1. Baskın Koyu/Zemin, 2. Panel/Kart, 3. Yazı/Vurgu.
 - Dil: Kullanıcı hangi dilde yazarsa o dilde cevap ver.
 ";
 
@@ -859,7 +866,7 @@ Kurallar:
                     messages = new[]
                     {
                         new { role = "system", content = systemPrompt },
-                        new { role = "user", content = $"Kategori: {kategori ?? "genel"}\nIstek: {prompt}" }
+                        new { role = "user", content = $"İstek: {prompt}" }
                     },
                     temperature = 0.7
                 };
