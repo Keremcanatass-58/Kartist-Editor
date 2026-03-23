@@ -467,6 +467,153 @@
             margin-bottom: 10px;
         }
 
+        /* AI STUDIO STİLLERİ */
+        .ai-style-grid {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: thin;
+        }
+        .ai-style-grid::-webkit-scrollbar {
+            height: 4px;
+        }
+        .ai-style-grid::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        .ai-style-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            min-width: 65px;
+            transition: 0.2s;
+            opacity: 0.6;
+        }
+        .ai-style-card:hover {
+            opacity: 0.8;
+            transform: translateY(-2px);
+        }
+        .ai-style-card.active {
+            opacity: 1;
+        }
+        .ai-style-card.active .ai-style-icon {
+            border: 2px solid #c6ff00;
+            box-shadow: 0 0 10px rgba(198, 255, 0, 0.4);
+        }
+        .ai-style-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+        .ai-style-card span {
+            font-size: 0.65rem;
+            color: #ccc;
+            font-weight: 600;
+            text-align: center;
+        }
+        .ai-style-card.active span {
+            color: #c6ff00;
+        }
+        .ai-chat-window {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            height: 180px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .ai-chat-message {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        .ai-chat-message.bot {
+            align-self: flex-start;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-bottom-left-radius: 2px;
+        }
+        .ai-chat-message.user {
+            align-self: flex-end;
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .ai-chat-message.typing {
+            color: #aaa;
+            font-style: italic;
+        }
+        .ai-input-area {
+            display: flex;
+            gap: 8px;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 5px;
+            align-items: center;
+        }
+        .ai-input-area:focus-within {
+            border-color: #c6ff00;
+            box-shadow: 0 0 8px rgba(198, 255, 0, 0.2);
+        }
+        .ai-input-area textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            resize: none;
+            height: 45px;
+            padding: 5px;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+        }
+        .ai-input-area textarea::placeholder {
+            color: #666;
+        }
+        .ai-magic-btn {
+            background: #c6ff00;
+            color: black;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .ai-magic-btn:hover {
+            transform: scale(1.05);
+            background: #b3e600;
+        }
+        .ai-magic-btn:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* --- YENİ FX (FİLTRE) STİLLERİ --- */
         .filter-grid {
             display: grid;
@@ -2274,54 +2421,49 @@
                 </div>
 
                 <div id="tabAI" class="tool-section">
-                    <div class="panel-title">AI Tasarım Asistanı 🤖</div>
+                    <div class="panel-title">KARTIST AI STUDIO ⚡</div>
 
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <select id="aiCategorySelect" class="sidebar-input" style="margin-bottom:0;">
-                            <option value="dogumgunu">🎂 Doğum Günü</option>
-                            <option value="ask">❤️ Aşk / Sevgili</option>
-                            <option value="tesekkur">🙏 Teşekkür / Tebrik</option>
-                            <option value="motivasyon">✨ Motivasyon</option>
-                            <option value="ozur">🙏 Özür Kartı</option>
-                            <option value="genel">🎨 Genel / Diğer</option>
-                        </select>
+                    <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">1. Görsel Tarzını Seç</div>
+                    <div class="ai-style-grid">
+                        <div class="ai-style-card active" onclick="selectAiStyle('Standart', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #1e293b, #334155);">✨</div>
+                            <span>Standart</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Sulu Boya', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #f472b6, #38bdf8);">🎨</div>
+                            <span>Sulu Boya</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Cyberpunk', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">🌃</div>
+                            <span>Cyberpunk</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Anime', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #fbbf24, #f43f5e);">🌸</div>
+                            <span>Anime</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('3D Render', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #34d399, #3b82f6);">🧊</div>
+                            <span>3D Render</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Gerçekçi', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #9ca3af, #4b5563);">📸</div>
+                            <span>Gerçekçi</span>
+                        </div>
                     </div>
 
-                    <p style="font-size:0.8rem; color:#888; margin-bottom:8px;">
-                        Ne tarz bir kart istediğini yaz; duyguyu, renkleri veya mesajı kısaca anlat.
-                    </p>
-
-                    <textarea id="aiPrompt" class="sidebar-input"
-                              style="height:90px; resize:none;"
-                              placeholder="Örn: pastel ve romantik doğum günü kartı, kısa ama duygusal bir mesaj olsun.">
-					</textarea>
-
-                    <p style="font-size:0.8rem; color:#888; font-weight:bold; margin-top:10px; margin-bottom:5px;">Arka Plan Seçimi</p>
-                    <select id="aiBackgroundType" class="sidebar-input" onchange="toggleAiBgPrompt()" style="margin-bottom:8px;">
-                        <option value="none">Kendim Ekleyeceğim (Standart Renkler)</option>
-                        <option value="ai">AI Görsel Arka Plan Oluştur</option>
-                    </select>
-
-                    <div id="aiBgPromptContainer" style="display:none; margin-bottom:10px;">
-                        <textarea id="aiBgPrompt" class="sidebar-input"
-                                  style="height:60px; resize:none; margin-bottom:0;"
-                                  placeholder="Arka plan nasıl olsun? (Örn: şelale, gökyüzü, şato, karanlık orman)"></textarea>
+                    <div style="font-size:0.75rem; color:#aaa; margin-top:15px; margin-bottom:8px; font-weight:600;">2. Asistan ile Sohbet</div>
+                    <div class="ai-chat-window" id="aiChatWindow">
+                        <div class="ai-chat-message bot">
+                            Mükemmel bir tasarım için buradayım! Ne çizmemi veya nasıl bir arka plan oluşturmamı istersin?
+                        </div>
                     </div>
 
-                    <script>
-                        function toggleAiBgPrompt() {
-                            const type = document.getElementById('aiBackgroundType').value;
-                            document.getElementById('aiBgPromptContainer').style.display = type === 'ai' ? 'block' : 'none';
-                        }
-                    </script>
-
-                    <button onclick="generateDesignFromPrompt()" class="sidebar-btn" style="margin-bottom:6px;">
-                        PROMPT İLE TASARLA 🎨
-                    </button>
-
-                    <p style="font-size:0.75rem; color:#777;">
-                        Tasarım geldikten sonra nesneleri yine sürükleyip düzenleyebilirsin.
-                    </p>
+                    <div class="ai-input-area">
+                        <textarea id="aiMagicPrompt" placeholder="Örn: Annem için pembe ve romantik doğum günü..."></textarea>
+                        <button onclick="generateMagicDesign()" class="ai-magic-btn" id="aiMagicBtn" title="Tasarla">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </button>
+                    </div>
                 </div>
 
 
@@ -3856,23 +3998,57 @@
 			document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
 		}
 
-        async function generateDesignFromPrompt() {
-            const promptEl = document.getElementById("aiPrompt");
-            const catEl = document.getElementById("aiCategorySelect");
+        let activeAiStyle = 'Standart';
 
-            const prompt = (promptEl?.value || "").trim();
-            const selectedCategory = catEl ? catEl.value : "genel";
+        function selectAiStyle(styleName, el) {
+            activeAiStyle = styleName;
+            document.querySelectorAll('.ai-style-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function appendChatMessage(sender, text, isTyping = false) {
+            const chatWindow = document.getElementById('aiChatWindow');
+            if (!chatWindow) return;
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `ai-chat-message ${sender} ${isTyping ? 'typing' : ''}`;
+            
+            if (isTyping) {
+                msgDiv.id = "aiTypingIndicator";
+                msgDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + text;
+            } else {
+                msgDiv.innerText = text;
+            }
+            
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const ind = document.getElementById('aiTypingIndicator');
+            if (ind) ind.remove();
+        }
+
+        async function generateMagicDesign() {
+            const promptEl = document.getElementById("aiMagicPrompt");
+            const btnEl = document.getElementById("aiMagicBtn");
+            const prompt = (promptEl ? promptEl.value : "").trim();
 
             if (!prompt) {
-                Swal.fire("Eksik bilgi", "Ne tarz bir kart istediğini yazmalısın.", "warning");
+                Swal.fire("Eksik bilgi", "Lütfen hayalindeki tasarımı kısaca anlat.", "warning");
                 return;
             }
 
-            showToast("AI kart tasarımı hazırlanıyor...");
+            // Düğme ve Input Yönetimi
+            if (btnEl) btnEl.disabled = true;
+            appendChatMessage("user", prompt);
+            if (promptEl) promptEl.value = "";
+
+            appendChatMessage("bot", "Tasarımını analiz ediyorum ve stüdyoyu hazırlıyorum... (Yaklaşık 10-20 sn)", true);
 
             const fd = new FormData();
             fd.append("prompt", prompt);
-            fd.append("kategori", selectedCategory);
+            fd.append("kategori", "genel");
+            fd.append("style", activeAiStyle);
             fd.append("__RequestVerificationToken", getCSRFToken());
 
             let apiResponse;
@@ -3884,12 +4060,18 @@
                 apiResponse = await res.json();
             } catch (e) {
                 console.error(e);
+                removeTypingIndicator();
+                appendChatMessage("bot", "Bağlantı hatası oluştu, sunucuya ulaşılamıyor.");
+                if (btnEl) btnEl.disabled = false;
                 Swal.fire("Bağlantı Hatası", "Sunucuya ulaşılamadı.", "error");
                 return;
             }
 
             if (!apiResponse || !apiResponse.success) {
                 console.error("AI Hatası:", apiResponse ? apiResponse.data : "Bilinmiyor");
+                removeTypingIndicator();
+                appendChatMessage("bot", "Maalesef tasarım hazırlanırken bir hata ile karşılaştım.");
+                if (btnEl) btnEl.disabled = false;
                 Swal.fire("AI Hatası", apiResponse ? apiResponse.data : "Sunucu hatası.", "error");
                 return;
             }
@@ -4010,22 +4192,17 @@
             const ch = canvas.getHeight();
 
 
-            // AI GÖRSEL ARKA PLAN
-            const aiBgType = document.getElementById('aiBackgroundType')?.value || 'none';
-            const useAiImage = (aiBgType === 'ai');
+            // AI GÖRSEL ARKA PLAN (Her zaman aktif)
+            const useAiImage = true;
             let aiImageLoaded = false;
 
             if (useAiImage) {
-                showToast("AI görsel arka plan oluşturuluyor... (10-30 sn sürebilir) 🖼️");
-
                 try {
-                    const catSlug = document.getElementById("aiCategorySelect")?.value || "genel";
-                    const bgPromptText = document.getElementById("aiBgPrompt")?.value || "";
-                    
                     // 1. Türkçe promptu Groq ile İngilizce Stable Diffusion promptuna çevir
                     const fdTranslate = new FormData();
-                    fdTranslate.append("kategori", catSlug);
-                    fdTranslate.append("prompt", bgPromptText);
+                    fdTranslate.append("prompt", prompt);
+                    // YENİ: Seçilen UI tarzını (Sulu Boya, Cyberpunk vs.) bildir.
+                    fdTranslate.append("style", activeAiStyle); 
                     fdTranslate.append("__RequestVerificationToken", getCSRFToken());
 
                     const translateResp = await fetch("/Home/TranslateImagePrompt", { method: "POST", body: fdTranslate });
@@ -4262,8 +4439,12 @@
             }));
 
             canvas.renderAll();
+            
+            removeTypingIndicator();
+            appendChatMessage("bot", "Tasarımınız hazır! ✨ İşte tuvalde seni bekliyor.");
+            const btnElFinish = document.getElementById("aiMagicBtn");
+            if (btnElFinish) btnElFinish.disabled = false;
             if (typeof saveHistory === "function") saveHistory();
-            showToast("AI tasarımınız hazır ✨");
         }
 
         // --- PAYLAŞ BUTONU ---
