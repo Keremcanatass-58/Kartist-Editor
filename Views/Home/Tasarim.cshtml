@@ -4217,9 +4217,9 @@
 
                     // 2. Pollinations.ai ile Doğrudan AI Görseli Oluştur (Proxy'e gerek yok, CORS dostu)
                     const seed = Math.floor(Math.random() * 1000000);
-                    const aiImageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalEngPrompt)}?width=${cw}&height=${ch}&seed=${seed}&nologo=true`;
+                    const aiImageUrl = `https://pollinations.ai/p/${encodeURIComponent(finalEngPrompt)}?width=${cw}&height=${ch}&seed=${seed}`;
 
-                    await new Promise((resolve) => {
+                    await new Promise((resolve, reject) => {
                         fabric.Image.fromURL(aiImageUrl, function(img) {
                             if (img && img.width) {
                                 img.scaleToWidth(cw);
@@ -4233,8 +4233,10 @@
                                     fill: 'rgba(0,0,0,0.3)', selectable: false, evented: false
                                 }));
                                 aiImageLoaded = true;
+                                resolve();
+                            } else {
+                                reject(new Error("Görsel nesnesi oluşturulamadı"));
                             }
-                            resolve();
                         }, { crossOrigin: 'anonymous' });
                     });
                 } catch (e) {
