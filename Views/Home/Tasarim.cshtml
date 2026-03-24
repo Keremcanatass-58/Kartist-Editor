@@ -2786,7 +2786,14 @@
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
 
     <script>
-        console.log("Kartist Editor v1.2.4 (Canvas Fix) Loaded 🧹");
+        // CANVAS FIX: Browser compatibility for Fabric.js
+        if (typeof fabric !== 'undefined' || window.fabric) {
+            const f = window.fabric || fabric;
+            f.Text.prototype.textBaseline = 'middle';
+            if (f.IText) f.IText.prototype.textBaseline = 'middle';
+            if (f.Textbox) f.Textbox.prototype.textBaseline = 'middle';
+            console.log("Kartist Editor v1.2.4 (Canvas Fix) Loaded 🧹");
+        }
 		function getCSRFToken() {
 			return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
 		}
