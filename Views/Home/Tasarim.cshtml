@@ -4217,7 +4217,10 @@
                     const translateResp = await fetch("/Home/TranslateImagePrompt", { method: "POST", body: fdTranslate });
                     const translateData = await translateResp.json();
                     
-                    let finalEngPrompt = "beautiful digital art background, high quality, 8k, masterpiece, no text";
+                    // SMART FALLBACK: Eğer çeviri başarısız olursa, kullanıcının orijinal promptunu kullan ve stili ekle.
+                    // Bu sayede "istanbul" yazan birine "abstract art" çıkmaz.
+                    let finalEngPrompt = `${prompt}, ${activeAiStyle} background, high quality, 8k, masterpiece, no text, no letters`;
+                    
                     if (translateData && translateData.success && translateData.prompt) {
                         finalEngPrompt = translateData.prompt;
                     }
