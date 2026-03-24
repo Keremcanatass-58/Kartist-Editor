@@ -876,6 +876,10 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
 
                 return Json(new { success = false, error = "Şu an tasarım motorumuzda bir yoğunluk var, lütfen bir süre sonra tekrar deneyin." });
             }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, error = "Sistem Hatası: " + ex.Message });
+            }
         }
 
 
