@@ -852,6 +852,30 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
                 }
                 catch { }
 
+                // LAYER 4: Absolute Safety Net (Verified High-Res Stocks)
+                // If everything else fails, we provide a guaranteed high-quality experience.
+                try
+                {
+                    string safeUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop"; // Nature
+                    string lowPrompt = prompt.ToLower();
+                    if (lowPrompt.Contains("city") || lowPrompt.Contains("şehir") || lowPrompt.Contains("istanbul"))
+                        safeUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1920&auto=format&fit=crop";
+                    else if (lowPrompt.Contains("car") || lowPrompt.Contains("araba"))
+                        safeUrl = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop";
+                    else if (lowPrompt.Contains("abstract") || lowPrompt.Contains("art") || lowPrompt.Contains("çizim"))
+                        safeUrl = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1920&auto=format&fit=crop";
+
+                    var finalResp = await client.GetAsync(safeUrl);
+                    if (finalResp.IsSuccessStatusCode)
+                    {
+                        byte[] imageBytes = await finalResp.Content.ReadAsByteArrayAsync();
+                        string contentType = finalResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "safeguard" });
+                    }
+                }
+                catch { }
+
                 return Json(new { success = false, error = "Tasarım motoru şu an çok yoğun. Lütfen 10 sn sonra tekrar deneyin." });
             }
             catch (Exception ex)

@@ -30,7 +30,7 @@ namespace Kartist.Middleware
             string permissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()";
             context.Response.Headers.Append("Permissions-Policy", permissionsPolicy);
 
-            string connectSrc = "'self' https://api.groq.com https://open.spotify.com https://www.youtube.com https://cdn.jsdelivr.net https://accounts.google.com https://image.pollinations.ai https://pollinations.ai https://api.airforce";
+            string connectSrc = "'self' https://api.groq.com https://open.spotify.com https://www.youtube.com https://cdn.jsdelivr.net https://accounts.google.com https://image.pollinations.ai https://pollinations.ai https://api.airforce https://*.unsplash.com https://cdnjs.cloudflare.com";
             if (_environment.IsDevelopment())
             {
                 connectSrc += " ws://localhost:* wss://localhost:* http://localhost:*";
@@ -46,7 +46,7 @@ namespace Kartist.Middleware
                 "script-src " + scriptSrc + "; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
-                "img-src 'self' data: https: http: https://pollinations.ai https://*.pollinations.ai; " +
+                "img-src 'self' data: https: http: https://pollinations.ai https://*.pollinations.ai https://images.unsplash.com https://source.unsplash.com; " +
                 "connect-src " + connectSrc + "; " +
                 "frame-src 'self' https://open.spotify.com https://www.youtube.com https://accounts.google.com https://www.google.com https://maps.google.com; " +
                 "media-src 'self' data: https:; " +
