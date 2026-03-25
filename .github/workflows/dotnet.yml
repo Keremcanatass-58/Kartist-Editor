@@ -55,7 +55,7 @@ jobs:
     - name: Zip Published Files
       run: |
         cd publish
-        zip -r ../release.zip ./*
+        zip -r ../release.zip .
 
     - name: Deploy via Native C# API Webhook
       run: |
