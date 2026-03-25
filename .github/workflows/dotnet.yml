@@ -52,11 +52,8 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
 
-    - name: List files for debug
-      run: ls -R ./publish
-
     - name: Zip Published Files
-      run: 7z a release.zip ./publish/*
+      run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
 
     - name: Deploy via Native C# API Webhook
       run: |
