@@ -2625,6 +2625,11 @@
                         <button class="icon-btn danger" onclick="deleteObject()" title="Seçileni Sil (Delete)"><i class="fa-solid fa-trash"></i></button>
                         <button class="icon-btn danger" onclick="clearCanvas()" title="Tuvali Temizle"><i class="fa-solid fa-broom"></i></button>
                     </div>
+
+                    <div class="divider ai-only" style="display:none;"></div>
+                    <button class="icon-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Arka Planı Sil" style="display:none; color: #c6ff00; border: 1px solid #c6ff00; background: rgba(198, 255, 0, 0.1); width: auto; padding: 0 10px; font-size: 0.75rem;">
+                        <i class="fa-solid fa-wand-sparkles"></i> <span style="margin-left:5px; font-weight:800;">ARKA PLANI SİL</span>
+                    </button>
                 </div>
             </div>
 
@@ -2784,6 +2789,7 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js'></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@1.5.5/dist/index.js"></script>
 
     <script>
         // CANVAS FIX: Browser compatibility for Fabric.js
@@ -3421,8 +3427,15 @@
                     var btnShadow = document.getElementById('btnShadow');
                     if (btnShadow) btnShadow.style.color = (o.shadow) ? activeColor : passiveColor;
 
-                } else {
-                    textTools.style.display = 'none';
+                }
+
+                // AI Tools (Image Only)
+                const isImage = o.type === 'image';
+                const btnRemoveBg = document.getElementById('btnRemoveBg');
+                if (btnRemoveBg) {
+                    btnRemoveBg.style.display = isImage ? 'flex' : 'none';
+                    const aiDivider = document.querySelector('.divider.ai-only');
+                    if (aiDivider) aiDivider.style.display = isImage ? 'block' : 'none';
                 }
 
                 // Kilit Butonu
@@ -3746,6 +3759,81 @@
 				canvas.requestRenderAll();
 			}
 		}
+
+        async function removeBackground() {
+            const obj = canvas.getActiveObject();
+            if (!obj || obj.type !== 'image') {
+                showToast("Lütfen bir resim seçin");
+                return;
+            }
+
+            Swal.fire({
+                title: 'Yapay Zeka Çalışıyor... 🧠',
+                text: 'Arka plan dekupe ediliyor, bu işlem görsel boyutuna göre 10-20 sn sürebilir.',
+                allowOutsideClick: false,
+                background: '#1e1e1e',
+                color: '#fff',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
+                
+                if (!removeFn) {
+                    throw new Error("AI Modülü henüz yüklenemedi. Lütfen sayfayı yenileyip 5 sn bekleyin.");
+                }
+
+                const dataUrl = obj.toDataURL({ format: 'png' });
+                const blob = await fetch(dataUrl).then(res => res.blob());
+                
+                const resultBlob = await removeFn(blob, {
+                    debug: false,
+                    model: 'medium',
+                    progress: (step, percent) => {
+                        console.log(`BG Removal: ${step} ${Math.round(percent * 100)}%`);
+                    }
+                });
+
+                const resultUrl = URL.createObjectURL(resultBlob);
+
+                fabric.Image.fromURL(resultUrl, function(newImg) {
+                    newImg.set({
+                        left: obj.left,
+                        top: obj.top,
+                        scaleX: obj.scaleX,
+                        scaleY: obj.scaleY,
+                        angle: obj.angle,
+                        flipX: obj.flipX,
+                        flipY: obj.flipY,
+                        originX: obj.originX,
+                        originY: obj.originY
+                    });
+                    
+                    canvas.add(newImg);
+                    canvas.remove(obj);
+                    canvas.setActiveObject(newImg);
+                    canvas.renderAll();
+                    
+                    saveHistory();
+                    markDirty();
+                    updateLayers();
+                    
+                    Swal.close();
+                    showToast("Arka Plan Başarıyla Silindi! ✨");
+                }, { crossOrigin: 'anonymous' });
+
+            } catch (error) {
+                console.error("AI BG Removal Error:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Hata',
+                    text: error.message || "Arka plan silinirken bir teknik sorun oluştu.",
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#ff4444'
+                });
+            }
+        }
 
 		async function saveToCloud(options = {}) {
             const opts = {

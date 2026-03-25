@@ -45,10 +45,10 @@ namespace Kartist.Middleware
             string csp = "default-src 'self'; " +
                 "script-src " + scriptSrc + "; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
-                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
-                "img-src 'self' data: https: http: https://pollinations.ai https://*.pollinations.ai https://images.unsplash.com https://source.unsplash.com; " +
-                "connect-src " + connectSrc + "; " +
-                "frame-src 'self' https://open.spotify.com https://www.youtube.com https://accounts.google.com https://www.google.com https://maps.google.com; " +
+                "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "                    + "connect-src 'self' https://kartistt.com.tr wss://kartistt.com.tr https://*.pollinations.ai https://*.unsplash.com https://*.bing.com https://cdn.jsdelivr.net https://unpkg.com; " +
+                    "img-src 'self' data: blob: https://* http://*; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://unpkg.com https://cdn.jsdelivr.net https://code.jquery.com; " +
+                    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                 "media-src 'self' data: https:; " +
                 "object-src 'none'; " +
                 "base-uri 'self'; " +

@@ -1,0 +1,1 @@
+ = Invoke-WebRequest -Uri 'https://www.bing.com/images/search?q=paris+eiffel+tower+aesthetic+digital+art+background+scenery+landscape+empty+background+wallpaper+no+humans+-person+-woman+-girl+-human+-boy+-man+-portrait&form=HDRSC2&first=1' -UseBasicParsing; .Content | Select-String -Pattern 'murl&quot;:&quot;(.*?)&quot;' | Select-Object -First 2
