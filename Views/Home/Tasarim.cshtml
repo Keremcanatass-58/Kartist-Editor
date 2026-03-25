@@ -1107,6 +1107,56 @@
             }
         }
 
+        /* --- PREMIUM AI BUTTON & TOOLBAR --- */
+        .ai-primary-btn {
+            background: linear-gradient(135deg, rgba(198, 255, 0, 0.15), rgba(34, 211, 238, 0.15));
+            border: 1px solid rgba(198, 255, 0, 0.5);
+            color: #c6ff00;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(8px);
+            text-shadow: 0 0 8px rgba(198, 255, 0, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            height: 28px;
+        }
+
+        .ai-primary-btn:hover {
+            transform: scale(1.05) translateY(-1px);
+            border-color: #c6ff00;
+            background: linear-gradient(135deg, rgba(198, 255, 0, 0.25), rgba(34, 211, 238, 0.25));
+            box-shadow: 0 0 20px rgba(198, 255, 0, 0.5);
+            color: #fff;
+        }
+
+        .ai-primary-btn i {
+            font-size: 0.9rem;
+            filter: drop-shadow(0 0 3px #c6ff00);
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @@keyframes pulseGlow {
+            0% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.8; transform: scale(1); }
+        }
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         .btn-share {
             background: #ff7ae6;
             border: none;
@@ -2627,8 +2677,9 @@
                     </div>
 
                     <div class="divider ai-only" style="display:none;"></div>
-                    <button class="icon-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Arka Planı Sil" style="display:none; color: #c6ff00; border: 1px solid #c6ff00; background: rgba(198, 255, 0, 0.1); width: auto; padding: 0 10px; font-size: 0.75rem;">
-                        <i class="fa-solid fa-wand-sparkles"></i> <span style="margin-left:5px; font-weight:800;">ARKA PLANI SİL</span>
+                    <button class="ai-primary-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Yapay Zeka Arka Plan Silici" style="display:none;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Arka Planı Sil</span>
                     </button>
                 </div>
             </div>
@@ -3777,10 +3828,17 @@
             });
 
             try {
-                const removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
+                // Modül yükleme kontrolü ve bekleme mantığı
+                let removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
                 
                 if (!removeFn) {
-                    throw new Error("AI Modülü henüz yüklenemedi. Lütfen sayfayı yenileyip 5 sn bekleyin.");
+                    // Kütüphane henüz tam initialize olmamış olabilir, 2 sn daha bekle ve dene
+                    await new Promise(r => setTimeout(r, 2000));
+                    removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
+                }
+
+                if (!removeFn) {
+                    throw new Error("AI Modülü şu an hazır değil. Lütfen internet bağlantınızı kontrol edip 5 saniye sonra tekrar deneyin.");
                 }
 
                 const dataUrl = obj.toDataURL({ format: 'png' });
