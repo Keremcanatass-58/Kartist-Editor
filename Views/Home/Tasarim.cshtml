@@ -2671,13 +2671,17 @@
                     <button class="icon-btn" onclick="copy()" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
                     <button class="icon-btn" onclick="paste()" title="Yapıştır"><i class="fa-solid fa-paste"></i></button>
 
+                    <button class="ai-primary-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Yapay Zeka Arka Plan Silici" style="display:none;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Arka Planı Sil</span>
+                    </button>
+
                     <div class="btn-group" style="border:1px solid rgba(255,68,68,0.3);">
                         <button class="icon-btn danger" onclick="deleteObject()" title="Seçileni Sil (Delete)"><i class="fa-solid fa-trash"></i></button>
                         <button class="icon-btn danger" onclick="clearCanvas()" title="Tuvali Temizle"><i class="fa-solid fa-broom"></i></button>
                     </div>
 
                     <div class="divider ai-only" style="display:none;"></div>
-                    <button class="ai-primary-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Yapay Zeka Arka Plan Silici" style="display:none;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <span>Arka Planı Sil</span>
                     </button>
@@ -3828,17 +3832,20 @@
             });
 
             try {
-                // Modül yükleme kontrolü ve bekleme mantığı
-                let removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
+                // Kapsamlı Modül Kancası (Namespace Fallback)
+                let removeFn = window.imglyRemoveBackground || 
+                               (window.imglyBackgroundRemoval ? (window.imglyBackgroundRemoval.removeBackground || window.imglyBackgroundRemoval) : null) ||
+                               (window.imgly && window.imgly.backgroundRemoval ? window.imgly.backgroundRemoval.removeBackground : null);
                 
                 if (!removeFn) {
-                    // Kütüphane henüz tam initialize olmamış olabilir, 2 sn daha bekle ve dene
                     await new Promise(r => setTimeout(r, 2000));
-                    removeFn = window.imglyRemoveBackground || (window.imglyBackgroundRemoval ? window.imglyBackgroundRemoval.removeBackground : null);
+                    removeFn = window.imglyRemoveBackground || 
+                               (window.imglyBackgroundRemoval ? (window.imglyBackgroundRemoval.removeBackground || window.imglyBackgroundRemoval) : null) ||
+                               (window.imgly && window.imgly.backgroundRemoval ? window.imgly.backgroundRemoval.removeBackground : null);
                 }
 
                 if (!removeFn) {
-                    throw new Error("AI Modülü şu an hazır değil. Lütfen internet bağlantınızı kontrol edip 5 saniye sonra tekrar deneyin.");
+                    throw new Error("AI Modülü şu an initialize ediliyor. Lütfen 3 saniye sonra tekrar deneyin.");
                 }
 
                 const dataUrl = obj.toDataURL({ format: 'png' });
