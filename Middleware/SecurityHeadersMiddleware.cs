@@ -1,4 +1,4 @@
-namespace Kartist.Middleware
+﻿namespace Kartist.Middleware
 {
     public class SecurityHeadersMiddleware
     {
@@ -13,7 +13,7 @@ namespace Kartist.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Statik dosyalar iÃ§in CSP header eklemeye gerek yok (performans)
+            // Statik dosyalar iÃƒÂ§in CSP header eklemeye gerek yok (performans)
             var path = context.Request.Path.Value ?? "";
             if (path.StartsWith("/lib/") || path.StartsWith("/css/") || path.StartsWith("/js/") ||
                 path.StartsWith("/uploads/") || path.StartsWith("/img/") || path.EndsWith(".ico"))
@@ -43,7 +43,7 @@ namespace Kartist.Middleware
             }
 
             string csp = "default-src 'self'; " +
-                "frame-src 'self' https://open.spotify.com https://www.youtube.com; " +
+                "frame-src 'self' https://open.spotify.com https://www.youtube.com https://www.google.com https://www.google.com.tr https://www.openstreetmap.org; " +
                 "script-src " + scriptSrc + "; " +
                 "worker-src 'self' blob: https://cdn.jsdelivr.net https://unpkg.com; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
@@ -70,6 +70,7 @@ namespace Kartist.Middleware
         }
     }
 }
+
 
 
 
