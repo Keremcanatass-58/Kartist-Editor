@@ -41,7 +41,7 @@ RULES:
 - STYLE: {style}.
 - Output ONLY the prompt in English. End with ', high quality, aesthetic, no text, no letters'.";
 
-            return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.7, cancellationToken);
+            return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.7, null, cancellationToken);
         }
 
         public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, string history = null, CancellationToken cancellationToken = default)
