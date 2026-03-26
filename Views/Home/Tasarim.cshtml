@@ -4370,17 +4370,27 @@
                     removeTypingIndicator();
                     appendChatMessage("bot", "Yapay zeka gorselini senin icin hazirliyorum...", true);
 
-                    const fdTranslate = new FormData();
-                    fdTranslate.append("prompt", prompt);
-                    fdTranslate.append("style", activeAiStyle);
-                    fdTranslate.append("__RequestVerificationToken", getCSRFToken());
+                    let finalEngPrompt = "";
+                    
+                    // If AI already provided a specific localized prompt in the JSON, use it!
+                    if (aiData.revisedImagePrompt) {
+                        finalEngPrompt = aiData.revisedImagePrompt;
+                        console.log("Using unified image prompt from AI JSON:", finalEngPrompt);
+                    } else {
+                        // Fallback to separate translation if not in JSON
+                        const fdTranslate = new FormData();
+                        fdTranslate.append("prompt", prompt);
+                        fdTranslate.append("style", activeAiStyle);
+                        fdTranslate.append("__RequestVerificationToken", getCSRFToken());
 
-                    const translateResp = await fetch("/Home/TranslateImagePrompt", { method: "POST", body: fdTranslate });
-                    const translateData = await translateResp.json();
-                    let finalEngPrompt = `${prompt}, ${activeAiStyle} background, high quality, no text, no letters`;
-
-                    if (translateData && translateData.success && translateData.prompt) {
-                        finalEngPrompt = translateData.prompt;
+                        const translateResp = await fetch("/Home/TranslateImagePrompt", { method: "POST", body: fdTranslate });
+                        const translateData = await translateResp.json();
+                        
+                        if (translateData && translateData.success && translateData.prompt) {
+                            finalEngPrompt = translateData.prompt;
+                        } else {
+                            finalEngPrompt = `${prompt}, ${activeAiStyle} background, high quality, no text, no letters`;
+                        }
                     }
 
                     const fdProxy = new FormData();
