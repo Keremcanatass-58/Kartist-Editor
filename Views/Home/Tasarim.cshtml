@@ -5099,14 +5099,24 @@
             btn.disabled = true;
 
             try {
-                if (typeof window.imglyRemoveBackground === 'undefined') {
-                    throw new Error('Arka plan silme motoru yuklenemedi. Islemi dondurunuz.');
+                // Try multiple possible global names exposed by different UMD builds
+                var removeFn = window.imglyRemoveBackground || 
+                               (window.imgly && window.imgly.backgroundRemoval) ||
+                               (window.backgroundRemoval);
+
+                if (typeof removeFn !== 'function') {
+                    console.error("BG removal function not found. window keys:", Object.keys(window).filter(k => k.includes('imgly') || k.includes('background')));
+                    throw new Error('Arka plan silme motoru yuklenemedi. Lutfen sayfayi yenileyin.');
                 }
 
                 let srcUrl = o.getSrc();
                 showToast('Yapay zeka calisiyor, lutfen bekleyin... Sihir gerceklesiyor! 🪄', 'info');
 
-                const imageBlob = await window.imglyRemoveBackground(srcUrl);
+                const imageBlob = await removeFn(srcUrl, {
+                    publicPath: 'https://static.remove.bg/remove-bg-web/2e87c2b/', // Fallback assets path
+                    debug: false
+                });
+                
                 const url = URL.createObjectURL(imageBlob);
 
                 fabric.Image.fromURL(url, function(newImg) {
@@ -5131,13 +5141,13 @@
                 });
             } catch (err) {
                 console.error('Arka plan silme hatasi:', err);
-                showToast('Arka plan silinirken bir hata olustu.', 'error');
+                showToast('Arka plan silinirken bir hata olustu: ' + err.message, 'error');
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@@1.4.3/dist/browser/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@@1.5.5/dist/browser/index.umd.js"></script>
 </body>
 </html>
 
