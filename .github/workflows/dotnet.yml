@@ -71,6 +71,10 @@ jobs:
         test -n "$DEPLOY_URL"
         test -n "$DEPLOY_SECRET"
 
+    - name: Remove server-owned web.config from artifact
+      shell: bash
+      run: rm -f ./publish/web.config
+
     - name: Zip published files
       run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
 
@@ -120,5 +124,6 @@ jobs:
           sleep 10
         done
         exit 1
+
 
 
