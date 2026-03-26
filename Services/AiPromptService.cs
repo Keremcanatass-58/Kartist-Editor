@@ -73,13 +73,15 @@ Sadece gecerli JSON dondur:
   ""yaziFontu"": ""Poppins, Montserrat, Roboto, Playfair Display veya Inter arasindan sec"",
   ""layoutStyle"": ""minimal, bold, elegant veya modern"",
   ""anaMetin"": ""Kullanıcının isteğine uygun 1-3 cumlelik etkileyici ve samimi bir mesaj"",
-  ""emojiler"": [""🌸"", ""🎂"", ""✨""]
+  ""emojiler"": [""🌸"", ""🎂"", ""✨""],
+  ""revisedImagePrompt"": ""Arka plan için İngilizce, detaylı ve sanatsal bir görsel oluşturma komutu (Örn: 'a soft aesthetic background of white daisies with yellow centers, bokeh effect, pastel colors')""
 }}
 
 Kurallar:
-- RENK PALETİ: Kullanıcının isteğine GÖRSEL olarak uyum sağla. (Örn: Papatya -> Beyaz, Sarı, Yeşil; Aşk -> Kırmızı, Pembe; Modern -> Siyah, Gold/Neon).
-- EMOJİLER: İsteğe tam uyumlu 3 emoji seç.
-- Sadece JSON ver. Asla baska aciklama ekleme!
+- TUTARLILIK: 'tema', 'renkPaleti' ve 'revisedImagePrompt' birbiriyle tam uyumlu olmalı. (Papatya istenirse renkler sarı-beyaz, resim komutu da papatya olmalı).
+- TASARIM KALİTESİ: Modern, şık ve 'wow' dedirtecek bir estetik kurgula.
+- RESİM KOMUTU (revisedImagePrompt): Sadece İNGİLİZCE olmalı. Görselde yazı/metin/rakam OLMAMALI ('no text, no letters' kuralına uy).
+- Sadece JSON dondur. Asla aciklama ekleme!
 - Dil: Kullanici hangi dilde yazarsa o dilde cevap ver.";
 
             return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, cancellationToken);
