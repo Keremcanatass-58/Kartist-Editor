@@ -89,6 +89,7 @@ jobs:
         curl -X POST -f -S -s \
           -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
           -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
+          -F "secret=kartist-deploy-secret-2026" \
           -F "file=@release.zip" \
           "$DEPLOY_URL"
 
@@ -103,3 +104,4 @@ jobs:
       run: |
         TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
         curl -f -S -s "$TARGET_URL/api/health/ai" > /dev/null
+
