@@ -1479,6 +1479,104 @@
             z-index: 100;
         }
 
+        /* AI Magic Button */
+        .ai-magic-btn {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            font-family: inherit;
+        }
+        .ai-magic-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+        }
+        .ai-magic-btn:active {
+            transform: scale(0.95);
+        }
+        .ai-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #f43f5e;
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* AI Processing Overlay */
+        .ai-processing-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            border-radius: 8px;
+        }
+        .ai-processing-content {
+            text-align: center;
+            color: white;
+        }
+        .magic-wand-anim {
+            font-size: 3.5rem;
+            color: #fbbf24;
+            animation: magicWand 1.5s infinite;
+            filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.8));
+            margin-bottom: 20px;
+        }
+        @keyframes magicWand {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-20deg) scale(1.1); filter: drop-shadow(0 0 25px #fbbf24); }
+            50% { transform: rotate(15deg) scale(1.2); }
+            75% { transform: rotate(-10deg) scale(1.1); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        .ai-progress-bar {
+            width: 240px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            margin: 25px auto 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .ai-progress-inner {
+            height: 100%;
+            width: 40%;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            border-radius: 3px;
+            animation: aiProgress 2s infinite ease-in-out;
+            position: absolute;
+        }
+        @keyframes aiProgress {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
+
+        /* Responsive Fix for Overlay */
+        @@media (max-width: 900px) {
+            .ai-processing-overlay {
+                border-radius: 0;
+            }
+        }
+
         /* ============================================
            MOBİL RESPONSIVE STİLLER (max-width: 900px)
            ============================================ */
@@ -2671,9 +2769,10 @@
                     <button class="icon-btn" onclick="copy()" title="Kopyala"><i class="fa-regular fa-copy"></i></button>
                     <button class="icon-btn" onclick="paste()" title="Yapıştır"><i class="fa-solid fa-paste"></i></button>
 
-                    <button class="ai-primary-btn ai-tool" id="btnRemoveBg" onclick="removeBackground()" title="Yapay Zeka Arka Plan Silici" style="display:none;">
+                    <button class="ai-magic-btn" id="btnRemoveBg" onclick="removeBackground()" title="AI Arka Plan Silici" style="display:none;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                         <span>Arka Planı Sil</span>
+                        <div class="ai-badge">AI MAGIC</div>
                     </button>
 
                     <div class="btn-group" style="border:1px solid rgba(255,68,68,0.3);">
@@ -2685,8 +2784,22 @@
                 </div>
             </div>
 
-            <div class="canvas-container-shadow">
+            <div class="canvas-container-shadow" style="position:relative;">
                 <canvas id="c" width="700" height="500"></canvas>
+                
+                <!-- AI Processing Overlay -->
+                <div id="aiProcessingOverlay" class="ai-processing-overlay" style="display:none;">
+                    <div class="ai-processing-content">
+                        <div class="magic-wand-container">
+                            <i class="fa-solid fa-wand-magic-sparkles magic-wand-anim"></i>
+                        </div>
+                        <h3>AI SİHRİ GERÇEKLEŞİYOR...</h3>
+                        <p>Arka plan saniyeler içinde temizleniyor.</p>
+                        <div class="ai-progress-bar">
+                            <div class="ai-progress-inner"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -5134,9 +5247,12 @@
             }
 
             var btn = document.getElementById('btnRemoveBg');
+            var overlay = document.getElementById('aiProcessingOverlay');
             var originalHtml = btn.innerHTML;
+            
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Isleniyor...';
             btn.disabled = true;
+            if (overlay) overlay.style.display = 'flex';
 
             try {
                 // Try multiple possible global names exposed by different UMD builds
@@ -5175,15 +5291,16 @@
                     canvas.setActiveObject(newImg);
                     canvas.requestRenderAll();
                     
-                    showToast('Arka plan basariyla silindi! 🪄', 'success');
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                });
-            } catch (err) {
-                console.error('Arka plan silme hatasi:', err);
-                showToast('Arka plan silinirken bir hata olustu: ' + err.message, 'error');
+                showToast('Arka plan silindi! 🪄', 'success');
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
+                if (overlay) overlay.style.display = 'none';
+            } catch (err) {
+                console.error('Arka plan silme hatasi:', err);
+                showToast('Hata: ' + err.message, 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                if (overlay) overlay.style.display = 'none';
             }
         }
     </script>
