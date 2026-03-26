@@ -80,11 +80,14 @@ namespace Kartist.Services
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("KartistAI/1.0");
 
-                var encodedPrompt = Uri.EscapeDataString(prompt);
+                var enhancedPrompt = EnhancePrompt(prompt);
+                var encodedPrompt = Uri.EscapeDataString(enhancedPrompt);
                 var seed = Random.Shared.Next(100000, 999999);
                 var model = string.IsNullOrWhiteSpace(_options.PollinationsModel) ? "flux" : _options.PollinationsModel;
                 var endpoint = _options.PollinationsEndpoint?.TrimEnd('/') ?? "https://image.pollinations.ai/prompt";
-                var imageUrl = $"{endpoint}/{encodedPrompt}?width=1024&height=1024&seed={seed}&nologo=true&model={Uri.EscapeDataString(model)}";
+                
+                // Using 'prompt' as a query parameter is often more reliable for long complex prompts
+                var imageUrl = $"{endpoint}/?prompt={encodedPrompt}&width=1024&height=1024&seed={seed}&nologo=true&model={Uri.EscapeDataString(model)}";
 
                 using var response = await client.GetAsync(imageUrl, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -317,6 +320,24 @@ namespace Kartist.Services
                     Error = ex.Message
                 };
             }
+        }
+
+        private string EnhancePrompt(string prompt)
+        {
+            var p = prompt.ToLowerInvariant();
+            var sb = new StringBuilder(prompt);
+
+            // HARD OVERRIDES: If the user mentioned these, FORCE the designer prompts
+            if (p.Contains("papatya")) sb.Append(", exquisite detailed white daisies with yellow centers, macro floral background, soft morning light, hyper-realistic, 8k, professional card background");
+            if (p.Contains("gül") || p.Contains("rose")) sb.Append(", elegant dark red roses, velvet petals, romantic aesthetic background, scattered petals, cinematic lighting");
+            if (p.Contains("doğum günü") || p.Contains("birthday")) sb.Append(", festive celebration background, soft bokeh balloons, glitter, elegant card layout style");
+            if (p.Contains("anne") || p.Contains("mother")) sb.Append(", warm heartwarming aesthetic, soft pastel colors, mother and child thematic background, gentle textures");
+            if (p.Contains("aşk") || p.Contains("love") || p.Contains("sevgili")) sb.Append(", romantic heart-shaped bokeh, glowing warm red and pink tones, soft aesthetic patterns");
+
+            // Quality Boosters
+            sb.Append(", professional graphic design, masterpiece, high resolution, soft lighting, award-winning illustration style, card background");
+
+            return sb.ToString();
         }
 
         private HttpClient BuildClient()
