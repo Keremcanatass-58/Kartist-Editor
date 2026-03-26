@@ -793,7 +793,7 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null)
+        public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null, string history = null)
         {
             try
             {
@@ -813,7 +813,7 @@ namespace Kartist.Controllers
                     return Json(new { success = false, data = "Prompt cok uzun (max 1000 karakter)." });
                 }
 
-                var aiResponse = await _aiPromptService.GenerateDesignSuggestionJsonAsync(prompt, kategori, style, HttpContext.RequestAborted);
+                var aiResponse = await _aiPromptService.GenerateDesignSuggestionJsonAsync(prompt, kategori, style, history, HttpContext.RequestAborted);
                 if (string.IsNullOrWhiteSpace(aiResponse))
                 {
                     return Json(new { success = true, data = BuildFallbackDesignJson(prompt, kategori) });

@@ -44,7 +44,7 @@ RULES:
             return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.7, cancellationToken);
         }
 
-        public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, CancellationToken cancellationToken = default)
+        public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, string history = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(prompt) || !HasConfiguredProvider())
             {
@@ -70,10 +70,10 @@ Kurallar:
 - Sadece JSON.
 - Dil: Kullanıcı dili.";
 
-            return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, cancellationToken);
+            return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, history, cancellationToken);
         }
 
-        private async Task<string> SendChatRequestAsync(string systemPrompt, string userPrompt, int maxTokens, double temperature, CancellationToken cancellationToken)
+        private async Task<string> SendChatRequestAsync(string systemPrompt, string userPrompt, int maxTokens, double temperature, string historyJson = null, CancellationToken cancellationToken = default)
         {
             var endpoint = GetProviderEndpoint();
             var apiKey = GetProviderApiKey();
@@ -91,14 +91,34 @@ Kurallar:
 
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
+            var messages = new List<object>
+            {
+                new { role = "system", content = systemPrompt }
+            };
+
+            // Parse and add history if present
+            if (!string.IsNullOrWhiteSpace(historyJson))
+            {
+                try
+                {
+                    var history = JsonSerializer.Deserialize<List<JsonElement>>(historyJson);
+                    if (history != null)
+                    {
+                        foreach (var msg in history)
+                        {
+                            messages.Add(msg);
+                        }
+                    }
+                }
+                catch { /* Ignore malformed history */ }
+            }
+
+            messages.Add(new { role = "user", content = userPrompt });
+
             var payload = new
             {
                 model,
-                messages = new[]
-                {
-                    new { role = "system", content = systemPrompt },
-                    new { role = "user", content = userPrompt }
-                },
+                messages,
                 temperature,
                 max_tokens = maxTokens
             };

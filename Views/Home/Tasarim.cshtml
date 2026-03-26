@@ -4188,6 +4188,8 @@
             if (ind) ind.remove();
         }
 
+        const aiChatHistory = [];
+
         async function generateMagicDesign() {
             const promptEl = document.getElementById("aiMagicPrompt");
             const btnEl = document.getElementById("aiMagicBtn");
@@ -4209,6 +4211,7 @@
             fd.append("prompt", prompt);
             fd.append("kategori", "genel");
             fd.append("style", activeAiStyle);
+            fd.append("history", JSON.ReferenceError ? "" : JSON.stringify(aiChatHistory));
             fd.append("__RequestVerificationToken", getCSRFToken());
 
             let apiResponse;
@@ -4260,6 +4263,13 @@
                 // Metadata logging for debugging
                 console.log("Parsed AI Data:", aiData);
                 
+                // Track history for context persistence
+                aiChatHistory.push({ role: "user", content: prompt });
+                aiChatHistory.push({ role: "assistant", content: JSON.stringify(aiData) });
+                
+                // Limit history to last 6 messages to keep it fast
+                if (aiChatHistory.length > 6) aiChatHistory.splice(0, 2);
+
                 if (!aiData.renkPaleti || !aiData.tema || !aiData.anaMetin) {
                     console.warn("AI Data is partially missing fields, applying defaults.");
                 }
