@@ -2682,9 +2682,6 @@
                     </div>
 
                     <div class="divider ai-only" style="display:none;"></div>
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Arka Planı Sil</span>
-                    </button>
                 </div>
             </div>
 
@@ -2844,7 +2841,6 @@
     <script src='https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js'></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@1.5.5/dist/index.js"></script>
 
     <script>
         // CANVAS FIX: Browser compatibility for Fabric.js
@@ -3902,16 +3898,7 @@
             return await new Promise(resolve => resizeCanvas.toBlob(result => resolve(result || blob), 'image/png', 0.92));
         }
 
-        const backgroundRemovalService = {
-            async getClientRemover() {
-                let removeFn = window.imglyRemoveBackground ||
-                    (window.imglyBackgroundRemoval ? (window.imglyBackgroundRemoval.removeBackground || window.imglyBackgroundRemoval) : null) ||
-                    (window.imgly && window.imgly.backgroundRemoval ? window.imgly.backgroundRemoval.removeBackground : null);
-
-                if (!removeFn) {
-                    try {
-                        await import('https://cdn.jsdelivr.net/npm/@@imgly/background-removal@1.5.5/+esm');
-                    } catch (importError) {
+        catch (importError) {
                         console.warn('IMG.LY module import failed:', importError);
                     }
 
@@ -5202,9 +5189,68 @@
                 }
             }
         });
+            // ==========================================
+        // AKILLI ARKA PLAN SILICI (@@imgly)
+        // ==========================================
+        async function removeBackground() {
+            var o = canvas.getActiveObject();
+            if (!o || o.type !== 'image') {
+                showToast('Lutfen arka planini silmek istediginiz resmi secin.', 'warning');
+                return;
+            }
+
+            var btn = document.getElementById('btnRemoveBg');
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Isleniyor...';
+            btn.disabled = true;
+
+            try {
+                if (typeof window.imglyRemoveBackground === 'undefined') {
+                    throw new Error('Arka plan silme motoru yuklenemedi. Islemi dondurunuz.');
+                }
+
+                let srcUrl = o.getSrc();
+                showToast('Yapay zeka calisiyor, lutfen bekleyin... Sihir gerceklesiyor! 🪄', 'info');
+
+                const imageBlob = await window.imglyRemoveBackground(srcUrl);
+                const url = URL.createObjectURL(imageBlob);
+
+                fabric.Image.fromURL(url, function(newImg) {
+                    newImg.set({
+                        left: o.left,
+                        top: o.top,
+                        scaleX: o.scaleX,
+                        scaleY: o.scaleY,
+                        angle: o.angle,
+                        flipX: o.flipX,
+                        flipY: o.flipY
+                    });
+
+                    canvas.remove(o);
+                    canvas.add(newImg);
+                    canvas.setActiveObject(newImg);
+                    canvas.requestRenderAll();
+                    
+                    showToast('Arka plan basariyla silindi! 🪄', 'success');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+            } catch (err) {
+                console.error('Arka plan silme hatasi:', err);
+                showToast('Arka plan silinirken bir hata olustu.', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@@1.4.3/dist/browser/umd/index.min.js"></script>
 </body>
 </html>
+
+
+
+
+
 
 
 

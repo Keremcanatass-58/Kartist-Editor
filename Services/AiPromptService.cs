@@ -34,18 +34,18 @@ namespace Kartist.Services
                 return null;
             }
 
-            var systemPrompt = $@"You are an expert background scenery analyst.
-Your task is to extract ONLY the visual landscape/scenery keywords from the user's request for a background search.
-The style is: {style ?? "Standard"}.
+            var systemPrompt = $@"You are an expert AI image generation prompt engineer.
+Your task is to translate and enhance the user's request into a highly descriptive English prompt for an image generator.
+The requested visual style is: {style ?? "Standard"}.
 
 STRICT RULES:
-1. IGNORE names of people, recipients, and the fact that it is a card or design.
-2. FOCUS ONLY on the location, elements, and aesthetic.
-3. OUTPUT ONLY 3-6 English keywords separated by commas.
-4. MANDATORY: Include 'no text' and 'no letters' as the last keywords.
-5. NO HUMANS, NO FACES. Scenery only.";
+1. Translate the user's request faithfully to English.
+2. Keep ALL specific subjects mentioned by the user (people, faces, characters, objects, etc.). Do NOT remove them.
+3. Add relevant lighting, aesthetic, and photographic/artistic keywords to match the requested style.
+4. Output ONLY the final English prompt. No conversational text.
+5. MANDATORY: End the prompt with the exact keywords: ', no text, no watermark, no letters'.";
 
-            return await SendChatRequestAsync(systemPrompt, $"User Request: {prompt}", 60, 0.3, cancellationToken);
+            return await SendChatRequestAsync(systemPrompt, $"User Request: {prompt}", 200, 0.7, cancellationToken);
         }
 
         public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, CancellationToken cancellationToken = default)
