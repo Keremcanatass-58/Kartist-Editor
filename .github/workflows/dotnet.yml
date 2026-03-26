@@ -71,9 +71,24 @@ jobs:
         test -n "$DEPLOY_URL"
         test -n "$DEPLOY_SECRET"
 
-    - name: Remove server-owned web.config from artifact
+    - name: Remove server-owned config files from artifact
       shell: bash
-      run: rm -f ./publish/web.config
+      run: |
+        rm -f ./publish/web.config
+        rm -f ./publish/appsettings.Development.json
+        rm -f ./publish/appsettings.Production.json
+
+    - name: Inject production config from secret
+      shell: bash
+      env:
+        APPSETTINGS_JSON: ${{ secrets.APPSETTINGS_PRODUCTION_JSON }}
+      run: |
+        if [ -n "$APPSETTINGS_JSON" ]; then
+          echo "$APPSETTINGS_JSON" > ./publish/appsettings.json
+          echo "Production appsettings injected from secret."
+        else
+          echo "No APPSETTINGS_PRODUCTION_JSON secret found. Keeping default appsettings.json."
+        fi
 
     - name: Zip published files
       run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
