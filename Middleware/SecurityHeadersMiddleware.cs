@@ -43,6 +43,7 @@ namespace Kartist.Middleware
             }
 
             string csp = "default-src 'self'; " +
+                "frame-src 'self' https://open.spotify.com https://www.youtube.com; " +
                 "script-src " + scriptSrc + "; " +
                 "worker-src 'self' blob: https://cdn.jsdelivr.net https://unpkg.com; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
@@ -69,6 +70,8 @@ namespace Kartist.Middleware
         }
     }
 }
+
+
 
 
 

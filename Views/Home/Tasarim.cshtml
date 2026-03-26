@@ -3440,6 +3440,20 @@
             }
         }, true);
 
+        function normalizeColorForInput(value, fallback = '#000000') {
+            if (!value || typeof value !== 'string') return fallback;
+            const color = value.trim().toLowerCase();
+            if (/^#[0-9a-f]{6}$/.test(color)) return color;
+            if (/^#[0-9a-f]{3}$/.test(color)) {
+                return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+            }
+            const rgbMatch = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbMatch) {
+                const toHex = part => Math.max(0, Math.min(255, Number(part || 0))).toString(16).padStart(2, '0');
+                return `#${toHex(rgbMatch[1])}${toHex(rgbMatch[2])}${toHex(rgbMatch[3])}`;
+            }
+            return fallback;
+        }
 
         function updateUI() {
             var o = canvas.getActiveObject();
@@ -5177,6 +5191,7 @@
     </script>
 </body>
 </html>
+
 
 
 
