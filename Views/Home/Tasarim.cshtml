@@ -3332,6 +3332,8 @@
 						i.scaleToWidth(200);
 						canvas.add(i);
 						canvas.setActiveObject(i);
+						canvas.requestRenderAll();
+						showToast('Resim yüklendi. Arka plan silmek için butona basın.', 'info');
 					});
 				};
 				r.readAsDataURL(e.target.files[0]);
@@ -5239,43 +5241,166 @@
             // ==========================================
         // AKILLI ARKA PLAN SILICI (@@imgly)
         // ==========================================
-        async function removeBackground() {
-            var o = canvas.getActiveObject();
-            if (!o || o.type !== 'image') {
-                showToast('Lutfen arka planini silmek istediginiz resmi secin.', 'warning');
-                return;
+        function isBackgroundRemovalLoaded() {
+            return typeof window.imglyRemoveBackground === 'function' ||
+                   (window.imgly && typeof window.imgly.backgroundRemoval === 'function') ||
+                   typeof window.backgroundRemoval === 'function';
+        }
+
+        function loadBackgroundRemovalLib() {
+            if (isBackgroundRemovalLoaded()) {
+                return Promise.resolve();
+            }
+            if (window._imglyBgRemoveLoading) {
+                return window._imglyBgRemoveLoading;
             }
 
-            var btn = document.getElementById('btnRemoveBg');
-            var overlay = document.getElementById('aiProcessingOverlay');
-            var originalHtml = btn.innerHTML;
-            
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Isleniyor...';
-            btn.disabled = true;
-            if (overlay) overlay.style.display = 'flex';
+            var openSourceUrls = [
+                'https://cdn.jsdelivr.net/npm/@@imgly/background-removal@1.5.5/dist/browser/index.umd.js',
+                'https://unpkg.com/@@imgly/background-removal@1.5.5/dist/browser/index.umd.js'
+            ];
 
-            try {
-                // Try multiple possible global names exposed by different UMD builds
-                var removeFn = window.imglyRemoveBackground || 
-                               (window.imgly && window.imgly.backgroundRemoval) ||
-                               (window.backgroundRemoval);
+            window._imglyBgRemoveLoading = new Promise((resolve, reject) => {
+                function tryLoad(index) {
+                    if (index >= openSourceUrls.length) {
+                        reject(new Error('Arka plan silme motoru yüklenemedi. İnternet bağlantısını veya CDN erişimini kontrol edin.'));
+                        return;
+                    }
 
-                if (typeof removeFn !== 'function') {
-                    console.error("BG removal function not found. window keys:", Object.keys(window).filter(k => k.includes('imgly') || k.includes('background')));
-                    throw new Error('Arka plan silme motoru yuklenemedi. Lutfen sayfayi yenileyin.');
+                    var script = document.createElement('script');
+                    script.src = openSourceUrls[index];
+                    script.async = true;
+                    script.onload = function () {
+                        if (isBackgroundRemovalLoaded()) {
+                            resolve();
+                        } else {
+                            tryLoad(index + 1);
+                        }
+                    };
+                    script.onerror = function () {
+                        tryLoad(index + 1);
+                    };
+                    document.head.appendChild(script);
                 }
 
-                let srcUrl = o.getSrc();
-                showToast('Yapay zeka calisiyor, lutfen bekleyin... Sihir gerceklesiyor! 🪄', 'info');
+                tryLoad(0);
+            });
 
-                const imageBlob = await removeFn(srcUrl, {
-                    publicPath: 'https://static.remove.bg/remove-bg-web/2e87c2b/', // Fallback assets path
-                    debug: false
-                });
-                
-                const url = URL.createObjectURL(imageBlob);
+            return window._imglyBgRemoveLoading;
+        }
 
-                fabric.Image.fromURL(url, function(newImg) {
+        function getPixelDistance(r1, g1, b1, r2, g2, b2) {
+            var dr = r1 - r2;
+            var dg = g1 - g2;
+            var db = b1 - b2;
+            return Math.sqrt(dr * dr + dg * dg + db * db);
+        }
+
+        function estimateBackgroundColor(imageData, width, height) {
+            var data = imageData.data;
+            var step = Math.max(1, Math.floor(Math.min(width, height) / 20));
+            var sum = { r: 0, g: 0, b: 0, count: 0 };
+
+            function sample(x, y) {
+                var i = (y * width + x) * 4;
+                sum.r += data[i];
+                sum.g += data[i + 1];
+                sum.b += data[i + 2];
+                sum.count += 1;
+            }
+
+            for (var x = 0; x < width; x += step) {
+                sample(x, 0);
+                sample(x, height - 1);
+            }
+
+            for (var y = 0; y < height; y += step) {
+                sample(0, y);
+                sample(width - 1, y);
+            }
+
+            if (sum.count === 0) return { r: 255, g: 255, b: 255 };
+            return { r: sum.r / sum.count, g: sum.g / sum.count, b: sum.b / sum.count };
+        }
+
+        function loadImage(url) {
+            return new Promise(function (resolve, reject) {
+                var img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function () { resolve(img); };
+                img.onerror = function () { reject(new Error('Gorsel yuklenemedi: ' + url)); };
+                img.src = url;
+            });
+        }
+
+        async function removeBackgroundLocal(srcUrl) {
+            var img = await loadImage(srcUrl);
+            var width = img.naturalWidth || img.width;
+            var height = img.naturalHeight || img.height;
+            if (!width || !height) {
+                throw new Error('Gorsel olcusu bulunamadi.');
+            }
+
+            var tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width = width;
+            tmpCanvas.height = height;
+            var tmpCtx = tmpCanvas.getContext('2d', { alpha: true });
+            tmpCtx.drawImage(img, 0, 0, width, height);
+
+            var imageData = tmpCtx.getImageData(0, 0, width, height);
+            var bg = estimateBackgroundColor(imageData, width, height);
+            var threshold = 50;
+
+            for (var y = 0; y < height; y++) {
+                for (var x = 0; x < width; x++) {
+                    var idx = (y * width + x) * 4;
+                    var r = imageData.data[idx];
+                    var g = imageData.data[idx + 1];
+                    var b = imageData.data[idx + 2];
+                    var dist = getPixelDistance(r, g, b, bg.r, bg.g, bg.b);
+                    if (dist <= threshold) {
+                        imageData.data[idx + 3] = 0;
+                    }
+                }
+            }
+
+            tmpCtx.putImageData(imageData, 0, 0);
+            return tmpCanvas.toDataURL('image/png');
+        }
+
+        async function removeBackgroundFromObject(o) {
+            if (!o || o.type !== 'image') {
+                throw new Error('Lutfen arka planini silmek istediginiz resmi secin.');
+            }
+
+            var removeFn = window.imglyRemoveBackground ||
+                           (window.imgly && window.imgly.backgroundRemoval) ||
+                           window.backgroundRemoval;
+
+            var srcUrl = o.getSrc();
+            if (!srcUrl) {
+                throw new Error('Gorselin kaynagi bulunamadi.');
+            }
+
+            var processedUrl = null;
+            if (typeof removeFn === 'function') {
+                try {
+                    var imageBlob = await removeFn(srcUrl, {
+                        publicPath: 'https://static.remove.bg/remove-bg-web/2e87c2b/',
+                        debug: false
+                    });
+                    processedUrl = URL.createObjectURL(imageBlob);
+                } catch (err) {
+                    console.warn('Harici arka plan silme basarisiz, yerel mod araniyor:', err);
+                }
+            }
+
+            if (!processedUrl) {
+                processedUrl = await removeBackgroundLocal(srcUrl);
+            }
+
+            return new Promise(function (resolve, reject) {
+                fabric.Image.fromURL(processedUrl, function (newImg) {
                     newImg.set({
                         left: o.left,
                         top: o.top,
@@ -5290,22 +5415,47 @@
                     canvas.add(newImg);
                     canvas.setActiveObject(newImg);
                     canvas.requestRenderAll();
-                    
-                    showToast('Arka plan silindi! 🪄', 'success');
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                    if (overlay) overlay.style.display = 'none';
-                });
+
+                    if (processedUrl.startsWith('blob:')) {
+                        URL.revokeObjectURL(processedUrl);
+                    }
+                    resolve(newImg);
+                }, { crossOrigin: 'anonymous' });
+            });
+        }
+
+        async function removeBackground() {
+            var o = canvas.getActiveObject();
+            var btn = document.getElementById('btnRemoveBg');
+            var overlay = document.getElementById('aiProcessingOverlay');
+            var originalHtml = btn ? btn.innerHTML : '';
+
+            if (!o || o.type !== 'image') {
+                showToast('Lutfen arka planini silmek istediginiz resmi secin.', 'warning');
+                return;
+            }
+
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Isleniyor...';
+                btn.disabled = true;
+            }
+            if (overlay) overlay.style.display = 'flex';
+
+            try {
+                await removeBackgroundFromObject(o);
+                showToast('Arka plan silindi! 🪄', 'success');
             } catch (err) {
                 console.error('Arka plan silme hatasi:', err);
                 showToast('Hata: ' + err.message, 'error');
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
                 if (overlay) overlay.style.display = 'none';
             }
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@@imgly/background-removal@@1.5.5/dist/browser/index.umd.js"></script>
 </body>
 </html>
 
