@@ -93,15 +93,32 @@ jobs:
           -F "file=@release.zip" \
           "$DEPLOY_URL"
 
+    - name: Wait for app warmup
+      shell: bash
+      run: sleep 20
+
     - name: Health check home page
       shell: bash
       run: |
         TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
-        curl -f -S -s "$TARGET_URL" > /dev/null
+        for i in 1 2 3 4 5; do
+          if curl -f -S -s "$TARGET_URL" > /dev/null; then
+            exit 0
+          fi
+          sleep 10
+        done
+        exit 1
 
     - name: Health check AI endpoint
       shell: bash
       run: |
         TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
-        curl -f -S -s "$TARGET_URL/api/health/ai" > /dev/null
+        for i in 1 2 3 4 5; do
+          if curl -f -S -s "$TARGET_URL/api/health/ai" > /dev/null; then
+            exit 0
+          fi
+          sleep 10
+        done
+        exit 1
+
 
