@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
 	  <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DefaultItemExcludes>$(DefaultItemExcludes);manual-publish**\**;manual-publish-sc**\**;deploy-selfcontained**\**;**/publish/**</DefaultItemExcludes>
+    <EnableDefaultContentItems>true</EnableDefaultContentItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +19,7 @@
   </ItemGroup>
 
 </Project>
+
 
 
 
