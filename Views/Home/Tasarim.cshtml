@@ -1,4 +1,4 @@
-﻿@model Kartist.Models.Sablon
+@model Kartist.Models.Sablon
 @{
     Layout = null;
 }
@@ -3898,114 +3898,8 @@
             return await new Promise(resolve => resizeCanvas.toBlob(result => resolve(result || blob), 'image/png', 0.92));
         }
 
-        catch (importError) {
-                        console.warn('IMG.LY module import failed:', importError);
-                    }
 
-                    await new Promise(r => setTimeout(r, 1500));
-                    removeFn = window.imglyRemoveBackground ||
-                        (window.imglyBackgroundRemoval ? (window.imglyBackgroundRemoval.removeBackground || window.imglyBackgroundRemoval) : null) ||
-                        (window.imgly && window.imgly.backgroundRemoval ? window.imgly.backgroundRemoval.removeBackground : null);
-                }
 
-                return removeFn;
-            },
-            async tryServerFallback(blob) {
-                const fd = new FormData();
-                fd.append('image', blob, 'selection.png');
-                const csrf = getCSRFToken();
-                if (csrf) fd.append('__RequestVerificationToken', csrf);
-
-                const resp = await fetch('/Home/RemoveImageBackground', { method: 'POST', body: fd });
-                return await resp.json();
-            }
-        };
-
-        async function removeBackground() {
-            const obj = canvas.getActiveObject();
-            if (!obj || obj.type !== 'image') {
-                showToast('Lutfen bir resim secin');
-                return;
-            }
-
-            Swal.fire({
-                title: 'Yapay Zeka Calisiyor...',
-                text: 'Arka plan dekupe ediliyor. Buyuk gorseller otomatik optimize edilir.',
-                allowOutsideClick: false,
-                background: '#1e1e1e',
-                color: '#fff',
-                didOpen: () => { Swal.showLoading(); }
-            });
-
-            try {
-                const removeFn = await backgroundRemovalService.getClientRemover();
-                if (!removeFn) {
-                    throw new Error('AI modulu henuz hazir degil. Lutfen birkac saniye sonra tekrar deneyin.');
-                }
-
-                const dataUrl = obj.toDataURL({ format: 'png' });
-                const originalBlob = await fetch(dataUrl).then(res => res.blob());
-                const optimizedBlob = await resizeBlobForBackgroundRemoval(originalBlob);
-                const resultBlob = await removeFn(optimizedBlob, {
-                    debug: false,
-                    model: 'medium',
-                    progress: (step, percent) => {
-                        console.log(`BG Removal: ${step} ${Math.round(percent * 100)}%`);
-                    }
-                });
-
-                const resultUrl = URL.createObjectURL(resultBlob);
-                const newImg = await addImageLayerFromDataUrl(resultUrl, {
-                    left: obj.left,
-                    top: obj.top,
-                    selectable: true,
-                    evented: true,
-                    opacity: obj.opacity ?? 1
-                });
-
-                newImg.set({
-                    scaleX: obj.scaleX,
-                    scaleY: obj.scaleY,
-                    angle: obj.angle,
-                    flipX: obj.flipX,
-                    flipY: obj.flipY,
-                    originX: obj.originX,
-                    originY: obj.originY
-                });
-
-                canvas.remove(obj);
-                canvas.setActiveObject(newImg);
-                canvas.renderAll();
-                saveHistory();
-                markDirty();
-                updateLayers();
-                Swal.close();
-                showToast('Arka plan basariyla silindi');
-            } catch (error) {
-                console.error('AI BG Removal Error:', error);
-
-                let fallbackMessage = error.message || 'Arka plan silinirken bir teknik sorun olustu.';
-                try {
-                    const dataUrl = obj.toDataURL({ format: 'png' });
-                    const originalBlob = dataUrlToBlob(dataUrl);
-                    const fallbackResult = await backgroundRemovalService.tryServerFallback(originalBlob);
-                    if (fallbackResult && fallbackResult.message) {
-                        fallbackMessage = `${fallbackMessage} ${fallbackResult.message}`;
-                    }
-                } catch (fallbackError) {
-                    console.warn('Server fallback unavailable:', fallbackError);
-                }
-
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Hata',
-                    text: fallbackMessage,
-                    background: '#1e1e1e',
-                    color: '#fff',
-                    confirmButtonColor: '#ff4444'
-                });
-            }
-        }
 		async function saveToCloud(options = {}) {
             const opts = {
                 silent: false,          // true ise toast daha az
