@@ -193,13 +193,17 @@ app.MapPost("/api/deploy", async (HttpContext context, IOptions<DeploymentOption
     var batContent = @"@echo off
 setlocal
 set WEB_CONFIG_BACKUP=web.config.bak
+set APPSETTINGS_BACKUP=appsettings.json.bak
 if exist web.config copy /y web.config %WEB_CONFIG_BACKUP% > nul
+if exist appsettings.json copy /y appsettings.json %APPSETTINGS_BACKUP% > nul
 timeout /t 2 /nobreak > nul
 copy /y offline_template.htm app_offline.htm > nul
 timeout /t 3 /nobreak > nul
 tar -xf release.zip
 if exist %WEB_CONFIG_BACKUP% copy /y %WEB_CONFIG_BACKUP% web.config > nul
 if exist %WEB_CONFIG_BACKUP% del %WEB_CONFIG_BACKUP%
+if exist %APPSETTINGS_BACKUP% copy /y %APPSETTINGS_BACKUP% appsettings.json > nul
+if exist %APPSETTINGS_BACKUP% del %APPSETTINGS_BACKUP%
 del app_offline.htm
 del offline_template.htm
 del release.zip
