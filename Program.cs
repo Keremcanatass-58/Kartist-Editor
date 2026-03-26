@@ -191,14 +191,20 @@ app.MapPost("/api/deploy", async (HttpContext context, IOptions<DeploymentOption
 
     var batPath = Path.Combine(Directory.GetCurrentDirectory(), "update.bat");
     var batContent = @"@echo off
+setlocal
+set WEB_CONFIG_BACKUP=web.config.bak
+if exist web.config copy /y web.config %WEB_CONFIG_BACKUP% > nul
 timeout /t 2 /nobreak > nul
 copy /y offline_template.htm app_offline.htm > nul
 timeout /t 3 /nobreak > nul
 tar -xf release.zip
+if exist %WEB_CONFIG_BACKUP% copy /y %WEB_CONFIG_BACKUP% web.config > nul
+if exist %WEB_CONFIG_BACKUP% del %WEB_CONFIG_BACKUP%
 del app_offline.htm
 del offline_template.htm
 del release.zip
-del update.bat";
+del update.bat
+endlocal";
 
     await File.WriteAllTextAsync(batPath, batContent);
     var process = new System.Diagnostics.Process
@@ -330,3 +336,4 @@ END
         Console.WriteLine($"DB schema check failed: {ex.Message}");
     }
 }
+
