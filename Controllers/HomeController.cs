@@ -1,5 +1,7 @@
 using Dapper;
 using Kartist.Models;
+using Kartist.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Net;
@@ -12,10 +14,14 @@ namespace Kartist.Controllers
     {
         private readonly string _baglantiCumlesi;
         private readonly IConfiguration _configuration;
+        private readonly IAiPromptService _aiPromptService;
+        private readonly IAiImageService _aiImageService;
 
-        public HomeController(IConfiguration config)
+        public HomeController(IConfiguration config, IAiPromptService aiPromptService, IAiImageService aiImageService)
         {
             _configuration = config;
+            _aiPromptService = aiPromptService;
+            _aiImageService = aiImageService;
             _baglantiCumlesi = config.GetConnectionString("DefaultConnection");
         }
 
@@ -685,62 +691,31 @@ namespace Kartist.Controllers
         {
             try
             {
-                var aiConfig = ResolveAiConfig();
-                if (string.IsNullOrWhiteSpace(aiConfig.ApiKey))
+                if (string.IsNullOrWhiteSpace(prompt))
                 {
-                    return Json(new { success = false, data = "API anahtarı bulunamadı." });
+                    return Json(new { success = false, prompt = string.Empty, data = "Prompt bos olamaz." });
                 }
 
-                string systemPrompt = $@"You are an expert background scenery analyst. 
-Your task is to extract ONLY the visual landscape/scenery keywords from the user's request for a background search.
-The style is: {style ?? "Standard"}.
-
-STRICT RULES:
-1. IGNORE names of people (e.g., Mustafa, Ayşe), recipients (e.g., annem için), and the fact that it's a 'card' or 'design'.
-2. FOCUS ONLY on the location (e.g., Paris, Eiffel Tower), elements (e.g., sunset, roses, sea), and aesthetic.
-3. OUTPUT ONLY 3-6 English keywords separated by commas.
-4. MANDATORY: Include 'no text' and 'no letters' as the last keywords to avoid text in images.
-5. NO HUMANS, NO FACES. Scenery only.
-
-Example: 'Mustafa için parisli doğum günü kartı' -> 'Paris, Eiffel Tower, city view, sunset, no text, no letters'
-Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light, nature, no text, no letters'";
-
-                var messages = new[]
+                prompt = Helpers.InputValidator.SanitizeHtml(prompt).Trim();
+                if (!Helpers.InputValidator.IsValidPrompt(prompt))
                 {
-                    new { role = "system", content = systemPrompt },
-                    new { role = "user", content = $"User Request: {prompt}" }
-                };
+                    return Json(new { success = false, prompt = string.Empty, data = "Gecersiz karakterler tespit edildi." });
+                }
 
-                var requestBody = new
+                var rewritten = await _aiPromptService.RewriteImagePromptAsync(prompt, style, HttpContext.RequestAborted);
+                var fallbackPrompt = BuildImagePromptFallback(prompt, style);
+
+                return Json(new
                 {
-                    model = "llama-3.3-70b-versatile",
-                    messages = messages,
-                    temperature = 0.3,
-                    max_tokens = 60
-                };
-
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", aiConfig.ApiKey);
-                var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(requestBody), System.Text.Encoding.UTF8, "application/json");
-                
-                var response = await client.PostAsync("https://api.groq.com/openai/v1/chat/completions", jsonContent);
-
-                if (!response.IsSuccessStatusCode)
-                    return Json(new { success = false, data = "Groq servisi yanıt vermedi." });
-
-                var responseString = await response.Content.ReadAsStringAsync();
-                using var jsonDoc = System.Text.Json.JsonDocument.Parse(responseString);
-                var content = jsonDoc.RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString()?.Trim().Replace("\"", "");
-
-                return Json(new { success = true, prompt = content });
+                    success = true,
+                    prompt = string.IsNullOrWhiteSpace(rewritten) ? fallbackPrompt : rewritten,
+                    provider = _aiPromptService.GetConfiguredProviderName(),
+                    usedFallback = string.IsNullOrWhiteSpace(rewritten)
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, data = ex.Message });
+                return Json(new { success = false, prompt = string.Empty, data = ex.Message });
             }
         }
 
@@ -768,123 +743,54 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
             try
             {
                 if (string.IsNullOrWhiteSpace(prompt))
-                    return Json(new { success = false, error = "Prompt boş olamaz." });
-
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(25);
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36");
-
-                string encodedPrompt = Uri.EscapeDataString(prompt);
-                int seed = new Random().Next(100000, 999999);
-
-                // LAYER 1: Pollinations.ai (True AI) - Using the more direct redirect endpoint
-                string aiUrl = $"https://image.pollinations.ai/prompt/{encodedPrompt}?width=1024&height=1024&seed={seed}&nologo=true&model=flux";
-                
-                try
                 {
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("image/*"));
-                    var response = await client.GetAsync(aiUrl);
-                    if (response.IsSuccessStatusCode && response.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
-                    {
-                        byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();
-                        string contentType = response.Content.Headers.ContentType.MediaType;
-                        var base64 = Convert.ToBase64String(imageBytes);
-                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "pollinations" });
-                    }
+                    return Json(new { success = false, error = "Prompt bos olamaz.", provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
                 }
-                catch { /* Fail to Layer 2 */ }
 
-                // LAYER 2: Unsplash Dynamic Fallback (Relevant Photo)
-                // This ensures we get a REAL image matching the prompt (e.g. Red Car) even if AI fails.
-                try
+                prompt = Helpers.InputValidator.SanitizeHtml(prompt).Trim();
+                if (!Helpers.InputValidator.IsValidPrompt(prompt))
                 {
-                    // Temiz anahtar kelimeler oluştur
-                    string keywords = prompt.ToLower().Replace("a ", "").Replace("an ", "").Replace("the ", "");
-                    string unsplashUrl = $"https://source.unsplash.com/featured/1280x720/?{Uri.EscapeDataString(keywords)}";
-                    
-                    var unsplashResp = await client.GetAsync(unsplashUrl);
-                    if (unsplashResp.IsSuccessStatusCode && unsplashResp.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
-                    {
-                        byte[] imageBytes = await unsplashResp.Content.ReadAsByteArrayAsync();
-                        string contentType = unsplashResp.Content.Headers.ContentType.MediaType;
-                        var base64 = Convert.ToBase64String(imageBytes);
-                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "unsplash" });
-                    }
+                    return Json(new { success = false, error = "Gecersiz karakterler tespit edildi.", provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
                 }
-                catch { /* Fail to Layer 3 */ }
 
-                // LAYER 3: Bing Photo Archive (Scraper Fallback)
-                try
+                if (prompt.Length > 600)
                 {
-                    string queryText = prompt.Replace(",", " ") + " wallpaper hd -text -font";
-                    string query = Uri.EscapeDataString(queryText);
-                    var searchUrl = $"https://www.bing.com/images/search?q={query}&qft=+filterui:imagesize-large&form=IRFLTR&first=1";
-                    
-                    var searchResp = await client.GetAsync(searchUrl);
-                    if (searchResp.IsSuccessStatusCode)
-                    {
-                        var html = await searchResp.Content.ReadAsStringAsync();
-                        var matches = System.Text.RegularExpressions.Regex.Matches(html, @"(https?://[^\s""']+?\.(jpg|jpeg|png|webp))");
-                        
-                        int count = 0;
-                        foreach (System.Text.RegularExpressions.Match match in matches)
-                        {
-                            if (count >= 10) break;
-                            string imgUrl = match.Value;
-                            if (imgUrl.Contains("bing.com") || imgUrl.Contains("mm.bing.net") || imgUrl.Contains("gstatic.com")) continue;
-
-                            try
-                            {
-                                var imgResp = await client.GetAsync(imgUrl);
-                                if (imgResp.IsSuccessStatusCode && imgResp.Content.Headers.ContentType?.MediaType?.StartsWith("image/") == true)
-                                {
-                                    byte[] imageBytes = await imgResp.Content.ReadAsByteArrayAsync();
-                                    string contentType = imgResp.Content.Headers.ContentType.MediaType;
-                                    var base64 = Convert.ToBase64String(imageBytes);
-                                    return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "bing" });
-                                }
-                            }
-                            catch { }
-                            count++;
-                        }
-                    }
+                    return Json(new { success = false, error = "Prompt cok uzun (max 600 karakter).", provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
                 }
-                catch { }
 
-                // LAYER 4: Absolute Safety Net (Verified High-Res Stocks)
-                // If everything else fails, we provide a guaranteed high-quality experience.
-                try
+                var result = await _aiImageService.GenerateImageAsync(prompt, HttpContext.RequestAborted);
+                return Json(new
                 {
-                    string safeUrl = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop"; // Nature
-                    string lowPrompt = prompt.ToLower();
-                    if (lowPrompt.Contains("city") || lowPrompt.Contains("şehir") || lowPrompt.Contains("istanbul"))
-                        safeUrl = "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1920&auto=format&fit=crop";
-                    else if (lowPrompt.Contains("car") || lowPrompt.Contains("araba"))
-                        safeUrl = "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1920&auto=format&fit=crop";
-                    else if (lowPrompt.Contains("abstract") || lowPrompt.Contains("art") || lowPrompt.Contains("çizim"))
-                        safeUrl = "https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1920&auto=format&fit=crop";
-
-                    var finalResp = await client.GetAsync(safeUrl);
-                    if (finalResp.IsSuccessStatusCode)
-                    {
-                        byte[] imageBytes = await finalResp.Content.ReadAsByteArrayAsync();
-                        string contentType = finalResp.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
-                        var base64 = Convert.ToBase64String(imageBytes);
-                        return Json(new { success = true, dataUrl = $"data:{contentType};base64,{base64}", source = "safeguard" });
-                    }
-                }
-                catch { }
-
-                return Json(new { success = false, error = "Tasarım motoru şu an çok yoğun. Lütfen 10 sn sonra tekrar deneyin." });
+                    success = result.Success,
+                    dataUrl = result.DataUrl,
+                    provider = result.Provider,
+                    revisedPrompt = result.RevisedPrompt,
+                    warnings = result.Warnings,
+                    error = result.Error
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Sistem Hatası: " + ex.Message });
+                return Json(new { success = false, error = "Sistem Hatasi: " + ex.Message, provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
             }
         }
 
+        [HttpPost]
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public IActionResult RemoveImageBackground(IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+            {
+                return Json(new { success = false, fallbackAvailable = false, message = "Islenecek bir gorsel bulunamadi." });
+            }
 
+            return Json(new
+            {
+                success = false,
+                fallbackAvailable = false,
+                message = "Server-side background removal is not configured for this deployment yet. Client-side removal will continue to be used."
+            });
+        }
 
         [HttpPost]
         public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null)
@@ -893,7 +799,7 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
             {
                 if (string.IsNullOrWhiteSpace(prompt))
                 {
-                    return Json(new { success = false, data = "Prompt boş olamaz." });
+                    return Json(new { success = false, data = "Prompt bos olamaz." });
                 }
 
                 prompt = Helpers.InputValidator.SanitizeHtml(prompt);
@@ -904,87 +810,22 @@ Example: 'Sevgilime orman manzaralı kart' -> 'Forest, pine trees, morning light
 
                 if (prompt.Length > 1000)
                 {
-                    return Json(new { success = false, data = "Prompt çok uzun (max 1000 karakter)." });
+                    return Json(new { success = false, data = "Prompt cok uzun (max 1000 karakter)." });
                 }
 
-                var aiConfig = ResolveAiConfig();
-                if (string.IsNullOrWhiteSpace(aiConfig.ApiKey))
+                var aiResponse = await _aiPromptService.GenerateDesignSuggestionJsonAsync(prompt, kategori, style, HttpContext.RequestAborted);
+                if (string.IsNullOrWhiteSpace(aiResponse))
                 {
                     return Json(new { success = true, data = BuildFallbackDesignJson(prompt, kategori) });
                 }
 
-                using var client = new HttpClient();
-                client.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", aiConfig.ApiKey);
-
-                var systemPrompt = $@"
-Sen, Kartist platformu için çalışan, dünyaca ünlü bir Baş Tasarımcısın.
-Görevin, kullanıcının girdiği prompt'a göre duygusal derinliği olan, estetik ve kişiselleştirilmiş bir kart tasarımı kurgulamak.
-
-Kullanıcı şu görsel tarzı tercih etti: {style ?? "Modern"}. 
-Bu tarza uygun font ve renk seçimleri yap (Örn: Cyberpunk için neon pembe-mavi, Anime için canlı sıcak tonlar).
-
-Kullanıcı bir isim (örn: Mustafa) veya bir ilişki (örn: sevgilim) belirtirse, bunu mutlaka anaMetin veya tema içerisinde doğal ve samimi bir şekilde kullan. 
-
-Sadece geçerli JSON döndür:
-{{
-  ""renkPaleti"": [""#ArkaPlan"", ""#Panel"", ""#Vurgu""],
-  ""tema"": ""Vurucu bir başlık"",
-  ""yaziFontu"": ""Poppins, Montserrat, Roboto, Playfair Display veya Inter arasından seç"",
-  ""layoutStyle"": ""'minimal', 'bold', 'elegant' veya 'modern' arasından seç"",
-  ""anaMetin"": ""Kullanıcının duygusuna tercüman olan, 1-3 cümlelik etkileyici mesaj"",
-  ""emojiler"": [""??"", ""??"", ""??""]
-}}
-
-Kurallar:
-- Sadece JSON ver.
-- Renk paleti 3 renkli olsun: 1. Baskın Koyu/Zemin, 2. Panel/Kart, 3. Yazı/Vurgu.
-- Dil: Kullanıcı hangi dilde yazarsa o dilde cevap ver.
-";
-
-                var payload = new
-                {
-                    model = aiConfig.Model,
-                    messages = new[]
-                    {
-                        new { role = "system", content = systemPrompt },
-                        new { role = "user", content = $"İstek: {prompt}" }
-                    },
-                    temperature = 0.7
-                };
-
-                var jsonContent = new StringContent(
-                    System.Text.Json.JsonSerializer.Serialize(payload),
-                    System.Text.Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await client.PostAsync(aiConfig.Endpoint, jsonContent);
-                var responseString = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var err = responseString?.ToLowerInvariant() ?? "";
-                    if (response.StatusCode == HttpStatusCode.Unauthorized || err.Contains("invalid api key") || err.Contains("invalid_api_key"))
-                    {
-                        return Json(new { success = true, data = BuildFallbackDesignJson(prompt, kategori) });
-                    }
-
-                    return Json(new
-                    {
-                        success = false,
-                        data = "API Hatası: " + response.StatusCode
-                    });
-                }
-
-                return Json(new { success = true, data = responseString });
+                return Json(new { success = true, data = aiResponse });
             }
             catch
             {
-                return Json(new { success = true, data = BuildFallbackDesignJson(prompt ?? "", kategori) });
+                return Json(new { success = true, data = BuildFallbackDesignJson(prompt ?? string.Empty, kategori) });
             }
         }
-
 
         public IActionResult Koleksiyon()
         {
@@ -1076,37 +917,16 @@ Kurallar:
                 }
             }
         }
-        private (string ApiKey, string Endpoint, string Model) ResolveAiConfig()
+        private string BuildImagePromptFallback(string prompt, string style)
         {
-            string openAiKey =
-                _configuration["OpenAI:ApiKey"] ??
-                _configuration["OPENAI_API_KEY"] ??
-                Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-
-            string groqKey =
-                _configuration["Groq:ApiKey"] ??
-                _configuration["GROQ_API_KEY"] ??
-                Environment.GetEnvironmentVariable("GROQ_API_KEY");
-
-            if (!string.IsNullOrWhiteSpace(groqKey))
+            var cleaned = RemoveTurkishChars(prompt ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(cleaned))
             {
-                return (
-                    groqKey.Trim(),
-                    _configuration["Groq:Endpoint"] ?? "https://api.groq.com/openai/v1/chat/completions",
-                    _configuration["Groq:Model"] ?? "llama-3.3-70b-versatile"
-                );
+                cleaned = "abstract background";
             }
 
-            if (!string.IsNullOrWhiteSpace(openAiKey))
-            {
-                return (
-                    openAiKey.Trim(),
-                    _configuration["OpenAI:Endpoint"] ?? "https://api.openai.com/v1/chat/completions",
-                    _configuration["OpenAI:Model"] ?? "gpt-4o-mini"
-                );
-            }
-
-            return ("", "", "");
+            var stylePart = string.IsNullOrWhiteSpace(style) ? "modern" : style.Trim();
+            return $"{cleaned}, {stylePart} background, high quality, no text, no letters";
         }
 
         private string BuildFallbackDesignJson(string prompt, string kategori)
@@ -1213,6 +1033,8 @@ Kurallar:
         }
     }
 }
+
+
 
 
 

@@ -1,9 +1,19 @@
+using System.Security.Cryptography;
+using System.Text;
+using Kartist.Models;
 using Kartist.Middleware;
+using Kartist.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
+builder.Services.Configure<DeploymentOptions>(builder.Configuration.GetSection("Deployment"));
+builder.Services.AddScoped<IAiPromptService, AiPromptService>();
+builder.Services.AddScoped<IAiImageService, AiImageService>();
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -22,6 +32,7 @@ if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>(
 {
     mvc.AddRazorRuntimeCompilation();
 }
+
 builder.Services.AddSignalR();
 builder.Services.AddSession();
 
@@ -107,15 +118,36 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context) =>
+app.MapGet("/api/health/ai", (IOptions<AiOptions> aiOptions, IAiPromptService promptService, IAiImageService imageService) =>
 {
+    var options = aiOptions.Value;
+    return Results.Ok(new
+    {
+        success = true,
+        imageProvider = imageService.GetConfiguredProviderName(),
+        promptProvider = promptService.GetConfiguredProviderName(),
+        promptReady = promptService.HasConfiguredProvider(),
+        timeoutSeconds = options.TimeoutSeconds,
+        maxImageBytes = options.MaxImageBytes
+    });
+});
+
+app.MapPost("/api/deploy", async (HttpContext context, IOptions<DeploymentOptions> deploymentOptions) =>
+{
+    if (!IsDeployRequestAuthorized(context, deploymentOptions.Value))
+    {
+        return Results.Unauthorized();
+    }
+
     var form = await context.Request.ReadFormAsync();
-    if (form["secret"] != "kartist-deploy-secret-2026") return Microsoft.AspNetCore.Http.Results.Unauthorized();
-    if (form.Files.Count == 0) return Microsoft.AspNetCore.Http.Results.BadRequest("No file");
+    if (form.Files.Count == 0)
+    {
+        return Results.BadRequest("No file");
+    }
 
     var file = form.Files[0];
-    var zipPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "release.zip");
-    using (var stream = new System.IO.FileStream(zipPath, System.IO.FileMode.Create))
+    var zipPath = Path.Combine(Directory.GetCurrentDirectory(), "release.zip");
+    await using (var stream = new FileStream(zipPath, FileMode.Create))
     {
         await file.CopyToAsync(stream);
     }
@@ -125,7 +157,7 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Sistem Güncelleniyor | Kartist</title>
+    <title>Sistem Guncelleniyor | Kartist</title>
     <link href='https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;800&display=swap' rel='stylesheet'>
     <style>
         body { margin: 0; padding: 0; background-color: #050505; color: white; font-family: 'Space Grotesk', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; overflow: hidden; }
@@ -141,7 +173,7 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
     <script>
         setInterval(() => {
             fetch('/').then(response => {
-                if(response.ok) { window.location.reload(); }
+                if (response.ok) { window.location.reload(); }
             }).catch(() => {});
         }, 2000);
     </script>
@@ -149,15 +181,15 @@ app.MapPost("/api/deploy", async (Microsoft.AspNetCore.Http.HttpContext context)
 <body>
     <div class='logo-text'>KART<span>IST</span></div>
     <div class='spinner'></div>
-    <div class='title pulse'>Sistem Güncelleniyor</div>
-    <div class='subtitle'>Kartist'i yepyeni özelliklerle donatıyoruz. Lütfen sayfayı kapatmayın, güncelleme tamamlandığında sayfa otomatik olarak yenilenecektir.</div>
+    <div class='title pulse'>Sistem Guncelleniyor</div>
+    <div class='subtitle'>Kartist'i yepyeni ozelliklerle donatiyoruz. Lutfen sayfayi kapatmayin, guncelleme tamamlandiginda sayfa otomatik olarak yenilenecektir.</div>
 </body>
 </html>";
 
-    var templatePath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "offline_template.htm");
-    await System.IO.File.WriteAllTextAsync(templatePath, offlineHtml);
+    var templatePath = Path.Combine(Directory.GetCurrentDirectory(), "offline_template.htm");
+    await File.WriteAllTextAsync(templatePath, offlineHtml);
 
-    var batPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "update.bat");
+    var batPath = Path.Combine(Directory.GetCurrentDirectory(), "update.bat");
     var batContent = @"@echo off
 timeout /t 2 /nobreak > nul
 copy /y offline_template.htm app_offline.htm > nul
@@ -167,8 +199,8 @@ del app_offline.htm
 del offline_template.htm
 del release.zip
 del update.bat";
-                
-    await System.IO.File.WriteAllTextAsync(batPath, batContent);
+
+    await File.WriteAllTextAsync(batPath, batContent);
     var process = new System.Diagnostics.Process
     {
         StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -180,11 +212,51 @@ del update.bat";
             WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
         }
     };
+
     process.Start();
-    return Microsoft.AspNetCore.Http.Results.Ok("Deployment initiated successfully.");
+    return Results.Ok(new { success = true, message = "Deployment initiated successfully." });
 }).DisableAntiforgery();
 
 app.Run();
+
+static bool IsDeployRequestAuthorized(HttpContext context, DeploymentOptions options)
+{
+    if (string.IsNullOrWhiteSpace(options.Secret))
+    {
+        return false;
+    }
+
+    var timestamp = context.Request.Headers["X-Kartist-Timestamp"].ToString();
+    var signature = context.Request.Headers["X-Kartist-Signature"].ToString();
+    if (string.IsNullOrWhiteSpace(timestamp) || string.IsNullOrWhiteSpace(signature))
+    {
+        return false;
+    }
+
+    if (!long.TryParse(timestamp, out var unixSeconds))
+    {
+        return false;
+    }
+
+    var requestTime = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+    var age = (DateTimeOffset.UtcNow - requestTime).Duration();
+    if (age > TimeSpan.FromSeconds(Math.Max(60, options.SignatureToleranceSeconds)))
+    {
+        return false;
+    }
+
+    var expectedSignature = ComputeDeploySignature(options.Secret, timestamp);
+    var providedBytes = Encoding.UTF8.GetBytes(signature);
+    var expectedBytes = Encoding.UTF8.GetBytes(expectedSignature);
+    return providedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes);
+}
+
+static string ComputeDeploySignature(string secret, string timestamp)
+{
+    using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+    var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(timestamp));
+    return Convert.ToHexString(hash).ToLowerInvariant();
+}
 
 static void EnsureDatabaseSchema(string connectionString)
 {
@@ -258,8 +330,3 @@ END
         Console.WriteLine($"DB schema check failed: {ex.Message}");
     }
 }
-
-
-
-
-
