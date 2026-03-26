@@ -3449,7 +3449,7 @@
                 bar.classList.add('active');
 
                 // Renk & Opaklık
-                if (o.fill && typeof o.fill === 'string') document.getElementById('colorInput').value = o.fill;
+                if (o.fill && typeof o.fill === 'string') document.getElementById('colorInput').value = normalizeColorForInput(o.fill);
                 document.getElementById('opacitySlider').value = o.opacity || 1;
 
                 // Metin Kontrolleri
@@ -3881,6 +3881,12 @@
                     (window.imgly && window.imgly.backgroundRemoval ? window.imgly.backgroundRemoval.removeBackground : null);
 
                 if (!removeFn) {
+                    try {
+                        await import('https://cdn.jsdelivr.net/npm/@@imgly/background-removal@1.5.5/+esm');
+                    } catch (importError) {
+                        console.warn('IMG.LY module import failed:', importError);
+                    }
+
                     await new Promise(r => setTimeout(r, 1500));
                     removeFn = window.imglyRemoveBackground ||
                         (window.imglyBackgroundRemoval ? (window.imglyBackgroundRemoval.removeBackground || window.imglyBackgroundRemoval) : null) ||
@@ -3965,7 +3971,9 @@
 
                 let fallbackMessage = error.message || 'Arka plan silinirken bir teknik sorun olustu.';
                 try {
-                    const fallbackResult = await backgroundRemovalService.tryServerFallback(new Blob());
+                    const dataUrl = obj.toDataURL({ format: 'png' });
+                    const originalBlob = await fetch(dataUrl).then(res => res.blob());
+                    const fallbackResult = await backgroundRemovalService.tryServerFallback(originalBlob);
                     if (fallbackResult && fallbackResult.message) {
                         fallbackMessage = `${fallbackMessage} ${fallbackResult.message}`;
                     }
@@ -5169,6 +5177,10 @@
     </script>
 </body>
 </html>
+
+
+
+
 
 
 

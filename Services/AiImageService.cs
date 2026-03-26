@@ -45,11 +45,30 @@ namespace Kartist.Services
 
                 openAiResult.Warnings.Add("OpenAI image provider kullanilamadi, ucretsiz saglayiciya geri donuldu.");
                 var fallback = await TryGenerateWithPollinationsAsync(normalizedPrompt, cancellationToken);
-                fallback.Warnings.InsertRange(0, openAiResult.Warnings);
-                return fallback;
+                if (fallback.Success)
+                {
+                    fallback.Warnings.InsertRange(0, openAiResult.Warnings);
+                    return fallback;
+                }
+
+                var keywordFallback = await TryGenerateWithKeywordFallbackAsync(normalizedPrompt, cancellationToken);
+                keywordFallback.Warnings.InsertRange(0, openAiResult.Warnings);
+                return keywordFallback;
             }
 
-            return await TryGenerateWithPollinationsAsync(normalizedPrompt, cancellationToken);
+            var pollinationsResult = await TryGenerateWithPollinationsAsync(normalizedPrompt, cancellationToken);
+            if (pollinationsResult.Success)
+            {
+                return pollinationsResult;
+            }
+
+            var genericFallback = await TryGenerateWithKeywordFallbackAsync(normalizedPrompt, cancellationToken);
+            genericFallback.Warnings.InsertRange(0, pollinationsResult.Warnings);
+            if (!string.IsNullOrWhiteSpace(pollinationsResult.Error))
+            {
+                genericFallback.Warnings.Insert(0, pollinationsResult.Error);
+            }
+            return genericFallback;
         }
 
         private async Task<AiImageResponse> TryGenerateWithPollinationsAsync(string prompt, CancellationToken cancellationToken)
@@ -121,6 +140,24 @@ namespace Kartist.Services
                     Error = ex.Message
                 };
             }
+        }
+
+        private async Task<AiImageResponse> TryGenerateWithKeywordFallbackAsync(string prompt, CancellationToken cancellationToken)
+        {
+            var seed = Uri.EscapeDataString(prompt.ToLowerInvariant().Replace(' ', '-'));
+            var picsumUrl = $"https://picsum.photos/seed/{seed}/1024/1024";
+
+            var result = await TryFetchImageAsDataUrlAsync(picsumUrl, "Picsum", prompt, cancellationToken);
+            if (result.Success)
+            {
+                result.Warnings.Add("AI gorsel uretilemedigi icin ucretsiz genel fallback gorsel kullanildi.");
+                return result;
+            }
+
+            result.Error = string.IsNullOrWhiteSpace(result.Error)
+                ? "Gorsel olusturulamadi. Lutfen daha sonra tekrar deneyin."
+                : result.Error;
+            return result;
         }
 
         private async Task<AiImageResponse> TryGenerateWithOpenAiAsync(string prompt, CancellationToken cancellationToken)
@@ -211,6 +248,71 @@ namespace Kartist.Services
                 {
                     Success = false,
                     Provider = "OpenAI",
+                    RevisedPrompt = prompt,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        private async Task<AiImageResponse> TryFetchImageAsDataUrlAsync(string imageUrl, string provider, string prompt, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var client = BuildClient();
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("KartistAI/1.0");
+
+                using var response = await client.GetAsync(imageUrl, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = provider,
+                        RevisedPrompt = prompt,
+                        Error = $"{provider} fallback servisi yanit vermedi."
+                    };
+                }
+
+                var mediaType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
+                if (!mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = provider,
+                        RevisedPrompt = prompt,
+                        Error = $"{provider} gorsel formatinda veri dondurmedi."
+                    };
+                }
+
+                var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                if (bytes.Length == 0 || bytes.Length > _options.MaxImageBytes)
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = provider,
+                        RevisedPrompt = prompt,
+                        Error = $"{provider} gorsel boyutu uygun degil."
+                    };
+                }
+
+                return new AiImageResponse
+                {
+                    Success = true,
+                    Provider = provider,
+                    RevisedPrompt = prompt,
+                    DataUrl = $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Provider = provider,
                     RevisedPrompt = prompt,
                     Error = ex.Message
                 };
