@@ -4394,7 +4394,18 @@
                     }
 
                     const fdProxy = new FormData();
-                    fdProxy.append("prompt", finalEngPrompt.trim());
+                    let boostedPrompt = finalEngPrompt.trim();
+                    
+                    // KEYWORD BOOSTER: If user wants daisies, hearts, or specific themes, boost them manually
+                    if (prompt.toLowerCase().includes("papatya")) boostedPrompt += ", focus on white and yellow daisies, beautiful floral pattern, macro photography";
+                    if (prompt.toLowerCase().includes("anne")) boostedPrompt += ", heart warming, gentle colors, soft lighting";
+                    if (prompt.toLowerCase().includes("aşk") || prompt.toLowerCase().includes("sevgili")) boostedPrompt += ", romantic atmosphere, rose petals, hearts, warm lighting";
+                    
+                    // CACHE BUSTER: Add random seed
+                    const seed = Math.floor(Math.random() * 1000000);
+                    boostedPrompt += `, seed: ${seed}`;
+
+                    fdProxy.append("prompt", boostedPrompt);
                     fdProxy.append("__RequestVerificationToken", getCSRFToken());
 
                     const imgResp = await fetch("/Home/FetchAiImageBase64", { method: "POST", body: fdProxy });

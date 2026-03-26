@@ -34,18 +34,14 @@ namespace Kartist.Services
                 return null;
             }
 
-            var systemPrompt = $@"You are an elite AI image prompt specialist. 
-Your goal is to create a STUNNING visual background for a greeting card.
+            var systemPrompt = $@"You are a professional designer. Translate the user's request into a highly descriptive English image prompt for a greeting card background.
+RULES:
+- NO LANDSCAPES (No mountains, deserts, canyons).
+- FOCUS ON THE SUBJECT: If they ask for flowers (daisies, roses), the prompt must be about flowers.
+- STYLE: {style}.
+- Output ONLY the prompt in English. End with ', high quality, aesthetic, no text, no letters'.";
 
-STRICT GUIDELINES:
-1. NO GENERIC LANDSCAPES: Do NOT generate mountains, canyons, or forests unless the user specifically asks for them. 
-2. THEME-FIRST: If the user mentions an object (e.g., 'papatya'/daisy, 'balon'/balloon, 'kalp'/heart), that object MUST be the main visual element.
-3. CARD AESTHETIC: Focus on 'graphic design', 'aesthetic patterns', 'soft bokeh', and 'artistic compositions'.
-4. STYLE: Apply the '{style}' style with high artistic fidelity.
-5. TRANSLATION: User asked: '{prompt}'. Translate and enrich this into a professional prompt.
-6. NO TEXT: MANDATORY - Output ONLY the English prompt. End with: ', no text, no watermark, no letters'.";
-
-            return await SendChatRequestAsync(systemPrompt, $"Creative Request: {prompt}", 200, 0.7, cancellationToken);
+            return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.7, cancellationToken);
         }
 
         public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, CancellationToken cancellationToken = default)
@@ -56,27 +52,23 @@ STRICT GUIDELINES:
             }
 
             var systemPrompt = $@"
-Sen bir grafik tasarım dehasısın. Kullanıcıya 'VAY BE' dedirtecek bir kart tasarımı oluşturacaksın.
+Kullanıcı için estetik bir kart tasarımı kurgula. 
+NOT: Eğer kullanıcı çiçek, obje veya özel bir renk belirtirse mutlaka onu kullan. Alakasız manzara resimleri önerme.
 
-KRİTİK TALİMATLAR:
-1. GÖRSEL TUTARLILIK: Kullanıcı 'papatya' diyorsa, resim komutu mutlaka papatya içermeli, renkler sarı-beyaz-yeşil olmalı.
-2. ASLA MANZARA YAPMA: Doğum günü kartı için kanyon, dağ, taş gibi alakasız manzaralar ÖNERME. Onun yerine estetik desenler, ilgili objeler ve şık kompozisyonlar kullan.
-3. KİŞİSELLEŞTİRME: 'Anne', 'Sevgili', 'Arkadaş' gibi hitapları 'anaMetin' ve 'tema'da samimi bir dille kullan.
-
-Sadece geçerli JSON:
+JSON formatında cevap ver:
 {{
-  ""renkPaleti"": [""#ArkaPlan"", ""#Panel"", ""#Vurgu""],
-  ""tema"": ""Kullanıcı isteğine özel, vurucu başlık"",
-  ""yaziFontu"": ""Poppins, Montserrat veya Playfair Display"",
-  ""layoutStyle"": ""minimal, bold veya modern"",
-  ""anaMetin"": ""Duygusal ve etkileyici 1-3 cümle"",
-  ""emojiler"": [""emoji1"", ""emoji2"", ""emoji3""],
-  ""revisedImagePrompt"": ""Aesthetic background prompt in English (EX: 'soft aesthetic daisy field background, bokeh, pastel colors, high quality')""
+  ""renkPaleti"": [""#renk1"", ""#renk2"", ""#renk3""],
+  ""tema"": ""Kısa Başlık"",
+  ""yaziFontu"": ""Poppins veya Montserrat"",
+  ""layoutStyle"": ""modern"",
+  ""anaMetin"": ""Duygusal mesaj"",
+  ""emojiler"": [""😊"", ""🎉"", ""✨""],
+  ""revisedImagePrompt"": ""Arka plan için İngilizce detaylı prompt (Örn: 'aesthetic white daisy pattern background')""
 }}
 
 Kurallar:
-- Sadece JSON. Başka yazı ekleme.
-- Dil: Kullanıcı diliyle cevap ver.";
+- Sadece JSON.
+- Dil: Kullanıcı dili.";
 
             return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, cancellationToken);
         }
