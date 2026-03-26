@@ -40,10 +40,11 @@ The requested visual style is: {style ?? "Standard"}.
 
 STRICT RULES:
 1. Translate the user's request faithfully to English.
-2. Keep ALL specific subjects mentioned by the user (people, faces, characters, objects, etc.). Do NOT remove them.
-3. Add relevant lighting, aesthetic, and photographic/artistic keywords to match the requested style.
-4. Output ONLY the final English prompt. No conversational text.
-5. MANDATORY: End the prompt with the exact keywords: ', no text, no watermark, no letters'.";
+2. IMPORTANT: Keep ALL specific subjects mentioned by the user (people, faces, characters, specific flowers like papatya/daisies, objects, etc.). 
+3. If the user mentions a specific theme (e.g., 'birthday for mother with daisies'), the prompt MUST include 'birthday celebration', 'mother', and 'daisies' prominently.
+4. Add relevant lighting, aesthetic, and photographic/artistic keywords to match the requested style.
+5. Output ONLY the final English prompt. No conversational text.
+6. MANDATORY: End the prompt with the exact keywords: ', no text, no watermark, no letters'.";
 
             return await SendChatRequestAsync(systemPrompt, $"User Request: {prompt}", 200, 0.7, cancellationToken);
         }
@@ -56,8 +57,10 @@ STRICT RULES:
             }
 
             var systemPrompt = $@"
-Sen, Kartist platformu icin calisan, dunyaca unlu bir bas tasarimcisin.
-Gorevin, kullanicinin girdigi prompt'a gore duygusal derinligi olan, estetik ve kisilestirilmis bir kart tasarimi kurgulamak.
+Sen, Kartist platformu icin calisan, dunya capinda basarili bir grafik tasarimcisin. 
+Kullanicinin istegine gore estetik, duygusal ve KISISELLESTIRILMIS bir kart tasarimi kurgulayacaksin.
+
+ÖNEMLİ: Kullanıcının özel isteklerini (örneğin: 'annem için', 'papatyalı', 'balonlu', 'mavi temalı') MUTLAKA 'tema' ve 'anaMetin' alanlarına yansıt. 
 
 Kullanici su gorsel tarzi tercih etti: {style ?? "Modern"}.
 Kategori: {kategori ?? "Genel"}.
@@ -65,15 +68,15 @@ Kategori: {kategori ?? "Genel"}.
 Sadece gecerli JSON dondur:
 {{
   ""renkPaleti"": [""#ArkaPlan"", ""#Panel"", ""#Vurgu""],
-  ""tema"": ""Vurucu bir baslik"",
+  ""tema"": ""Vurucu ve kisisellestirilmis bir baslik (Örn: Canım Anneme, Papatya Bahçesi vb.)"",
   ""yaziFontu"": ""Poppins, Montserrat, Roboto, Playfair Display veya Inter arasindan sec"",
   ""layoutStyle"": ""minimal, bold, elegant veya modern"",
-  ""anaMetin"": ""1-3 cumlelik etkileyici mesaj"",
-  ""emojiler"": [""*"", ""*"", ""*""]
+  ""anaMetin"": ""Kullanıcının isteğine uygun 1-3 cumlelik etkileyici ve samimi bir mesaj"",
+  ""emojiler"": [""🌸"", ""🎂"", ""✨""]
 }}
 
 Kurallar:
-- Sadece JSON ver.
+- Sadece JSON ver. Asla baska aciklama ekleme!
 - Dil: Kullanici hangi dilde yazarsa o dilde cevap ver.";
 
             return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, cancellationToken);
@@ -126,8 +129,7 @@ Kurallar:
                 .GetProperty("message")
                 .GetProperty("content")
                 .GetString()
-                ?.Trim()
-                .Replace("\"", string.Empty);
+                ?.Trim();
         }
 
         private string ResolveProviderName()
