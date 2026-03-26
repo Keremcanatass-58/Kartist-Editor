@@ -1,0 +1,228 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Kartist.Models;
+using Microsoft.Extensions.Options;
+
+namespace Kartist.Services
+{
+    public class AiImageService : IAiImageService
+    {
+        private readonly AiOptions _options;
+        private readonly IConfiguration _configuration;
+
+        public AiImageService(IOptions<AiOptions> options, IConfiguration configuration)
+        {
+            _options = options.Value;
+            _configuration = configuration;
+        }
+
+        public string GetConfiguredProviderName()
+        {
+            return string.IsNullOrWhiteSpace(_options.ImageProvider) ? "Pollinations" : _options.ImageProvider;
+        }
+
+        public async Task<AiImageResponse> GenerateImageAsync(string prompt, CancellationToken cancellationToken = default)
+        {
+            var normalizedPrompt = (prompt ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(normalizedPrompt))
+            {
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Error = "Prompt bos olamaz.",
+                    Provider = GetConfiguredProviderName()
+                };
+            }
+
+            if (GetConfiguredProviderName().Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+            {
+                var openAiResult = await TryGenerateWithOpenAiAsync(normalizedPrompt, cancellationToken);
+                if (openAiResult.Success)
+                {
+                    return openAiResult;
+                }
+
+                openAiResult.Warnings.Add("OpenAI image provider kullanilamadi, ucretsiz saglayiciya geri donuldu.");
+                var fallback = await TryGenerateWithPollinationsAsync(normalizedPrompt, cancellationToken);
+                fallback.Warnings.InsertRange(0, openAiResult.Warnings);
+                return fallback;
+            }
+
+            return await TryGenerateWithPollinationsAsync(normalizedPrompt, cancellationToken);
+        }
+
+        private async Task<AiImageResponse> TryGenerateWithPollinationsAsync(string prompt, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var client = BuildClient();
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("image/*"));
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("KartistAI/1.0");
+
+                var encodedPrompt = Uri.EscapeDataString(prompt);
+                var seed = Random.Shared.Next(100000, 999999);
+                var model = string.IsNullOrWhiteSpace(_options.PollinationsModel) ? "flux" : _options.PollinationsModel;
+                var endpoint = _options.PollinationsEndpoint?.TrimEnd('/') ?? "https://image.pollinations.ai/prompt";
+                var imageUrl = $"{endpoint}/{encodedPrompt}?width=1024&height=1024&seed={seed}&nologo=true&model={Uri.EscapeDataString(model)}";
+
+                using var response = await client.GetAsync(imageUrl, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = "Pollinations",
+                        RevisedPrompt = prompt,
+                        Error = "Ucretsiz gorsel servisi su an yanit vermedi."
+                    };
+                }
+
+                var mediaType = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
+                if (!mediaType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = "Pollinations",
+                        RevisedPrompt = prompt,
+                        Error = "Gorsel servisi beklenen formatta veri donmedi."
+                    };
+                }
+
+                var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
+                if (bytes.Length == 0 || bytes.Length > _options.MaxImageBytes)
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = "Pollinations",
+                        RevisedPrompt = prompt,
+                        Error = "Uretilen gorsel boyutu izin verilen siniri asti."
+                    };
+                }
+
+                return new AiImageResponse
+                {
+                    Success = true,
+                    Provider = "Pollinations",
+                    RevisedPrompt = prompt,
+                    DataUrl = $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Provider = "Pollinations",
+                    RevisedPrompt = prompt,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        private async Task<AiImageResponse> TryGenerateWithOpenAiAsync(string prompt, CancellationToken cancellationToken)
+        {
+            var apiKey = _configuration["OpenAI:ApiKey"]
+                ?? _configuration["OPENAI_API_KEY"]
+                ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Provider = "OpenAI",
+                    RevisedPrompt = prompt,
+                    Error = "OpenAI image provider icin API anahtari tanimli degil."
+                };
+            }
+
+            try
+            {
+                using var client = BuildClient();
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey.Trim());
+
+                var payload = new
+                {
+                    model = _options.OpenAiImageModel,
+                    prompt,
+                    size = "1024x1024"
+                };
+
+                using var response = await client.PostAsync(
+                    _options.OpenAiImageEndpoint,
+                    new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
+                    cancellationToken);
+
+                var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new AiImageResponse
+                    {
+                        Success = false,
+                        Provider = "OpenAI",
+                        RevisedPrompt = prompt,
+                        Error = $"OpenAI image endpoint hatasi: {response.StatusCode}"
+                    };
+                }
+
+                using var jsonDoc = JsonDocument.Parse(responseString);
+                var imageEntry = jsonDoc.RootElement.GetProperty("data")[0];
+
+                if (imageEntry.TryGetProperty("b64_json", out var b64Json))
+                {
+                    return new AiImageResponse
+                    {
+                        Success = true,
+                        Provider = "OpenAI",
+                        RevisedPrompt = prompt,
+                        DataUrl = $"data:image/png;base64,{b64Json.GetString()}"
+                    };
+                }
+
+                if (imageEntry.TryGetProperty("url", out var imageUrl))
+                {
+                    using var imageResponse = await client.GetAsync(imageUrl.GetString(), cancellationToken);
+                    var bytes = await imageResponse.Content.ReadAsByteArrayAsync(cancellationToken);
+                    var mediaType = imageResponse.Content.Headers.ContentType?.MediaType ?? "image/png";
+                    return new AiImageResponse
+                    {
+                        Success = true,
+                        Provider = "OpenAI",
+                        RevisedPrompt = prompt,
+                        DataUrl = $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}"
+                    };
+                }
+
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Provider = "OpenAI",
+                    RevisedPrompt = prompt,
+                    Error = "OpenAI image response formati beklenenden farkli."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AiImageResponse
+                {
+                    Success = false,
+                    Provider = "OpenAI",
+                    RevisedPrompt = prompt,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        private HttpClient BuildClient()
+        {
+            return new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(Math.Max(5, _options.TimeoutSeconds))
+            };
+        }
+    }
+}

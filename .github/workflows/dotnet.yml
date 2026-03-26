@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build & Publish
+    name: Build, Test, Publish
     runs-on: ubuntu-latest
 
     steps:
@@ -26,10 +26,19 @@ jobs:
     - name: Build
       run: dotnet build --no-restore --configuration Release
 
+    - name: Test (if any test projects exist)
+      shell: bash
+      run: |
+        if find . -name '*Tests.csproj' -o -name '*Test.csproj' | grep -q .; then
+          dotnet test --no-build --configuration Release
+        else
+          echo 'No test projects found. Skipping dotnet test.'
+        fi
+
     - name: Publish
       run: dotnet publish --no-build --configuration Release --output ./publish
 
-    - name: Upload Build Artifact
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
         name: kartist-build-${{ github.run_number }}
@@ -37,10 +46,14 @@ jobs:
         retention-days: 30
 
   deploy:
-    name: Deploy to Server (PHP Webhook)
+    name: Deploy to Production
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
+      DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
 
     steps:
     - name: Checkout repository
@@ -52,14 +65,41 @@ jobs:
         name: kartist-build-${{ github.run_number }}
         path: ./publish
 
-    - name: Zip Published Files
+    - name: Validate deploy secrets
+      shell: bash
+      run: |
+        test -n "$DEPLOY_URL"
+        test -n "$DEPLOY_SECRET"
+
+    - name: Zip published files
       run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
 
-    - name: Deploy via Native C# API Webhook
+    - name: Create deploy signature
+      id: deploy_signature
+      shell: bash
       run: |
-        curl -X POST -f -S -s -F "secret=${{ secrets.DEPLOY_SECRET }}" -F "file=@release.zip" https://kartistt.com.tr/api/deploy
+        TIMESTAMP=$(date +%s)
+        SIGNATURE=$(printf '%s' "$TIMESTAMP" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -hex | sed 's/^.* //')
+        echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
+        echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
 
-    - name: Verify deployment
+    - name: Deploy via signed webhook
+      shell: bash
       run: |
-        echo "Deployment completed successfully via HTTP Webhook!"
-        echo "Site should be back online at https://kartistt.com.tr"
+        curl -X POST -f -S -s \
+          -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
+          -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
+          -F "file=@release.zip" \
+          "$DEPLOY_URL"
+
+    - name: Health check home page
+      shell: bash
+      run: |
+        TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
+        curl -f -S -s "$TARGET_URL" > /dev/null
+
+    - name: Health check AI endpoint
+      shell: bash
+      run: |
+        TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
+        curl -f -S -s "$TARGET_URL/api/health/ai" > /dev/null
