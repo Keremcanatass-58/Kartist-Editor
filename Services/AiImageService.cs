@@ -325,19 +325,17 @@ namespace Kartist.Services
         private string EnhancePrompt(string prompt)
         {
             var p = prompt.ToLowerInvariant();
-            var sb = new StringBuilder(prompt);
+            
+            // PRIORITY 1: Identify key themes and return EXCLUSIVELY high-weight English prompts
+            if (p.Contains("papatya")) return "macro shot of beautiful white daisies with yellow centers, soft morning bokeh, high quality floral background, 8k resolution, professional card aesthetic, no text";
+            if (p.Contains("gül") || p.Contains("rose")) return "exquisite red roses with water drops, velvet petals, romantic soft lighting, cinematic aesthetic, high resolution card background, no text";
+            if (p.Contains("doğum günü") || p.Contains("birthday")) return "festive birthday celebration background, colorful soft bokeh balloons, sparkling glitters, elegant party atmosphere, no text";
+            if (p.Contains("anne") || p.Contains("mother")) return "heartwarming soft pastel background, gentle textures, warm glowing light, maternal aesthetic, high quality, no text";
+            if (p.Contains("aşk") || p.Contains("love") || p.Contains("sevgili")) return "romantic aesthetic hearts bokeh, soft glowing red and pink tones, dreamy atmosphere, elegant love theme, no text";
 
-            // HARD OVERRIDES: If the user mentioned these, FORCE the designer prompts
-            if (p.Contains("papatya")) sb.Append(", exquisite detailed white daisies with yellow centers, macro floral background, soft morning light, hyper-realistic, 8k, professional card background");
-            if (p.Contains("gül") || p.Contains("rose")) sb.Append(", elegant dark red roses, velvet petals, romantic aesthetic background, scattered petals, cinematic lighting");
-            if (p.Contains("doğum günü") || p.Contains("birthday")) sb.Append(", festive celebration background, soft bokeh balloons, glitter, elegant card layout style");
-            if (p.Contains("anne") || p.Contains("mother")) sb.Append(", warm heartwarming aesthetic, soft pastel colors, mother and child thematic background, gentle textures");
-            if (p.Contains("aşk") || p.Contains("love") || p.Contains("sevgili")) sb.Append(", romantic heart-shaped bokeh, glowing warm red and pink tones, soft aesthetic patterns");
-
-            // Quality Boosters
-            sb.Append(", professional graphic design, masterpiece, high resolution, soft lighting, award-winning illustration style, card background");
-
-            return sb.ToString();
+            // PRIORITY 2: If no specific theme, translate the prompt but wrap it in quality tags
+            // We assume 'prompt' might contain Turkish, so we still use it as secondary context
+            return $"{prompt}, high quality professional card background, aesthetic, award-winning illustration style, no text, no letters";
         }
 
         private HttpClient BuildClient()
