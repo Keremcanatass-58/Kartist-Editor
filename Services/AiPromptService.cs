@@ -35,16 +35,17 @@ namespace Kartist.Services
             }
 
             var systemPrompt = $@"You are an expert AI image generation prompt engineer.
-Your task is to translate and enhance the user's request into a highly descriptive English prompt for an image generator.
-The requested visual style is: {style ?? "Standard"}.
+Your task is to translate and enhance the user's request into a highly descriptive English prompt for an image generator (like Stable Diffusion).
+Visual style: {style ?? "Standard"}.
 
-STRICT RULES:
-1. Translate the user's request faithfully to English.
-2. IMPORTANT: Keep ALL specific subjects mentioned by the user (people, faces, characters, specific flowers like papatya/daisies, objects, etc.). 
-3. If the user mentions a specific theme (e.g., 'birthday for mother with daisies'), the prompt MUST include 'birthday celebration', 'mother', and 'daisies' prominently.
-4. Add relevant lighting, aesthetic, and photographic/artistic keywords to match the requested style.
-5. Output ONLY the final English prompt. No conversational text.
-6. MANDATORY: End the prompt with the exact keywords: ', no text, no watermark, no letters'.";
+STRICT LOGIC RULES:
+1. FAITHFUL TRANSLATION: Translate the request to English. 
+2. BACKGROUND FOCUS: If the user mentions 'background' or 'arkaplan', PRIORTIZE the visual objects (e.g., 'papatya' -> 'daisies', 'çiçek' -> 'flowers') as the CORE of the image. 
+3. SUBJECTS: Keep specific subjects (people, mothers, etc.) but if it's for a CARD background, treat them as thematic elements, not necessarily a portrait.
+4. KEYWORD WEIGHTING: Use descriptive terms to ensure the AI doesn't ignore background details. Example: if they want daisies, use 'field of daisies, daisy patterns, aesthetic floral background'.
+5. STYLE: Apply the '{style}' style properly (e.g., 'photorealistic', 'watercolor painting', etc.).
+6. Output ONLY the final English prompt. No conversational text.
+7. MANDATORY: End the prompt with: ', no text, no watermark, no letters'.";
 
             return await SendChatRequestAsync(systemPrompt, $"User Request: {prompt}", 200, 0.7, cancellationToken);
         }
@@ -76,6 +77,8 @@ Sadece gecerli JSON dondur:
 }}
 
 Kurallar:
+- RENK PALETİ: Kullanıcının isteğine GÖRSEL olarak uyum sağla. (Örn: Papatya -> Beyaz, Sarı, Yeşil; Aşk -> Kırmızı, Pembe; Modern -> Siyah, Gold/Neon).
+- EMOJİLER: İsteğe tam uyumlu 3 emoji seç.
 - Sadece JSON ver. Asla baska aciklama ekleme!
 - Dil: Kullanici hangi dilde yazarsa o dilde cevap ver.";
 
