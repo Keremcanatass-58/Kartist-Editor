@@ -5291,10 +5291,11 @@
                     canvas.setActiveObject(newImg);
                     canvas.requestRenderAll();
                     
-                showToast('Arka plan silindi! 🪄', 'success');
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-                if (overlay) overlay.style.display = 'none';
+                    showToast('Arka plan silindi! 🪄', 'success');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    if (overlay) overlay.style.display = 'none';
+                });
             } catch (err) {
                 console.error('Arka plan silme hatasi:', err);
                 showToast('Hata: ' + err.message, 'error');
