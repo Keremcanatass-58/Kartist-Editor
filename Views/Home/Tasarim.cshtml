@@ -4239,32 +4239,41 @@
             let aiData;
             try {
                 let raw = apiResponse.data;
+                console.log("Raw AI Response:", raw);
 
                 if (typeof raw === "string") {
                     raw = raw.trim();
+                    
+                    // Simple regex to extract JSON if AI includes conversational text
+                    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        raw = jsonMatch[0];
+                    }
 
-                    if (raw.startsWith("{") && raw.indexOf("\"renkPaleti\"") !== -1) {
-                        aiData = JSON.parse(raw);
-                    } else {
-                        const outer = JSON.parse(raw);
-                        const content = outer && outer.choices && outer.choices[0] && outer.choices[0].message && outer.choices[0].message.content;
-                        if (!content) throw new Error("choices[0].message.content bulunamadı");
-                        aiData = JSON.parse(content);
-                    }
+                    aiData = JSON.parse(raw);
                 } else if (typeof raw === "object" && raw !== null) {
-                    if (raw.renkPaleti || raw.tema || raw.anaMetin) {
-                        aiData = raw;
-                    } else if (raw.choices && raw.choices[0] && raw.choices[0].message && raw.choices[0].message.content) {
-                        aiData = JSON.parse(raw.choices[0].message.content);
-                    } else {
-                        throw new Error("Geçersiz AI response formatı");
-                    }
+                    aiData = raw;
                 } else {
                     throw new Error("Beklenmeyen data.data tipi");
                 }
+
+                // Metadata logging for debugging
+                console.log("Parsed AI Data:", aiData);
+                
+                if (!aiData.renkPaleti || !aiData.tema || !aiData.anaMetin) {
+                    console.warn("AI Data is partially missing fields, applying defaults.");
+                }
+
             } catch (e) {
                 console.error("AI response parse hatası:", e, apiResponse.data);
-                Swal.fire("Veri Hatası", "AI tasarım verisi okunamadı.", "error");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Veri Hatası',
+                    text: 'Yapay zeka tasarımı oluştururken teknik bir hata oluştu. Lütfen tekrar deneyin.',
+                    background: '#1e1e1e',
+                    color: '#fff'
+                });
+                if (btnEl) btnEl.disabled = false;
                 return;
             }
 
