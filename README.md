@@ -85,7 +85,7 @@ CI/CD:      GitHub Actions
 - ✅ Kullanıcı odaklı tasarım akışı ve performans optimizasyonu
 
 ### 📄 Vize Proje Raporu
-Proje raporunun PDF sürümü repoda eklendi: [KARTIST_v2.0_-_Vize_Proje_Raporu.pdf](KARTIST_v2.0_-_Vize_Proje_Raporu.pdf)
+Proje raporunun PDF sürümü repoda eklendi: [KARTIST v2.0 - Vize Proje Raporu.pdf](KARTIST v2.0 - Vize Proje Raporu.pdf)
 
 ---
 
