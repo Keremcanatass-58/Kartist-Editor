@@ -21,6 +21,23 @@
   </a>
 </p>
 
+<br>
+
+<table align="center">
+  <tr>
+    <td align="center">
+      <h3>📋 Vize Proje Raporu</h3>
+      <p>
+        <a href="docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html"><strong>📄 Detaylı Vize Raporu (HTML) »</strong></a><br>
+        <em>10 sayfa • Ekran görüntüleri • Kod örnekleri • Mimari diyagramlar</em>
+      </p>
+      <p>
+        <a href="KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf"><strong>📥 PDF Sürümü »</strong></a>
+      </p>
+    </td>
+  </tr>
+</table>
+
 ---
 
 ## 🌟 Proje Hakkında
@@ -85,7 +102,12 @@ CI/CD:      GitHub Actions
 - ✅ Kullanıcı odaklı tasarım akışı ve performans optimizasyonu
 
 ### 📄 Vize Proje Raporu
-Proje raporunun PDF sürümü repoda eklendi: [KARTIST v2.0 - Vize Proje Raporu.pdf](KARTIST v2.0 - Vize Proje Raporu.pdf)
+
+| Doküman | Açıklama |
+|---------|----------|
+| [📋 Detaylı Vize Raporu (HTML)](docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html) | 10 sayfalık detaylı rapor — ekran görüntüleri, kod örnekleri, mimari diyagramlar |
+| [📋 Vize Raporu (PDF)](KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf) | PDF sürümü |
+| [📂 Tüm Dokümantasyon](docs/) | Sprint raporları, ekran görüntüleri ve teknik belgeler |
 
 ---
 

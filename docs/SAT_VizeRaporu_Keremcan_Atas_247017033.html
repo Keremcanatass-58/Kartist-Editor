@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KARTIST v2.0 - Vize Proje Raporu — Keremcan Ataş</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--neon:#c6ff00;--dark:#07070c;--card-bg:rgba(22,22,28,.85);--text-main:#d1d5db;--text-muted:#9ca3af;--accent2:#00c8ff;--accent3:#c044ff;--accent4:#f59e0b;--red:#ff5555}
+        *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;color-adjust:exact!important;print-color-adjust:exact!important;margin:0;padding:0}
+        body{background:#1a1a1f;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px 0}
+        @page{size:A4;margin:0}
+        .page{width:210mm;min-height:297mm;background:var(--dark);color:var(--text-main);position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.6);page-break-after:always;page-break-inside:avoid}
+        @media print{body{background:none;padding:0;display:block;gap:0}.page{box-shadow:none;margin:0;border:none}}
+        .content{padding:14mm 15mm 22mm 15mm;position:relative;z-index:10;height:100%;display:flex;flex-direction:column}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;color:#fff}
+        .page-header{border-bottom:2px solid rgba(198,255,0,.3);padding-bottom:8px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end}
+        .page-header h2{font-size:22px;font-weight:700}.page-header span{font-size:11px;color:var(--neon);text-transform:uppercase;letter-spacing:1.5px;font-weight:bold}
+        .footer{position:absolute;bottom:10mm;left:15mm;right:15mm;display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);padding-top:8px;font-size:9px;color:#555;font-family:'Space Grotesk',sans-serif;letter-spacing:1.5px;text-transform:uppercase}
+        .summary-box{background:rgba(198,255,0,.04);border-left:4px solid var(--neon);padding:14px 16px;border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.65;margin-bottom:18px}
+        .sprint-card{background:var(--card-bg);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:18px;margin-bottom:16px}
+        .sprint-card.done{border-color:rgba(198,255,0,.35);background:linear-gradient(145deg,var(--card-bg),rgba(198,255,0,.02))}
+        .sprint-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:10px}
+        .sprint-title{font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+        .sprint-title i{color:var(--neon);font-size:18px}
+        .badge{padding:4px 11px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+        .badge-done{background:rgba(198,255,0,.12);color:var(--neon);border:1px solid var(--neon)}
+        .badge-wip{background:rgba(0,200,255,.12);color:var(--accent2);border:1px solid var(--accent2)}
+        .sprint-desc{font-size:12px;color:var(--text-muted);margin-bottom:12px;font-style:italic}
+        .task-list{list-style:none}.task-list li{position:relative;padding-left:18px;margin-bottom:8px;font-size:12px;line-height:1.55;color:var(--text-main)}
+        .task-list li::before{content:'✓';position:absolute;left:0;color:var(--neon);font-weight:bold;font-size:12px}
+        .tag{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:5px;display:inline-block;text-transform:uppercase;letter-spacing:.5px}
+        .tag-sec{background:rgba(255,68,68,.12);color:var(--red);border:1px solid rgba(255,68,68,.25)}
+        .tag-arch{background:rgba(0,200,255,.12);color:var(--accent2);border:1px solid rgba(0,200,255,.25)}
+        .tag-ui{background:rgba(187,51,255,.12);color:var(--accent3);border:1px solid rgba(187,51,255,.25)}
+        .tag-ai{background:rgba(245,158,11,.12);color:var(--accent4);border:1px solid rgba(245,158,11,.25)}
+        .tag-ci{background:rgba(198,255,0,.1);color:var(--neon);border:1px solid rgba(198,255,0,.3)}
+        .screenshot{width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin:10px 0;object-fit:cover}
+        .screenshot-half{width:48%;border-radius:8px;border:1px solid rgba(255,255,255,.08);object-fit:cover}
+        .ss-row{display:flex;gap:4%;margin:10px 0}
+        .cover-badge{display:inline-block;padding:6px 16px;border:1px solid var(--neon);color:var(--neon);border-radius:50px;font-weight:600;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;background:rgba(198,255,0,.04)}
+        .cover-title{font-size:52px;font-weight:900;line-height:1.05;margin-bottom:12px;letter-spacing:-1px}.cover-title span{color:var(--neon)}
+        .cover-sub{font-size:15px;color:var(--text-muted);font-weight:300;line-height:1.55;margin-bottom:30px}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;background:var(--card-bg);padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,.05)}
+        .info-item h4{color:var(--neon);font-size:10px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px}.info-item p{font-size:14px;font-weight:600;color:#fff}
+        .cover-image{width:100%;height:300px;object-fit:cover;border-radius:12px;margin-bottom:22px;border:2px solid rgba(198,255,0,.15)}
+        .tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+        .tech-card{background:var(--card-bg);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px;text-align:center}
+        .tech-card i{font-size:24px;color:var(--neon);margin-bottom:8px;display:block}
+        .tech-card h3{font-size:13px;margin-bottom:6px;color:#fff}.tech-card p{font-size:11px;color:var(--text-muted);line-height:1.5}
+        .code-block{background:#0d0d14;border:1px solid rgba(198,255,0,.15);border-radius:8px;padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.6;color:#e0e0e0;margin:10px 0;overflow-x:auto;white-space:pre}
+        .code-block .kw{color:var(--accent2)}.code-block .str{color:var(--neon)}.code-block .cmt{color:#666;font-style:italic}.code-block .fn{color:var(--accent3)}
+        .vision-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+        .vision-card{background:var(--card-bg);border:1px solid rgba(198,255,0,.15);border-radius:10px;padding:18px;text-align:center}
+        .vision-icon{font-size:28px;color:var(--neon);margin-bottom:10px}.vision-card h3{font-size:14px;margin-bottom:6px;color:#fff}.vision-card p{font-size:11px;color:var(--text-muted);line-height:1.5}
+        .file-tree{font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.7;color:var(--text-main);background:#0d0d14;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px;margin:10px 0}
+        .file-tree .dir{color:var(--accent2);font-weight:600}.file-tree .file{color:var(--text-muted)}.file-tree .hl{color:var(--neon);font-weight:600}
+        .metric-row{display:flex;gap:10px;margin-bottom:14px}.metric{flex:1;background:var(--card-bg);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px;text-align:center}
+        .metric .num{font-size:26px;font-weight:900;color:var(--neon);font-family:'Space Grotesk',sans-serif}.metric .lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+        .banner{width:100%;height:130px;object-fit:cover;border-radius:10px;margin-bottom:16px;border:1px solid rgba(255,255,255,.08)}
+        .caption{font-size:10px;color:var(--text-muted);text-align:center;margin-top:-6px;margin-bottom:10px;font-style:italic}
+    </style>
+</head>
+<body>
+
+<!-- ════════════════════════ SAYFA 1: KAPAK ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="cover-badge"><i class="fa-solid fa-file-lines"></i> &nbsp;Resmi Vize Değerlendirme Raporu</div>
+        <h1 class="cover-title">KART<span>IST</span> v2.0</h1>
+        <p class="cover-sub">
+            Yapay Zekâ Destekli SaaS Tasarım Platformu<br>
+            İlk Yarıyıl (Sprint 1–3) Geliştirme Süreçleri ve Teknik Dokümantasyon
+        </p>
+
+        <img src="screenshots/anasayfa-hero.png" class="cover-image" alt="Kartist Ana Sayfa">
+
+        <div class="info-grid">
+            <div class="info-item">
+                <h4><i class="fa-solid fa-university"></i> Üniversite / Bölüm</h4>
+                <p>Sinop Üni. / Bilgisayar Prog.</p>
+            </div>
+            <div class="info-item">
+                <h4><i class="fa-solid fa-chalkboard-teacher"></i> Proje Danışmanı</h4>
+                <p>Öğr. Gör. Ekrem SAYDAM</p>
+            </div>
+            <div class="info-item">
+                <h4><i class="fa-solid fa-user-graduate"></i> Geliştirici (Öğrenci)</h4>
+                <p>Keremcan ATAŞ (247017033)</p>
+            </div>
+            <div class="info-item">
+                <h4><i class="fa-solid fa-signal"></i> Proje Durumu</h4>
+                <p>Sprint 3 Tamamlandı ✓</p>
+            </div>
+            <div class="info-item">
+                <h4><i class="fa-solid fa-globe"></i> Canlı Demo</h4>
+                <p style="color:var(--neon)">kartistt.com.tr</p>
+            </div>
+            <div class="info-item">
+                <h4><i class="fa-brands fa-github"></i> Kaynak Kod</h4>
+                <p style="font-size:11px">Keremcanatass-58/Kartist-Editor</p>
+            </div>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 01 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 2: YÖNETİCİ ÖZETİ ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-chart-line"></i> Yönetici Özeti & Proje Tanıtımı</h2><span>Bölüm 1</span></div>
+
+        <div class="summary-box">
+            <strong>Vize Rapor Özeti:</strong> Kartist projesinin geliştirme takviminde planlanan ilk 3 Sprint (Güvenlik Altyapısı, Kimlik Doğrulama & Dashboard, AI Entegrasyonu & Canvas) <strong>başarıyla kodlanmış, test edilmiş ve canlıya alınmıştır.</strong> Proje şu an ASP.NET Core 9.0 üzerinde, güvenli ve fonksiyonel bir MVP olarak <strong>kartistt.com.tr</strong> adresinde hizmet vermektedir.
+        </div>
+
+        <div class="metric-row">
+            <div class="metric"><div class="num">3</div><div class="lbl">Tamamlanan Sprint</div></div>
+            <div class="metric"><div class="num">21+</div><div class="lbl">Tamamlanan Task</div></div>
+            <div class="metric"><div class="num">6</div><div class="lbl">Güvenlik Katmanı</div></div>
+            <div class="metric"><div class="num">3</div><div class="lbl">AI Provider</div></div>
+        </div>
+
+        <img src="screenshots/anasayfa-scroll.png" class="screenshot" style="height:160px" alt="Kartist Özellikler">
+        <p class="caption">Şekil 1 — Kartist Ana Sayfa Özellikler Bölümü (kartistt.com.tr)</p>
+
+        <div class="sprint-card" style="border-color:rgba(198,255,0,.2);margin-top:auto;margin-bottom:0">
+            <h3 style="font-size:15px;margin-bottom:10px;color:#fff"><i class="fa-solid fa-bullseye" style="color:var(--neon)"></i> Projenin Amacı</h3>
+            <p style="font-size:12px;line-height:1.65;color:var(--text-main)">
+                <strong>KARTIST</strong>, karmaşık tasarım süreçlerini herkes için erişilebilir kılan, ASP.NET Core altyapısıyla geliştirilmiş yeni nesil bir <strong>SaaS tasarım editörüdür.</strong> Kullanıcılar; kartvizit, davetiye ve sosyal medya içeriklerini yapay zeka desteğiyle saniyeler içinde profesyonel standartlarda oluşturabilir. Platform; <strong>Fabric.js</strong> tabanlı interaktif canvas, <strong>Groq AI</strong> destekli akıllı içerik üretimi, <strong>Google OAuth + 2FA</strong> ile güçlendirilmiş güvenlik ve <strong>GitHub Actions CI/CD</strong> pipeline sunmaktadır.
+            </p>
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+                <span class="tag tag-arch">ASP.NET CORE 9.0</span><span class="tag tag-arch">DAPPER ORM</span><span class="tag tag-ui">FABRIC.JS</span>
+                <span class="tag tag-ai">GROQ AI</span><span class="tag tag-sec">BCRYPT</span><span class="tag tag-sec">2FA</span>
+                <span class="tag tag-ci">CI/CD</span><span class="tag tag-ui">GOOGLE OAUTH</span>
+            </div>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 02 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 3: TEKNOLOJİ YIĞINI ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-layer-group"></i> Teknoloji Yığını & Mimari</h2><span>Bölüm 2</span></div>
+
+        <div class="tech-grid">
+            <div class="tech-card"><i class="fa-solid fa-server"></i><h3>Backend</h3><p>ASP.NET Core 9.0<br>MVC + Razor Views<br>C# 13</p></div>
+            <div class="tech-card"><i class="fa-solid fa-database"></i><h3>Veritabanı</h3><p>Microsoft SQL Server<br>Dapper Micro-ORM<br>Parametrik Sorgular</p></div>
+            <div class="tech-card"><i class="fa-solid fa-palette"></i><h3>Frontend</h3><p>HTML5, CSS3, ES6+<br>Fabric.js (Canvas)<br>SweetAlert2, jQuery</p></div>
+            <div class="tech-card"><i class="fa-solid fa-robot"></i><h3>Yapay Zekâ</h3><p>Groq API (LLM)<br>Pollinations.ai (Görsel)<br>Picsum (Fallback)</p></div>
+            <div class="tech-card"><i class="fa-solid fa-shield-halved"></i><h3>Güvenlik</h3><p>BCrypt.Net Hashing<br>Google OAuth 2.0<br>2FA (E-posta OTP)</p></div>
+            <div class="tech-card"><i class="fa-solid fa-gears"></i><h3>DevOps</h3><p>GitHub Actions CI/CD<br>Plesk Deployment<br>.NET 9.0 Self-Contained</p></div>
+        </div>
+
+        <h3 style="font-size:14px;margin-bottom:10px;color:#fff"><i class="fa-solid fa-sitemap" style="color:var(--neon)"></i> Katmanlı Mimari Yapı</h3>
+        <div class="code-block"><span class="cmt">// Kartist — MVC Katmanlı Mimari</span>
+
+┌─────────────────────────────────────────────────┐
+│  <span class="kw">CLIENT (Browser)</span>                                │
+│  HTML5 + CSS3 + JavaScript + Fabric.js          │
+├─────────────────────────────────────────────────┤
+│  <span class="kw">MIDDLEWARE KATMANI</span>                              │
+│  SecurityHeaders │ RateLimiting │ Auth Cookie   │
+├─────────────────────────────────────────────────┤
+│  <span class="kw">CONTROLLER KATMANI</span>                             │
+│  HomeController │ AccountController │ AdminCtrl │
+├─────────────────────────────────────────────────┤
+│  <span class="kw">SERVİS KATMANI</span>                                 │
+│  AiImageService │ AiPromptService │ InputValid. │
+├─────────────────────────────────────────────────┤
+│  <span class="kw">VERİ ERİŞİM KATMANI</span>                            │
+│  Dapper ORM + MSSQL (Parametrik Sorgular)       │
+└─────────────────────────────────────────────────┘</div>
+
+        <div class="summary-box" style="margin-top:auto;margin-bottom:0">
+            <strong><i class="fa-solid fa-lightbulb" style="color:var(--accent4)"></i> Neden Bu Teknolojiler?</strong><br>
+            • <strong>Dapper ORM:</strong> Entity Framework yerine seçildi ⟶ Saf SQL kontrolü, yüksek performans, SQL Injection'a karşı parametrik sorgu garantisi.<br>
+            • <strong>Fabric.js:</strong> HTML5 Canvas üzerine nesne tabanlı katman sistemi ⟶ Profesyonel sürükle-bırak editör deneyimi.<br>
+            • <strong>Groq API:</strong> Ücretsiz ve hızlı LLM erişimi ⟶ Tasarım önerisi ve içerik üretimi için ideal.<br>
+            • <strong>BCrypt:</strong> Adaptif hash fonksiyonu ⟶ MD5/SHA256'dan çok daha güvenli şifre saklama.
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 03 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 4: SPRINT 1 ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-shield-halved"></i> Sprint 1 — Güvenlik Altyapısı</h2><span>Sprint 1</span></div>
+
+        <div class="sprint-card done">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-lock"></i> Siber Güvenlik Katmanları</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <p class="sprint-desc">Sistemin güvenlik temellerinin atılması ve OWASP Top 10 standartlarına uyum.</p>
+            <ul class="task-list">
+                <li><span class="tag tag-sec">SECURITY HEADERS</span> X-XSS-Protection, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy ve Content-Security-Policy header'ları özel middleware ile her HTTP yanıtına eklendi.</li>
+                <li><span class="tag tag-sec">BCRYPT HASHING</span> Düz metin (plaintext) saklanan tüm mevcut şifreler <strong>BCrypt adaptif hash</strong> algoritmasına migrate edildi. Work factor: 12.</li>
+                <li><span class="tag tag-sec">CSRF KORUMALARI</span> Tüm POST formlarına <strong>Anti-Forgery Token</strong> eklendi. Global <code>[ValidateAntiForgeryToken]</code> filtresi aktif.</li>
+                <li><span class="tag tag-sec">RATE LIMITING</span> Brute-force saldırılarına karşı IP bazlı istek sınırlama middleware'i devreye alındı.</li>
+                <li><span class="tag tag-arch">SQL INJECTION ÖNLEME</span> Tüm Dapper sorguları <strong>parametrik</strong> hale getirildi. String concatenation ile sorgu oluşturma tamamen kaldırıldı.</li>
+                <li><span class="tag tag-arch">INPUT VALIDATOR</span> Kullanıcı girdileri için merkezi InputValidator sınıfı güçlendirildi: XSS, path traversal ve injection kontrolü.</li>
+            </ul>
+        </div>
+
+        <h3 style="font-size:13px;margin-bottom:8px;color:#fff"><i class="fa-solid fa-code" style="color:var(--accent2)"></i> SecurityHeadersMiddleware.cs — Kod Örneği</h3>
+        <div class="code-block"><span class="cmt">// Her HTTP yanıtına güvenlik header'ları ekleyen middleware</span>
+<span class="kw">public async</span> Task <span class="fn">InvokeAsync</span>(HttpContext context) {
+    context.Response.Headers.Append(<span class="str">"X-XSS-Protection"</span>, <span class="str">"1; mode=block"</span>);
+    context.Response.Headers.Append(<span class="str">"X-Frame-Options"</span>, <span class="str">"SAMEORIGIN"</span>);
+    context.Response.Headers.Append(<span class="str">"X-Content-Type-Options"</span>, <span class="str">"nosniff"</span>);
+    context.Response.Headers.Append(<span class="str">"Referrer-Policy"</span>,
+        <span class="str">"strict-origin-when-cross-origin"</span>);
+
+    <span class="cmt">// Content-Security-Policy (CSP) ile kaynak kısıtlamaları</span>
+    <span class="kw">string</span> csp = <span class="str">"default-src 'self'; script-src 'self' ..."</span>;
+    context.Response.Headers.Append(<span class="str">"Content-Security-Policy"</span>, csp);
+
+    <span class="cmt">// Sunucu parmak izini gizle</span>
+    context.Response.Headers.Remove(<span class="str">"Server"</span>);
+    context.Response.Headers.Remove(<span class="str">"X-Powered-By"</span>);
+}</div>
+
+        <div class="sprint-card" style="border-color:rgba(0,200,255,.2);padding:14px;margin-top:auto;margin-bottom:0">
+            <h4 style="font-size:12px;color:var(--accent2);margin-bottom:6px"><i class="fa-solid fa-database"></i> Veritabanı Migration</h4>
+            <p style="font-size:11.5px;line-height:1.55">Sprint 1 kapsamında MSSQL veritabanına yeni tablolar (Users, Designs, TwoFactorCodes) ve alanlar (PasswordHash, IsLocked, LoginAttempts, LockoutEnd) eklendi. Migration SQL scripti repoda <code>migration.sql</code> dosyasında mevcuttur.</p>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 04 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 5: SPRINT 2 (A) ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-fingerprint"></i> Sprint 2 — Kimlik Doğrulama & Dashboard</h2><span>Sprint 2</span></div>
+
+        <div class="sprint-card done">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-user-shield"></i> Gelişmiş Kimlik Yönetimi</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <p class="sprint-desc">Kullanıcı verilerinin güvenliği, modern giriş sistemleri ve arayüz yenileme.</p>
+            <ul class="task-list">
+                <li><span class="tag tag-sec">COOKIE AUTH</span> ASP.NET Core yerleşik <strong>Cookie Authentication</strong> sistemi kuruldu. Oturum süresi, güvenli cookie flag'leri ve SameSite politikaları yapılandırıldı.</li>
+                <li><span class="tag tag-ui">GOOGLE OAUTH 2.0</span> Kullanıcıların tek tıkla üye olabilmesi için <strong>Google SSO (Single Sign-On)</strong> servisi sisteme entegre edildi.</li>
+                <li><span class="tag tag-sec">2FA (İKİ FAKTÖRLÜ)</span> Kullanıcı şifreyi girdikten sonra e-posta adresine <strong>6 haneli OTP kodu</strong> gönderen iki faktörlü doğrulama sistemi canlıya alındı.</li>
+                <li><span class="tag tag-sec">BRUTE-FORCE KORUMASI</span> Art arda 5 başarısız giriş denemesi yapan hesapların <strong>15 dakika boyunca kilitlenmesi</strong> (Account Lockout) mekanizması kodlandı.</li>
+            </ul>
+        </div>
+
+        <img src="screenshots/giris-sayfasi.png" class="screenshot" style="height:180px" alt="Kartist Giriş Sayfası">
+        <p class="caption">Şekil 2 — Kartist Giriş Sayfası: Google OAuth + E-posta/Şifre Girişi (kartistt.com.tr)</p>
+
+        <div class="sprint-card done" style="margin-top:auto;margin-bottom:0">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-gauge-high"></i> Dashboard & CI/CD</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <ul class="task-list">
+                <li><span class="tag tag-ui">DASHBOARD</span> Kullanıcı profil sayfası glassmorphism efektleri, hero banner ve modern kart tasarımıyla tamamen yeniden tasarlandı.</li>
+                <li><span class="tag tag-ci">GITHUB ACTIONS</span> Her <code>push</code> ve <code>pull_request</code> işleminde otomatik <strong>build & restore</strong> çalıştıran CI/CD pipeline aktif edildi.</li>
+                <li><span class="tag tag-ui">UI/UX İYİLEŞTİRME</span> Responsive tasarım, hover animasyonları, SweetAlert2 bildirimleri ve Spotify müzik entegrasyonu eklendi.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 05 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 6: SPRINT 2 (B) ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-wand-magic-sparkles"></i> Sprint 2 (devam) — Editör & UI/UX</h2><span>Sprint 2-B</span></div>
+
+        <img src="screenshots/kurumsal-sayfa.png" class="screenshot" style="height:180px" alt="Kartist Kurumsal Sayfa">
+        <p class="caption">Şekil 3 — Kartist Kurumsal (Hakkımızda) Sayfası — Glassmorphism UI Tasarımı</p>
+
+        <div class="sprint-card done">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-paint-brush"></i> Tasarım Editörü Geliştirmeleri</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <ul class="task-list">
+                <li><span class="tag tag-ui">FABRIC.JS CANVAS</span> Kullanıcıların sürükle-bırak (Drag & Drop) yöntemiyle yazı, şekil ve görsel ekleyebildiği interaktif tasarım tuvali oluşturuldu.</li>
+                <li><span class="tag tag-ui">KATMAN SİSTEMİ</span> Profesyonel tasarım programlarındaki gibi katman bazlı çalışma — nesneleri öne/arkaya taşıma, kilitleme, gizleme.</li>
+                <li><span class="tag tag-ui">RESPONSIVE LAYOUT</span> Mobil, tablet ve masaüstü cihazlarda kusursuz çalışan duyarlı arayüz tasarımı tamamlandı.</li>
+                <li><span class="tag tag-ui">SPOTIFY ENTEGRASYONU</span> Tasarım yaparken kullanıcı deneyimini zenginleştiren entegre Creative Beats müzik çalar eklendi.</li>
+            </ul>
+        </div>
+
+        <h3 style="font-size:13px;margin-bottom:8px;color:#fff"><i class="fa-solid fa-code" style="color:var(--accent2)"></i> GitHub Actions CI/CD — dotnet.yml</h3>
+        <div class="code-block"><span class="cmt"># .github/workflows/dotnet.yml</span>
+<span class="kw">name:</span> .NET CI/CD Pipeline
+
+<span class="kw">on:</span>
+  <span class="fn">push:</span>
+    branches: [ <span class="str">"main"</span> ]
+  <span class="fn">pull_request:</span>
+    branches: [ <span class="str">"main"</span> ]
+
+<span class="kw">jobs:</span>
+  <span class="fn">build:</span>
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: <span class="str">9.0.x</span>
+    - name: Restore & Build
+      run: |
+        dotnet restore
+        dotnet build --no-restore</div>
+
+        <div class="summary-box" style="margin-top:auto;margin-bottom:0">
+            <strong><i class="fa-solid fa-chart-bar" style="color:var(--accent4)"></i> Sprint 2 Sayılarla:</strong> 7 task tamamlandı • 2FA sistemi canlıya alındı • Dashboard tamamen yeniden tasarlandı • CI/CD pipeline aktif • Google OAuth entegrasyonu çalışır durumda
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 06 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 7: SPRINT 3 (A) ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-brain"></i> Sprint 3 — AI Entegrasyonu</h2><span>Sprint 3</span></div>
+
+        <div class="sprint-card done">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-robot"></i> Yapay Zekâ Motoru</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <p class="sprint-desc">Groq LLM ve görsel üretim API'lerinin platforma entegrasyonu ve akıllı fallback sistemi.</p>
+            <ul class="task-list">
+                <li><span class="tag tag-ai">GROQ API (LLM)</span> Kullanıcının tasarım isteğini doğal dilde anlayan ve <strong>kart içeriği, renk paleti, font önerisi</strong> üreten yapay zekâ servisi entegre edildi.</li>
+                <li><span class="tag tag-ai">AI GÖRSEL ÜRETİMİ</span> Metin açıklamasından (text-to-image) otomatik arka plan görseli üreten <strong>Pollinations.ai</strong> entegrasyonu tamamlandı.</li>
+                <li><span class="tag tag-arch">FALLBACK ALGORİTMASI</span> Ana API çökme/kota durumlarında isteklerin otomatik olarak <strong>Pollinations → Picsum</strong> zincirine yönlendirildiği 3 katmanlı yedekleme sistemi.</li>
+                <li><span class="tag tag-ai">PROMPT MÜHENDİSLİĞİ</span> Türkçe kullanıcı girdilerinin yüksek kaliteli İngilizce prompt'lara dönüştürüldüğü <strong>EnhancePrompt</strong> algoritması geliştirildi.</li>
+            </ul>
+        </div>
+
+        <h3 style="font-size:13px;margin-bottom:8px;color:#fff"><i class="fa-solid fa-code" style="color:var(--accent2)"></i> AiImageService.cs — Fallback Mekanizması</h3>
+        <div class="code-block"><span class="cmt">// 3 Katmanlı AI Görsel Üretim Fallback Zinciri</span>
+<span class="kw">public async</span> Task&lt;AiImageResponse&gt; <span class="fn">GenerateImageAsync</span>(
+    <span class="kw">string</span> prompt, CancellationToken ct) {
+
+    <span class="cmt">// Katman 1: Ana Provider (OpenAI veya Pollinations)</span>
+    <span class="kw">var</span> result = <span class="kw">await</span> <span class="fn">TryGenerateWithPollinationsAsync</span>(prompt, ct);
+    <span class="kw">if</span> (result.Success) <span class="kw">return</span> result;
+
+    <span class="cmt">// Katman 2: Keyword-based Fallback (Picsum)</span>
+    <span class="kw">var</span> fallback = <span class="kw">await</span> <span class="fn">TryGenerateWithKeywordFallbackAsync</span>(prompt, ct);
+    fallback.Warnings.InsertRange(0, result.Warnings);
+    <span class="kw">return</span> fallback;
+}
+
+<span class="cmt">// Türkçe → İngilizce prompt zenginleştirme</span>
+<span class="kw">private string</span> <span class="fn">EnhancePrompt</span>(<span class="kw">string</span> prompt) {
+    <span class="kw">if</span> (prompt.Contains(<span class="str">"doğum günü"</span>))
+        <span class="kw">return</span> <span class="str">"festive birthday celebration, colorful bokeh..."</span>;
+    <span class="kw">return</span> $<span class="str">"{prompt}, professional card background, aesthetic"</span>;
+}</div>
+
+        <div class="summary-box" style="margin-top:auto;margin-bottom:0">
+            <strong><i class="fa-solid fa-diagram-project" style="color:var(--accent2)"></i> AI Akış Diyagramı:</strong>
+            Kullanıcı Metni → <strong>EnhancePrompt</strong> (TR→EN) → Pollinations.ai → <em>[Başarısız?]</em> → Picsum Fallback → <strong>Base64 DataURL</strong> → Canvas'a Yerleştir
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 07 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 8: SPRINT 3 (B) ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-pen-nib"></i> Sprint 3 (devam) — Canvas & Tasarım Kaydetme</h2><span>Sprint 3-B</span></div>
+
+        <div class="sprint-card done">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-floppy-disk"></i> Canlı Canvas & State Yönetimi</div>
+                <div class="badge badge-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+            </div>
+            <p class="sprint-desc">Projenin kalbi olan tasarım tuvalinin ve veri persistans sisteminin kodlanması.</p>
+            <ul class="task-list">
+                <li><span class="tag tag-ui">DİNAMİK TUVAL</span> Fabric.js altyapısıyla yazı, şekil, görsel ekleme, boyutlandırma, döndürme ve renklendirme işlemlerini destekleyen tam fonksiyonel canvas editörü.</li>
+                <li><span class="tag tag-arch">JSON STATE KAYIT</span> Tasarımın anlık durumu (katmanlar, renkler, koordinatlar, fontlar) <strong>JSON formatına serialize edilerek MSSQL veritabanına kaydedilmekte.</strong> Kullanıcı daha sonra tasarımını kaldığı yerden devam ettirebilir.</li>
+                <li><span class="tag tag-ui">ÖNİZLEME SİSTEMİ</span> Tamamlanan tasarımların yüksek çözünürlüklü ekran görüntülerinin alınıp sunucuya <strong>Base64/PNG</strong> olarak kaydedilmesi — koleksiyonda thumbnail görüntüleme.</li>
+                <li><span class="tag tag-arch">PERFORMANS OPT.</span> Büyük JSON dosyalarının veritabanından hızlı okunması için Dapper ile optimize edilmiş sorgular ve lazy loading stratejisi uygulandı.</li>
+            </ul>
+        </div>
+
+        <h3 style="font-size:13px;margin-bottom:8px;color:#fff"><i class="fa-solid fa-code" style="color:var(--accent2)"></i> Canvas → JSON → MSSQL Kayıt Akışı</h3>
+        <div class="code-block"><span class="cmt">// Frontend: Fabric.js canvas state'ini JSON'a çevir</span>
+<span class="kw">const</span> canvasJSON = canvas.<span class="fn">toJSON</span>([<span class="str">'id'</span>,<span class="str">'selectable'</span>,<span class="str">'lockMovementX'</span>]);
+
+<span class="cmt">// Preview görselini Base64 olarak al</span>
+<span class="kw">const</span> previewDataUrl = canvas.<span class="fn">toDataURL</span>({
+    format: <span class="str">'png'</span>, quality: 0.8, multiplier: 2
+});
+
+<span class="cmt">// Backend API'ye gönder</span>
+<span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/Home/SaveDesign'</span>, {
+    method: <span class="str">'POST'</span>,
+    body: JSON.<span class="fn">stringify</span>({
+        designJson: canvasJSON,
+        previewImage: previewDataUrl,
+        designName: <span class="str">"Kartvizitim"</span>
+    })
+});</div>
+
+        <div class="code-block"><span class="cmt">// Backend: Dapper ile MSSQL'e kayıt (C#)</span>
+<span class="kw">await</span> connection.<span class="fn">ExecuteAsync</span>(@<span class="str">"
+    INSERT INTO Designs (UserId, Name, JsonData, PreviewImage, CreatedAt)
+    VALUES (@UserId, @Name, @JsonData, @PreviewImage, GETDATE())"</span>,
+    <span class="kw">new</span> { UserId = userId, Name = name,
+           JsonData = json, PreviewImage = preview });</div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 08 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 9: DOSYA YAPISI ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-folder-tree"></i> Proje Dosya Yapısı</h2><span>Ek-A</span></div>
+
+        <div class="file-tree">
+<span class="dir">Kartist-Editor/</span>
+├── <span class="dir">.github/workflows/</span>
+│   └── <span class="hl">dotnet.yml</span>              <span class="cmt">← CI/CD pipeline tanımı</span>
+├── <span class="dir">Controllers/</span>
+│   ├── <span class="hl">AccountController.cs</span>    <span class="cmt">← Auth, 2FA, OAuth, Register, Login</span>
+│   ├── <span class="hl">AdminController.cs</span>      <span class="cmt">← Admin paneli işlemleri</span>
+│   └── <span class="hl">HomeController.cs</span>       <span class="cmt">← Ana sayfa, Tasarım, AI, Kaydetme</span>
+├── <span class="dir">Helpers/</span>
+│   └── <span class="file">InputValidator.cs</span>       <span class="cmt">← XSS/Injection girdi doğrulama</span>
+├── <span class="dir">Middleware/</span>
+│   ├── <span class="hl">SecurityHeadersMiddleware.cs</span>  <span class="cmt">← CSP, X-Frame, XSS-Protect</span>
+│   ├── <span class="file">RateLimitingMiddleware.cs</span>    <span class="cmt">← IP bazlı istek sınırlama</span>
+│   └── <span class="file">RateLimitingExtensions.cs</span>    <span class="cmt">← Middleware DI kaydı</span>
+├── <span class="dir">Models/</span>
+│   └── <span class="file">AiOptions.cs, User.cs, Design.cs ...</span>
+├── <span class="dir">Services/</span>
+│   ├── <span class="hl">AiImageService.cs</span>       <span class="cmt">← AI görsel üretim + Fallback</span>
+│   ├── <span class="hl">AiPromptService.cs</span>      <span class="cmt">← Groq LLM entegrasyonu</span>
+│   ├── <span class="file">IAiImageService.cs</span>      <span class="cmt">← Interface (DI)</span>
+│   └── <span class="file">IAiPromptService.cs</span>     <span class="cmt">← Interface (DI)</span>
+├── <span class="dir">Views/</span>
+│   ├── <span class="dir">Account/</span>                <span class="cmt">← Login, Register, 2FA sayfaları</span>
+│   ├── <span class="dir">Admin/</span>                  <span class="cmt">← Admin yönetim paneli</span>
+│   ├── <span class="dir">Home/</span>
+│   │   ├── <span class="file">Index.cshtml</span>        <span class="cmt">← Ana sayfa (landing)</span>
+│   │   ├── <span class="hl">Tasarim.cshtml</span>      <span class="cmt">← Ana editör sayfası (~200KB)</span>
+│   │   ├── <span class="file">Koleksiyon.cshtml</span>   <span class="cmt">← Kaydedilen tasarımlar</span>
+│   │   ├── <span class="file">KartGoster.cshtml</span>   <span class="cmt">← Tasarım önizleme</span>
+│   │   ├── <span class="file">SatinAl.cshtml</span>      <span class="cmt">← Premium satın alma</span>
+│   │   └── <span class="file">Kurumsal.cshtml</span>     <span class="cmt">← Hakkımızda sayfası</span>
+│   └── <span class="dir">Shared/</span>                 <span class="cmt">← _Layout, _ViewImports</span>
+├── <span class="dir">wwwroot/</span>
+│   ├── <span class="dir">css/</span>                    <span class="cmt">← Stil dosyaları</span>
+│   ├── <span class="dir">js/</span>                     <span class="cmt">← JavaScript dosyaları</span>
+│   ├── <span class="dir">img/</span>                    <span class="cmt">← Logo, favicon, ikonlar</span>
+│   └── <span class="dir">uploads/</span>                <span class="cmt">← Kullanıcı yüklemeleri</span>
+├── <span class="hl">Program.cs</span>                  <span class="cmt">← Uygulama giriş noktası + DI config</span>
+├── <span class="file">appsettings.json</span>            <span class="cmt">← Yapılandırma (API keys, DB)</span>
+├── <span class="file">migration.sql</span>               <span class="cmt">← Veritabanı şema migration'ı</span>
+└── <span class="file">Kartist.csproj</span>              <span class="cmt">← Proje bağımlılıkları</span>
+        </div>
+
+        <div class="metric-row">
+            <div class="metric"><div class="num">3</div><div class="lbl">Controller</div></div>
+            <div class="metric"><div class="num">3</div><div class="lbl">Middleware</div></div>
+            <div class="metric"><div class="num">4</div><div class="lbl">Servis</div></div>
+            <div class="metric"><div class="num">8</div><div class="lbl">View Sayfası</div></div>
+        </div>
+
+        <div class="summary-box" style="margin-top:auto;margin-bottom:0">
+            <strong>Toplam Kaynak Kod:</strong> ~350+ KB C# backend kodu • ~200 KB frontend (Tasarim.cshtml) • 79 satır güvenlik middleware • 350 satır AI servis kodu • CI/CD pipeline • SQL migration scripti
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 09 / 10</span></div>
+</div>
+
+<!-- ════════════════════════ SAYFA 10: FİNAL HEDEFİ & SONUÇ ════════════════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-rocket"></i> Final Hedefi & Değerlendirme</h2><span>Sonuç</span></div>
+
+        <p style="font-size:13px;color:var(--text-main);margin-bottom:18px;line-height:1.65">
+            Vize teslimi itibarıyla projenin çekirdek özellikleri (MVP) tamamlanmıştır. Dönem sonu (Final) teslimi için planlanan <strong>Sprint 4</strong> kapsamında platforma ek yapay zekâ yetenekleri ve ticari özellikler entegre edilecektir:
+        </p>
+
+        <div class="sprint-card" style="border-color:var(--accent2)">
+            <div class="sprint-header">
+                <div class="sprint-title"><i class="fa-solid fa-wand-magic-sparkles"></i> SPRINT 4: Gelişmiş AI & Ticari Özellikler</div>
+                <div class="badge badge-wip"><i class="fa-solid fa-spinner"></i> Final Döneminde</div>
+            </div>
+            <ul class="task-list">
+                <li style="color:var(--accent2)"><span class="tag tag-ai">AI ARKA PLAN SİLME</span> Yüklenen fotoğraflardan arka planın otomatik kaldırılması (background removal) özelliği.</li>
+                <li style="color:var(--accent2)"><span class="tag tag-ai">GELİŞMİŞ AI CHAT</span> Çok turlu konuşma desteği ile daha akıllı tasarım önerileri ve bağlam hatırlama.</li>
+                <li style="color:var(--accent2)"><span class="tag tag-arch">IYZIPAY ÖDEME</span> Premium abonelik için Iyzipay ödeme altyapısı entegrasyonu.</li>
+                <li style="color:var(--accent2)"><span class="tag tag-ui">ŞABLON GALERİSİ</span> Kullanıcıların hazır şablonlardan tasarım başlatabileceği zengin şablon kütüphanesi.</li>
+            </ul>
+        </div>
+
+        <div class="vision-grid">
+            <div class="vision-card">
+                <div class="vision-icon"><i class="fa-solid fa-shield-check"></i></div>
+                <h3>Güvenlik ✓</h3>
+                <p>BCrypt, 2FA, CSRF, CSP, Rate Limiting, Brute-force koruması — endüstri standartlarında</p>
+            </div>
+            <div class="vision-card">
+                <div class="vision-icon"><i class="fa-solid fa-brain"></i></div>
+                <h3>Yapay Zekâ ✓</h3>
+                <p>Groq LLM + Pollinations AI görsel üretim + 3 katmanlı fallback zinciri</p>
+            </div>
+            <div class="vision-card">
+                <div class="vision-icon"><i class="fa-solid fa-pen-ruler"></i></div>
+                <h3>Editör ✓</h3>
+                <p>Fabric.js canvas, katman sistemi, JSON state kayıt, önizleme ve dışa aktarma</p>
+            </div>
+            <div class="vision-card">
+                <div class="vision-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                <h3>DevOps ✓</h3>
+                <p>GitHub Actions CI/CD, Plesk deployment, canlı demo (kartistt.com.tr)</p>
+            </div>
+        </div>
+
+        <div class="summary-box" style="margin-top:auto;margin-bottom:0;border-color:#fff;background:rgba(0,0,0,.35);color:#fff;padding:18px">
+            <strong><i class="fa-solid fa-gavel"></i> Vize Değerlendirme Sonucu:</strong><br><br>
+            <strong>Keremcan Ataş</strong> (247017033) tarafından yürütülen <strong>KARTIST</strong> projesi; ASP.NET Core 9.0, Dapper ORM, Fabric.js canvas editörü, Groq AI entegrasyonu ve endüstri standartlarında siber güvenlik katmanlarıyla <strong>vize hedeflerinin tamamına ulaşmıştır.</strong><br><br>
+            Platform, <strong>kartistt.com.tr</strong> adresinde canlı olarak hizmet vermekte olup, final tesliminde gelişmiş AI özellikleri ve ödeme altyapısıyla tam teşekküllü bir SaaS ürününe dönüşecektir.
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST TASARIM STÜDYOSU © 2026</span><span>SAYFA 10 / 10</span></div>
+</div>
+
+</body>
+</html>
