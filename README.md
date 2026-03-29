@@ -77,6 +77,16 @@ CI/CD:      GitHub Actions
 - ✅ GitHub Actions CI/CD pipeline
 - ✅ UI/UX iyileştirmeleri ve yeni görseller
 
+### Sprint 3 — AI Entegrasyonu ve Tasarım Kaydetme
+- ✅ AI destekli kart tasarım önerileri ve içerik üretimi
+- ✅ OpenAI/Groq ile görsel oluşturma akışı
+- ✅ Pollinations/Picsum fallback mekanizması
+- ✅ Canlı canvas tasarım kaydetme, JSON veri kaydı ve önizleme görseli üretme
+- ✅ Kullanıcı odaklı tasarım akışı ve performans optimizasyonu
+
+### 📄 Vize Proje Raporu
+Proje raporunun PDF sürümü repoda eklendi: [KARTIST_v2.0_-_Vize_Proje_Raporu.pdf](KARTIST_v2.0_-_Vize_Proje_Raporu.pdf)
+
 ---
 
 ## 🚀 Kurulum

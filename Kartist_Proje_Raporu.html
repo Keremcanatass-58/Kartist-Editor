@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KARTIST v2.0 - Vize Proje Raporu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --neon: #c6ff00;
+            --dark: #0a0a0f;
+            --card-bg: rgba(25, 25, 30, 0.8);
+            --text-main: #d1d5db;
+            --text-muted: #9ca3af;
+            --success: #c6ff00; /* Neon yeşil onay rengi */
+        }
+
+        /* SIFIRLAMA VE KESİN HİZALAMA */
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; margin: 0; padding: 0; }
+        
+        body {
+            background-color: #222; 
+            font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0;
+        }
+
+        /* TAM A4 BOYUTU (KAYMAYI ÖNLEYEN KISIM) */
+        @page { size: A4; margin: 0; }
+        
+        .page {
+            width: 210mm; height: 296.5mm;
+            background-color: var(--dark);
+            color: var(--text-main);
+            position: relative; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            page-break-after: always; page-break-inside: avoid;
+        }
+        
+        @media print {
+            body { background: none; padding: 0; display: block; }
+            .page { box-shadow: none; margin: 0; border: none; }
+        }
+
+        .content { padding: 15mm 15mm 20mm 15mm; position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; color: #fff; }
+
+        /* GÖRSELLER */
+        .cover-image { width: 100%; height: 320px; object-fit: cover; border-radius: 12px; margin-bottom: 25px; border: 2px solid rgba(198,255,0,0.2); }
+        .banner-image { width: 100%; height: 140px; object-fit: cover; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* SAYFA 1: KAPAK */
+        .cover-badge { display: inline-block; padding: 6px 15px; border: 1px solid var(--neon); color: var(--neon); border-radius: 50px; font-weight: 600; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 15px; background: rgba(198,255,0,0.05); }
+        .cover-title { font-size: 50px; font-weight: 900; line-height: 1.1; margin-bottom: 15px; letter-spacing: -1px; }
+        .cover-title span { color: var(--neon); }
+        .cover-subtitle { font-size: 16px; color: var(--text-muted); font-weight: 300; line-height: 1.5; margin-bottom: 35px; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: var(--card-bg); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .info-item h4 { color: var(--neon); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .info-item p { font-size: 15px; font-weight: 600; color: #fff; text-transform: uppercase; }
+
+        /* DİĞER SAYFALAR - BAŞLIKLAR */
+        .page-header { border-bottom: 2px solid rgba(198,255,0,0.3); padding-bottom: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .page-header h2 { font-size: 24px; font-weight: 700; color: #fff; }
+        .page-header span { font-size: 11px; color: var(--neon); text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+        .summary-box { background: rgba(198,255,0,0.05); border-left: 4px solid var(--neon); padding: 15px; border-radius: 0 8px 8px 0; font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+
+        /* SPRINT KARTLARI */
+        .sprint-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 20px; margin-bottom: 20px; position: relative; }
+        .sprint-card.completed { border-color: rgba(198,255,0,0.4); background: linear-gradient(145deg, var(--card-bg), rgba(198,255,0,0.03)); }
+        
+        .sprint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
+        .sprint-title { font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .sprint-title i { color: var(--neon); font-size: 20px; }
+        
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .status-done { background: rgba(198,255,0,0.15); color: var(--neon); border: 1px solid var(--neon); }
+        .status-progress { background: rgba(0, 200, 255, 0.15); color: #00c8ff; border: 1px solid #00c8ff; }
+        
+        .sprint-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 15px; font-style: italic; }
+        
+        .task-list { list-style: none; }
+        .task-list li { position: relative; padding-left: 20px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; color: var(--text-main); }
+        .task-list li::before { content: '✓'; position: absolute; left: 0; top: 0; font-size: 13px; color: var(--neon); font-weight: bold; }
+        
+        .tag { font-size: 10px; font-weight: 700; padding: 3px 6px; border-radius: 4px; margin-right: 6px; display: inline-block; text-transform: uppercase; }
+        .tag-sec { background: rgba(255, 68, 68, 0.15); color: #ff5555; border: 1px solid rgba(255, 68, 68, 0.3); }
+        .tag-arch { background: rgba(0, 200, 255, 0.15); color: #00c8ff; border: 1px solid rgba(0, 200, 255, 0.3); }
+        .tag-ui { background: rgba(187, 51, 255, 0.15); color: #c044ff; border: 1px solid rgba(187, 51, 255, 0.3); }
+        .tag-ai { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+        /* VİZYON KARTLARI (SAYFA 4) */
+        .vision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .vision-card { background: var(--card-bg); border: 1px solid rgba(198,255,0,0.2); border-radius: 10px; padding: 20px; text-align: center; }
+        .vision-icon { font-size: 30px; color: var(--neon); margin-bottom: 12px; }
+        .vision-card h3 { font-size: 15px; margin-bottom: 8px; color: #fff; }
+        .vision-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+        /* FOOTER */
+        .footer { position: absolute; bottom: 12mm; left: 15mm; right: 15mm; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; font-size: 10px; color: #666; font-family: 'Space Grotesk', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <div class="content">
+            <div class="cover-badge">Resmi Vize Değerlendirme Raporu</div>
+            <h1 class="cover-title">KART<span>IST</span> v2.0</h1>
+            <p class="cover-subtitle">SaaS Tabanlı Tasarım Platformu <br> İlk Yarıyıl (MVP) Geliştirme Süreçleri ve Mimari Dökümantasyonu</p>
+            
+            <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000" class="cover-image" alt="Cyberpunk Tech">
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>Üniversite / Bölüm</h4>
+                    <p>Sinop Üni. / Bilgisayar Programcılığı</p>
+                </div>
+                <div class="info-item">
+                    <h4>Proje Danışmanı</h4>
+                    <p>Öğr. Gör. Ekrem SAYDAM</p>
+                </div>
+                <div class="info-item">
+                    <h4>Geliştirici (Öğrenci)</h4>
+                    <p>Keremcan ATAŞ (247017033)</p>
+                </div>
+                <div class="info-item">
+                    <h4>Proje Durumu</h4>
+                    <p>Sprint 3 Tamamlandı (Canlıda)</p>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <span>KARTIST TASARIM STÜDYOSU © 2026</span>
+            <span>SAYFA 01</span>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <h2>Yönetici Özeti & Çekirdek Mimari</h2>
+                <span>Bölüm 1</span>
+            </div>
+
+            <div class="summary-box">
+                <strong>Vize Rapor Özeti:</strong> Kartist projesinin geliştirme takviminde planlanan ilk 3 Sprint (Mimari Kurulum, Güvenlik ve Canlı Editör) <strong>başarıyla kodlanmış ve test edilmiştir.</strong> Proje şu an ASP.NET Core 8.0 üzerinde, güvenli ve fonksiyonel bir MVP (Minimum Çalışan Ürün) olarak hizmet vermektedir.
+            </div>
+
+            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000" class="banner-image" alt="Dashboard Data">
+
+            <div class="sprint-card completed">
+                <div class="sprint-header">
+                    <div class="sprint-title"><i class="fa-solid fa-server"></i> SPRINT 1: Mimari & Veri Katmanı</div>
+                    <div class="status-badge status-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+                </div>
+                <p class="sprint-desc">Sistemin iskeletinin kurulması ve siber güvenlik katmanlarının entegrasyonu.</p>
+                <ul class="task-list">
+                    <li><span class="tag tag-arch">ASP.NET CORE 8.0</span> Proje MVC mimarisine uygun olarak ayağa kaldırıldı. Katmanlı yapı prensipleri uygulandı.</li>
+                    <li><span class="tag tag-arch">MSSQL & DAPPER</span> Entity Framework yerine yüksek performans sağlayan mikro-ORM aracı Dapper kurularak veritabanı bağlantıları sağlandı.</li>
+                    <li><span class="tag tag-sec">SİBER GÜVENLİK</span> Tüm Dapper sorguları parametrik hale getirilerek <strong>SQL Injection</strong> önlendi. Formlara Anti-Forgery (CSRF) korumaları entegre edildi.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <span>KARTIST TASARIM STÜDYOSU © 2026</span>
+            <span>SAYFA 02</span>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <h2>Kimlik Doğrulama ve Canlı Editör</h2>
+                <span>Bölüm 2</span>
+            </div>
+
+            <div class="sprint-card completed">
+                <div class="sprint-header">
+                    <div class="sprint-title"><i class="fa-solid fa-fingerprint"></i> SPRINT 2: Gelişmiş Kimlik Yönetimi</div>
+                    <div class="status-badge status-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+                </div>
+                <p class="sprint-desc">Kullanıcı verilerinin güvenliği ve modern giriş (Login) sistemleri entegrasyonu.</p>
+                <ul class="task-list">
+                    <li><span class="tag tag-sec">AUTH MİMARİSİ</span> ASP.NET Core yerleşik <strong>Cookie Authentication</strong> sistemi kuruldu. Şifreler MD5/SHA256 ile şifrelenerek veritabanına kaydedildi.</li>
+                    <li><span class="tag tag-ui">OAUTH ENTEGRASYONU</span> Kullanıcıların tek tıkla üye olabilmesi için <strong>Google OAuth (SSO)</strong> servisi sisteme başarıyla bağlandı.</li>
+                    <li><span class="tag tag-sec">ÇOK FAKTÖRLÜ (2FA)</span> Kullanıcı şifreyi bilse bile, güvenliği sağlamak için arka planda e-posta adresine 6 haneli doğrulama kodu gönderen sistem canlıya alındı.</li>
+                    <li><span class="tag tag-sec">BRUTE-FORCE KORUMASI</span> Art arda 5 başarısız giriş denemesi yapan IP/Hesapların 15 dakika boyunca kilitlenmesi (Lockout) sağlandı.</li>
+                </ul>
+            </div>
+
+            <div class="sprint-card completed">
+                <div class="sprint-header">
+                    <div class="sprint-title"><i class="fa-solid fa-pen-nib"></i> SPRINT 3: Canlı Canvas & State Kayıt</div>
+                    <div class="status-badge status-done"><i class="fa-solid fa-check"></i> Tamamlandı</div>
+                </div>
+                <p class="sprint-desc">Projenin kalbi olan tasarım tuvalinin (Canvas) ve önizleme sisteminin kodlanması.</p>
+                <ul class="task-list">
+                    <li><span class="tag tag-ui">DİNAMİK TUVAL</span> Kullanıcıların sürükle-bırak (Drag & Drop) yöntemiyle yazı, şekil ve görsel ekleyebildiği interaktif Canvas editörü oluşturuldu.</li>
+                    <li><span class="tag tag-arch">STATE MANAGEMENT</span> Tasarımın o anki durumunun (katmanlar, renkler, koordinatlar) kaybolmaması için <strong>JSON formatına çevrilip MSSQL'e kaydedilmesi</strong> başarıldı.</li>
+                    <li><span class="tag tag-ui">ÖNİZLEME (PREVIEW)</span> Tamamlanan tasarımların yüksek çözünürlüklü ekran görüntülerinin alınıp sunucuya Base64/Image olarak kaydedilmesi sağlandı.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <span>KARTIST TASARIM STÜDYOSU © 2026</span>
+            <span>SAYFA 03</span>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <h2>Final Hedefi: AI Entegrasyonu</h2>
+                <span>Bölüm 3</span>
+            </div>
+
+            <p style="font-size: 13.5px; color: var(--text-main); margin-bottom: 20px; line-height: 1.6;">
+                Vize teslimi itibarıyla projenin çekirdek özellikleri (MVP) tamamlanmıştır. Dönem sonu (Final) teslimi için planlanan <strong>Sprint 4</strong> kapsamında platforma Yapay Zekâ (AI) motorları entegre edilecektir:
+            </p>
+
+            <div class="sprint-card" style="border-color: #00c8ff;">
+                <div class="sprint-header">
+                    <div class="sprint-title"><i class="fa-solid fa-brain"></i> SPRINT 4: Text-to-Image & Fallback</div>
+                    <div class="status-badge status-progress"><i class="fa-solid fa-spinner"></i> Final Döneminde Yapılacak</div>
+                </div>
+                <ul class="task-list" style="margin-top: 10px;">
+                    <li><span class="tag tag-ai">OPENAI & GROQ API</span> Kullanıcıların yazdığı metinleri anında yüksek çözünürlüklü görsellere dönüştürecek asıl AI motorlarının arka plan bağlantıları.</li>
+                    <li><span class="tag tag-arch">FALLBACK ALGORİTMASI</span> Asıl API'lerde kota dolumu veya çökme (Timeout) yaşanırsa, sistemin hata vermemesi için isteklerin otomatik olarak <strong>Pollinations.ai</strong> veya <strong>Picsum</strong> servislerine yönlendirileceği "Yedekleme (Fallback)" kodlaması.</li>
+                </ul>
+            </div>
+
+            <div class="summary-box" style="margin-top: auto; margin-bottom: 0; border-color: #fff; background: rgba(0,0,0,0.3); color: #fff;">
+                <strong>Vize Değerlendirme Sonucu:</strong> Keremcan Ataş (247017033) tarafından yürütülen Kartist projesi; ASP.NET Core, Dapper ve Siber Güvenlik standartlarına tam uyumlu olarak vize hedeflerine ulaşmıştır. Platform, final tesliminde yapay zeka entegrasyonu ile tam teşekküllü bir SaaS ürününe dönüşecektir.
+            </div>
+
+        </div>
+        <div class="footer">
+            <span>KARTIST TASARIM STÜDYOSU © 2026</span>
+            <span>SAYFA 04</span>
+        </div>
+    </div>
+
+</body>
+</html>
