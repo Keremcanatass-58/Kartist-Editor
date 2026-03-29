@@ -28,11 +28,8 @@
     <td align="center">
       <h3>📋 Vize Proje Raporu</h3>
       <p>
-        <a href="docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html"><strong>📄 Detaylı Vize Raporu (HTML) »</strong></a><br>
+        <a href="https://htmlpreview.github.io/?https://github.com/Keremcanatass-58/Kartist-Editor/blob/main/docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html"><strong>📄 Detaylı Vize Raporu — Tıkla ve Görüntüle »</strong></a><br>
         <em>10 sayfa • Ekran görüntüleri • Kod örnekleri • Mimari diyagramlar</em>
-      </p>
-      <p>
-        <a href="KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf"><strong>📥 PDF Sürümü »</strong></a>
       </p>
     </td>
   </tr>
