@@ -6,7 +6,7 @@
     public string SafeResim(string url)
     {
         if (string.IsNullOrEmpty(url)) return "/img/default-design.svg";
-        if (url.StartsWith("http")) return url;
+        if (url.StartsWith("http")) return url;  // Unsplash veya harici HTTP URL
         if (url.StartsWith("data:")) return url;
         if (url.StartsWith("blob:")) return url;
         if (url.StartsWith("/")) return url;
@@ -210,9 +210,6 @@
                 <a href="@(User.Identity.IsAuthenticated ? "/Home/Tasarim/0" : "/Account/Giris")" class="btn-nano">
                     HEMEN BAŞLA <i class="fa-solid fa-bolt"></i>
                 </a>
-                <a href="javascript:void(0)" onclick="enterSocialNetwork()" class="btn-nano" style="background: transparent; color: var(--neon); border: 2px solid var(--neon);">
-                    SOSYAL AKIŞ <i class="fa-solid fa-users"></i>
-                </a>
                 <a href="#koleksiyon" style="display:inline-flex; align-items:center; padding:0 20px; color:#fff; font-weight:600; border:1px solid var(--border-light); border-radius:100px;">
                     Keşfet <i class="fa-solid fa-arrow-down" style="margin-left:10px;"></i>
                 </a>
@@ -300,32 +297,6 @@
                     Swal.fire({ icon: 'info', title: 'Giriş Yapmalısın', text: 'Favorilere eklemek için hesabına giriş yap.', confirmButtonColor: '#c6ff00', background: '#111', color: '#fff' });
                 }
             });
-    }
-
-    function enterSocialNetwork() {
-        document.getElementById('pageLoader')?.classList.add('loading');
-        
-        Swal.fire({
-            title: 'Kartist Ağına Bağlanılıyor',
-            html: '<div style="color:#aaa; font-size:0.95rem; margin-top:10px;">Güvenli geçiş protokolü başlatıldı...<br><br><i class="fa-solid fa-satellite-dish fa-beat-fade" style="color:#c6ff00; font-size:2.5rem; margin-top:15px; margin-bottom:10px;"></i></div>',
-            background: 'rgba(10, 10, 15, 0.95)',
-            color: '#fff',
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            backdrop: 'rgba(0, 0, 0, 0.85)',
-            timer: 1800,
-            customClass: {
-                popup: 'nano-panel'
-            },
-            didOpen: () => {
-                Swal.showLoading();
-                const loader = Swal.getHtmlContainer()?.querySelector('.swal2-loader');
-                if (loader) loader.style.borderColor = '#c6ff00 transparent #c6ff00 transparent';
-            }
-        }).then(() => {
-            document.body.classList.add('page-leaving');
-            window.location.href = '/Social/Feed';
-        });
     }
 </script>
 

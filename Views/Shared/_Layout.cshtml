@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
@@ -334,6 +334,28 @@
                 <ul class="navbar-nav align-items-center justify-content-center">
                     @if (User.Identity.IsAuthenticated)
                     {
+                        <!-- TOPLULUĞA KATIL BUTONU -->
+                        <a href="/Social/Feed" style="background:#c6ff00;color:#000;padding:10px 20px;border-radius:50px;font-weight:800;font-size:0.85rem;margin-right:15px;text-decoration:none;transition:0.3s;display:inline-flex;align-items:center;gap:8px;">
+                            <i class="fa-solid fa-users-line"></i> Topluluğa Katıl
+                        </a>
+
+                        <!-- NOTIFICATION BELL -->
+                        <div style="position:relative;display:inline-block;margin-left:10px;" id="notifContainer">
+                            <button onclick="toggleNotifs(event)" style="background:none;border:none;color:#ccc;font-size:1.1rem;cursor:pointer;position:relative;padding:8px;">
+                                <i class="fa-regular fa-bell"></i>
+                                <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;width:16px;height:16px;background:#ff2d55;border-radius:50%;font-size:0.6rem;color:#fff;font-weight:900;display:none;align-items:center;justify-content:center;"></span>
+                            </button>
+                            <div id="notifDropdown" style="position:absolute;top:120%;right:0;width:320px;background:#111;border:1px solid #222;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.6);padding:8px;z-index:1000;display:none;max-height:400px;overflow-y:auto;">
+                                <div style="padding:10px 12px;font-weight:800;color:#fff;font-size:0.9rem;border-bottom:1px solid #1a1a1a;">Bildirimler</div>
+                                <div id="notifList" style="padding:4px 0;"></div>
+                            </div>
+                        </div>
+
+                        <!-- DM ICON -->
+                        <a href="/Social/Mesajlar" style="color:#ccc;font-size:1.1rem;padding:8px;margin-left:4px;text-decoration:none;position:relative;">
+                            <i class="fa-regular fa-paper-plane"></i>
+                        </a>
+
                         <div class="user-menu-container" onclick="toggleMenu(event)">
                             <div class="user-btn">
                                 <span class="user-name-text">@User.Identity.Name</span>
@@ -349,6 +371,8 @@
                                 </div>
 
                                 <a href="/Account/Profil" class="dropdown-link"><i class="fa-solid fa-user"></i> Profilim</a>
+                                <a href="/Social/Feed" class="dropdown-link"><i class="fa-solid fa-users-line" style="color:#c6ff00"></i> Topluluğa Katıl</a>
+                                <a href="/Social/Mesajlar" class="dropdown-link"><i class="fa-solid fa-paper-plane"></i> Mesajlar</a>
                                 <a href="/Home/Koleksiyon" class="dropdown-link"><i class="fa-solid fa-layer-group"></i> Koleksiyonum</a>
                                 <div style="height:1px; background:#222; margin:5px 0;"></div>
                                 <a href="/Account/Cikis" class="dropdown-link logout"><i class="fa-solid fa-power-off"></i> Çıkış Yap</a>
@@ -357,7 +381,12 @@
                     }
                     else
                     {
-                        <div class="d-flex justify-content-center align-items-center gap-2 mt-3 mt-lg-0">
+                        <div class="d-flex justify-content-center align-items-center gap-3 mt-3 mt-lg-0">
+                            <!-- Sosyal Medya Giriş Butonları -->
+                            <a href="/Social/Feed" class="nav-link" style="color:#c6ff00 !important; margin:0 8px; display:flex; align-items:center; gap:6px; font-weight:700; transition:0.3s;">
+                                <i class="fa-solid fa-users-line"></i> Topluluğa Katıl
+                            </a>
+                            <div style="width:1px; height:20px; background:rgba(255,255,255,0.1);"></div>
                             <a href="/Account/Giris" class="btn-login" style="white-space: nowrap;">Giriş Yap</a>
                             <a href="/Account/Kayit" class="btn-register" style="white-space: nowrap;">Kayıt Ol</a>
                         </div>
@@ -517,6 +546,78 @@
                 confirmButtonText: '<span style="color:black; font-weight:bold;">DEVAM ET</span>',
                 timer: 3000, timerProgressBar: true
             });
+        }
+    </script>
+
+    <script>
+        // Notification system
+        function toggleNotifs(e) {
+            e.stopPropagation();
+            var dd = document.getElementById('notifDropdown');
+            if (!dd) return;
+            var isOpen = dd.style.display === 'block';
+            dd.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) { loadNotifs(); markNotifsRead(); }
+        }
+        document.addEventListener('click', function(e) {
+            var dd = document.getElementById('notifDropdown');
+            if (dd && !e.target.closest('#notifContainer')) dd.style.display = 'none';
+        });
+
+        async function loadNotifs() {
+            try {
+                var res = await fetch('/Social/GetBildirimler');
+                var data = await res.json();
+                if (!data.success) return;
+
+                var badge = document.getElementById('notifBadge');
+                if (data.okunmamis > 0) {
+                    badge.textContent = data.okunmamis;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                var list = document.getElementById('notifList');
+                if (!list) return;
+                list.innerHTML = '';
+                if (data.bildirimler.length === 0) {
+                    list.innerHTML = '<div style="padding:20px;text-align:center;color:#444;font-size:0.8rem;">Bildirim yok</div>';
+                    return;
+                }
+                data.bildirimler.forEach(function(n) {
+                    var avatar = n.GonderenResim || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+                    var bg = n.OkunduMu ? 'transparent' : 'rgba(198,255,0,0.02)';
+                    var ago = notifTimeAgo(n.Tarih);
+                    var icon = n.Tip === 'begeni' ? '❤️' : n.Tip === 'yorum' ? '💬' : n.Tip === 'takip' ? '🔔' : '💌';
+                    list.innerHTML += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:' + bg + ';cursor:pointer;transition:0.15s;" onmouseover="this.style.background=\'rgba(255,255,255,0.02)\'" onmouseout="this.style.background=\'' + bg + '\'">'
+                        + '<img src="' + avatar + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;">'
+                        + '<div style="flex:1;min-width:0;"><div style="font-size:0.8rem;color:#ccc;line-height:1.4;">' + icon + ' ' + n.Mesaj + '</div><div style="font-size:0.65rem;color:#444;margin-top:2px;">' + ago + '</div></div></div>';
+                });
+            } catch(e) {}
+        }
+
+        function notifTimeAgo(dateStr) {
+            var now = new Date(); var d = new Date(dateStr); var diff = Math.floor((now - d) / 1000);
+            if (diff < 60) return 'Az önce'; if (diff < 3600) return Math.floor(diff / 60) + ' dk';
+            if (diff < 86400) return Math.floor(diff / 3600) + ' sa'; return Math.floor(diff / 86400) + ' gün';
+        }
+
+        async function markNotifsRead() {
+            try {
+                var fd = new FormData(); fd.append('__RequestVerificationToken', getCSRFToken());
+                await fetch('/Social/BildirimleriOku', { method: 'POST', body: fd });
+                setTimeout(function() {
+                    var badge = document.getElementById('notifBadge');
+                    if (badge) badge.style.display = 'none';
+                }, 1000);
+            } catch(e){}
+        }
+
+        // Poll notifications every 30s
+        if (document.getElementById('notifContainer')) {
+            loadNotifs();
+            setInterval(loadNotifs, 30000);
         }
     </script>
 

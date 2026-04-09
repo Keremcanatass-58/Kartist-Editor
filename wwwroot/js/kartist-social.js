@@ -8,6 +8,18 @@ function CSRF() {
     return el ? el.value : '';
 }
 
+// --- Media URL Normalizer ---
+function normalizeMediaUrl(url) {
+    if (!url) return url;
+    url = url.trim().replace(/\\/g, '/');
+    if (url.startsWith('~/')) return '/' + url.slice(2);
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return url;
+    if (url.startsWith('uploads/')) return '/' + url;
+    if (/^[^\/]+\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url)) return '/uploads/social/' + url;
+    return '/' + url;
+}
+
 // --- Secure Fetch Helper ---
 async function secureFetch(url, method = 'GET', body = null) {
     try {
@@ -64,7 +76,7 @@ function timeAgo(dateStr) {
 
 // --- Avatar HTML Generator ---
 function avatarHTML(url, name, size = 44) {
-    if (url) return `<img src="${url}" class="avatar-img" style="width:${size}px;height:${size}px;" loading="lazy">`;
+    if (url) return `<img src="${normalizeMediaUrl(url)}" class="avatar-img" style="width:${size}px;height:${size}px;" loading="lazy">`;
     const letter = (name || '?')[0].toUpperCase();
     return `<div class="avatar-initial" style="width:${size}px;height:${size}px;font-size:${Math.round(size/2.5)}px;">${letter}</div>`;
 }
