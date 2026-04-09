@@ -1,4 +1,4 @@
-﻿@model List<Kartist.Models.Sablon>
+@model List<Kartist.Models.Sablon>
 @{
     ViewData["Title"] = "Ana Sayfa - Hoşgeldiniz";
 }
@@ -209,6 +209,9 @@
             <div style="display:flex; gap:15px; flex-wrap:wrap; @@media(max-width:992px){justify-content:center;}">
                 <a href="@(User.Identity.IsAuthenticated ? "/Home/Tasarim/0" : "/Account/Giris")" class="btn-nano">
                     HEMEN BAŞLA <i class="fa-solid fa-bolt"></i>
+                </a>
+                <a href="/Social/Feed" class="btn-nano" style="background: transparent; color: var(--neon); border: 2px solid var(--neon);">
+                    SOSYAL AKIŞ <i class="fa-solid fa-users"></i>
                 </a>
                 <a href="#koleksiyon" style="display:inline-flex; align-items:center; padding:0 20px; color:#fff; font-weight:600; border:1px solid var(--border-light); border-radius:100px;">
                     Keşfet <i class="fa-solid fa-arrow-down" style="margin-left:10px;"></i>
