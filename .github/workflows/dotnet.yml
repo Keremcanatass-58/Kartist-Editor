@@ -5,45 +5,48 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
   build:
-    name: Build, Test, Publish
+    name: Build and Publish
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET 8.0
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore Kartist.sln
 
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+      - name: Build solution
+        run: dotnet build Kartist.sln --no-restore --configuration Release
 
-    - name: Test (if any test projects exist)
-      shell: bash
-      run: |
-        if find . -name '*Tests.csproj' -o -name '*Test.csproj' | grep -q .; then
-          dotnet test --no-build --configuration Release
-        else
-          echo 'No test projects found. Skipping dotnet test.'
-        fi
+      - name: Run tests if available
+        shell: bash
+        run: |
+          if git ls-files '*.Test.csproj' '*.Tests.csproj' | grep -q .; then
+            dotnet test Kartist.sln --no-build --configuration Release
+          else
+            echo 'No test projects found. Skipping tests.'
+          fi
 
-    - name: Publish
-      run: dotnet publish --no-build --configuration Release --output ./publish
+      - name: Publish project
+        run: dotnet publish Kartist.csproj --no-build --configuration Release --output ./publish
 
-    - name: Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: kartist-build-${{ github.run_number }}
-        path: ./publish
-        retention-days: 30
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kartist-build-${{ github.run_number }}
+          path: ./publish
+          retention-days: 30
 
   deploy:
     name: Deploy to Production
@@ -54,91 +57,90 @@ jobs:
       DEPLOY_URL: ${{ secrets.DEPLOY_URL }}
       DEPLOY_SECRET: ${{ secrets.DEPLOY_SECRET }}
       HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      APPSETTINGS_PRODUCTION_JSON: ${{ secrets.APPSETTINGS_PRODUCTION_JSON }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: kartist-build-${{ github.run_number }}
-        path: ./publish
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kartist-build-${{ github.run_number }}
+          path: ./publish
 
-    - name: Validate deploy secrets
-      shell: bash
-      run: |
-        test -n "$DEPLOY_URL"
-        test -n "$DEPLOY_SECRET"
+      - name: Validate deploy secrets
+        shell: bash
+        run: |
+          test -n "$DEPLOY_URL"
+          test -n "$DEPLOY_SECRET"
 
-    - name: Remove server-owned config files from artifact
-      shell: bash
-      run: |
-        rm -f ./publish/web.config
-        rm -f ./publish/appsettings.Development.json
-        rm -f ./publish/appsettings.Production.json
+      - name: Remove server config files from artifact
+        shell: bash
+        run: |
+          rm -f ./publish/web.config
+          rm -f ./publish/appsettings.Development.json
+          rm -f ./publish/appsettings.Production.json
 
-    - name: Inject production config from secret
-      shell: bash
-      env:
-        APPSETTINGS_JSON: ${{ secrets.APPSETTINGS_PRODUCTION_JSON }}
-      run: |
-        if [ -n "$APPSETTINGS_JSON" ]; then
-          echo "$APPSETTINGS_JSON" > ./publish/appsettings.json
-          echo "Production appsettings injected from secret."
-        else
-          echo "No APPSETTINGS_PRODUCTION_JSON secret found. Keeping default appsettings.json."
-        fi
-
-    - name: Zip published files
-      run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
-
-    - name: Create deploy signature
-      id: deploy_signature
-      shell: bash
-      run: |
-        TIMESTAMP=$(date +%s)
-        SIGNATURE=$(printf '%s' "$TIMESTAMP" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -hex | sed 's/^.* //')
-        echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
-        echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
-
-    - name: Deploy via signed webhook
-      shell: bash
-      run: |
-        curl -X POST -f -S -s \
-          -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
-          -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
-          -F "secret=kartist-deploy-secret-2026" \
-          -F "file=@release.zip" \
-          "$DEPLOY_URL"
-
-    - name: Wait for app warmup
-      shell: bash
-      run: sleep 20
-
-    - name: Health check home page
-      shell: bash
-      run: |
-        TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
-        for i in 1 2 3 4 5; do
-          if curl -f -S -s "$TARGET_URL" > /dev/null; then
-            exit 0
+      - name: Inject production settings from secret
+        shell: bash
+        run: |
+          if [ -n "$APPSETTINGS_PRODUCTION_JSON" ]; then
+            echo "$APPSETTINGS_PRODUCTION_JSON" > ./publish/appsettings.json
+            echo "Injected production appsettings from secret."
+          else
+            echo "No APPSETTINGS_PRODUCTION_JSON secret found; keeping default appsettings.json."
           fi
-          sleep 10
-        done
-        exit 1
 
-    - name: Health check AI endpoint
-      shell: bash
-      run: |
-        TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
-        for i in 1 2 3 4 5; do
-          if curl -f -S -s "$TARGET_URL/api/health/ai" > /dev/null; then
-            exit 0
-          fi
-          sleep 10
-        done
-        exit 1
+      - name: Zip published files
+        run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
+
+      - name: Create deploy signature
+        id: deploy_signature
+        shell: bash
+        run: |
+          TIMESTAMP=$(date +%s)
+          SIGNATURE=$(printf '%s' "$TIMESTAMP" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -hex | sed 's/^.* //')
+          echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
+          echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via signed webhook
+        shell: bash
+        run: |
+          curl -X POST -f -S -s \
+            -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
+            -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
+            -F "secret=kartist-deploy-secret-2026" \
+            -F "file=@release.zip" \
+            "$DEPLOY_URL"
+
+      - name: Wait for app warmup
+        shell: bash
+        run: sleep 20
+
+      - name: Health check home page
+        shell: bash
+        run: |
+          TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
+          for i in 1 2 3 4 5; do
+            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Health check AI endpoint
+        shell: bash
+        run: |
+          TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}/api/health/ai"
+          for i in 1 2 3 4 5; do
+            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
 
 
 
