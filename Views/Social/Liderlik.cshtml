@@ -1,0 +1,136 @@
+@{
+    Layout = "_SocialLayout";
+    ViewData["Title"] = "Liderlik Tablosu";
+}
+
+<style>
+    .leader-wrapper { padding: 24px 20px; }
+    .leader-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    
+    .leader-tabs {
+        display: flex; gap: 6px; margin-bottom: 32px;
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border-radius: var(--radius-pill); padding: 5px; border: 1px solid var(--border);
+    }
+    .leader-tab {
+        flex: 1; background: transparent; border: none; color: var(--text-muted);
+        font-weight: 700; padding: 10px; cursor: pointer; border-radius: var(--radius-pill);
+        font-size: 0.88rem; transition: var(--transition); font-family: var(--font);
+    }
+    .leader-tab.active {
+        background: var(--bg-base); color: var(--text-primary);
+        box-shadow: var(--shadow-sm); border: 1px solid var(--border);
+    }
+
+    /* PODIUM */
+    .podium { display: flex; align-items: flex-end; justify-content: center; gap: 14px; margin-bottom: 32px; }
+    .podium-item { display: flex; flex-direction: column; align-items: center; }
+    .podium-rank { font-size: 2.2rem; margin-bottom: 10px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+    .podium-avatar {
+        width: 76px; height: 76px; border-radius: 50%; border: 3px solid var(--border);
+        overflow: hidden; display: flex; align-items: center; justify-content: center;
+        background: var(--bg-surface-solid); z-index: 2; position: relative;
+    }
+    .podium-item.gold .podium-avatar { border-color: var(--gold); box-shadow: 0 8px 25px rgba(255,215,0,0.25); width: 100px; height: 100px; }
+    .podium-item.silver .podium-avatar { border-color: #c0c0c0; width: 80px; height: 80px; }
+    .podium-item.bronze .podium-avatar { border-color: #cd7f32; width: 76px; height: 76px; }
+    .podium-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .podium-name { font-weight: 900; font-size: 0.85rem; margin-top: 12px; text-align: center; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .podium-xp { color: var(--accent); font-weight: 900; font-size: 0.95rem; margin-top: 4px; }
+    .podium-bar { border-radius: 10px 10px 0 0; margin-top: 10px; }
+    .podium-item.gold .podium-bar { height: 140px; background: linear-gradient(180deg, #ffd700, #b8860b); width: 90px; }
+    .podium-item.silver .podium-bar { height: 95px; background: linear-gradient(180deg, #c0c0c0, #808080); width: 80px; }
+    .podium-item.bronze .podium-bar { height: 65px; background: linear-gradient(180deg, #cd7f32, #8b4513); width: 80px; }
+
+    /* LIST */
+    .leader-row {
+        display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-md);
+        margin-bottom: 8px; transition: var(--transition); cursor: pointer;
+    }
+    .leader-row:hover { border-color: rgba(var(--accent-rgb),0.15); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .leader-row.me { border-color: rgba(var(--accent-rgb),0.3); background: rgba(var(--accent-rgb),0.03); }
+    .leader-pos { font-weight: 900; font-size: 1rem; color: var(--text-muted); min-width: 32px; text-align: center; }
+    .leader-pos.top { color: var(--text-primary); }
+    .leader-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+    .leader-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .leader-info { flex: 1; }
+    .leader-name { font-weight: 800; font-size: 0.95rem; margin-bottom: 3px; }
+    .leader-meta { color: var(--text-muted); font-size: 0.78rem; display: flex; gap: 10px; font-weight: 600; }
+    .leader-xp-val { color: var(--accent); font-weight: 900; font-size: 1rem; }
+
+    @@media (max-width: 600px) {
+        .podium-item.gold .podium-bar { height: 110px; width: 70px; }
+        .podium-item.silver .podium-bar { height: 75px; width: 60px; }
+        .podium-item.bronze .podium-bar { height: 45px; width: 60px; }
+        .podium-item.gold .podium-avatar { width: 80px; height: 80px; }
+    }
+</style>
+
+<div class="leader-wrapper">
+    <div class="leader-title"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Liderlik Tablosu</div>
+
+    <div class="leader-tabs">
+        <button class="leader-tab active" onclick="loadLB('hafta', this)">📅 Bu Hafta</button>
+        <button class="leader-tab" onclick="loadLB('ay', this)">📆 Bu Ay</button>
+        <button class="leader-tab" onclick="loadLB('tum', this)">🏆 Tüm Zamanlar</button>
+    </div>
+
+    <div id="podiumArea">
+        <div style="text-align:center;padding:40px;color:var(--text-muted)">
+            <div class="skel skel-line w40" style="margin:0 auto;height:16px;"></div>
+        </div>
+    </div>
+    <div id="leaderList" style="margin-top: 16px;"></div>
+</div>
+
+@section Scripts {
+<script>
+    async function loadLB(donem, btn) {
+        if (btn) { document.querySelectorAll('.leader-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); }
+        const data = await secureFetch(`/Social/GetLiderlik?donem=${donem}`);
+        if (!data || !data.success) return;
+
+        const top3 = data.liderler.slice(0, 3);
+        const rest = data.liderler.slice(3);
+
+        function av(u, size = 76) {
+            if (u.ProfilResmi) return `<img src="${u.ProfilResmi}">`;
+            const letter = (u.AdSoyad||'?')[0].toUpperCase();
+            return `<div style="width:100%;height:100%;background:linear-gradient(135deg,var(--accent),#7ab800);color:#000;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:${size/2.5}px;border-radius:50%">${letter}</div>`;
+        }
+
+        const order = [top3[1], top3[0], top3[2]].filter(Boolean);
+        const medals = ['🥈','🥇','🥉'];
+        const classes = ['silver','gold','bronze'];
+        
+        document.getElementById('podiumArea').innerHTML = top3.length >= 2 ? `<div class="podium">
+            ${order.map((u, i) => u ? `<div class="podium-item ${classes[i]}">
+                <div class="podium-rank">${medals[i]}</div>
+                <div class="podium-avatar">${av(u, classes[i]==='gold'?100:76)}</div>
+                <div class="podium-name">${u.AdSoyad}</div>
+                <div class="podium-xp">${u.DonemXP} XP</div>
+                <div class="podium-bar"></div>
+            </div>` : '').join('')}
+        </div>` : '<div style="text-align:center;padding:40px;color:var(--text-muted)">Yeterli veri yok</div>';
+
+        document.getElementById('leaderList').innerHTML = rest.map((u, i) => `
+            <div class="leader-row ${u.Id === data.myId ? 'me' : ''}" onclick="window.location.href='/Social/Profil/${u.Id}'">
+                <div class="leader-pos ${i < 7 ? 'top' : ''}">#${i + 4}</div>
+                <div class="leader-avatar">${av(u, 44)}</div>
+                <div class="leader-info">
+                    <div class="leader-name">${u.AdSoyad}</div>
+                    <div class="leader-meta">
+                        <span><i class="fa-solid fa-star" style="color:var(--gold)"></i> Lv.${u.Seviye}</span>
+                        <span><i class="fa-solid fa-fire" style="color:var(--red)"></i> ${u.Streak} gün</span>
+                    </div>
+                </div>
+                <div class="leader-xp-val">${u.DonemXP} XP</div>
+            </div>
+        `).join('');
+    }
+    
+    loadLB('hafta');
+</script>
+}
