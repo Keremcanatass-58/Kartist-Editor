@@ -21,13 +21,13 @@
 
     /* ===== PROFILE CARD (Floating) ===== */
     .sp-info-card {
-        background: rgba(22, 27, 34, 0.65); backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08);
-        border-radius: var(--radius-xl); margin: -80px 20px 0; position: relative; z-index: 10;
-        padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        background: rgba(22, 27, 34, 0.75); backdrop-filter: blur(28px);
+        -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.10);
+        border-radius: var(--radius-xl); margin: -90px auto 0; position: relative; z-index: 10;
+        padding: 36px; box-shadow: 0 28px 64px rgba(0,0,0,0.35); max-width: 1100px;
     }
     .sp-top-row { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
-    
+    .sp-info-main { display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; width: 100%; }
     .sp-avatar-wrap { position: relative; flex-shrink: 0; margin-top: -60px; }
     .sp-avatar-ring {
         width: 140px; height: 140px; border-radius: 50%; padding: 4px;
@@ -40,8 +40,8 @@
         background: #111; font-size: 3.5rem; font-weight: 900;
     }
 
-    .sp-identity { display: flex; flex-direction: column; align-items: center; width: 100%; }
-    .sp-identity h2 { margin: 0 0 10px; font-size: 2rem; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; letter-spacing:-0.5px;}
+    .sp-identity { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
+    .sp-identity h2 { margin: 0 0 10px; font-size: 2rem; font-weight: 900; display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; letter-spacing:-0.5px;}
     .sp-pro-tag {
         background: linear-gradient(90deg, #ff9f43, #ff4757); color: #fff; font-size: 0.65rem;
         padding: 4px 12px; border-radius: 99px; font-weight: 900; letter-spacing: 1px; display:inline-flex; align-items:center; gap:4px;
@@ -51,13 +51,14 @@
 
     /* ===== STATS BAR ===== */
     .sp-stats-row { display: flex; gap: 40px; justify-content: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; text-align: center; }
-    .sp-stat { display: flex; flex-direction: column; gap: 4px; }
+    .sp-stat { display: flex; flex-direction: column; gap: 4px; min-width: 90px; }
+    .sp-stat-icon { color: var(--accent); font-size: 1rem; margin-bottom: 6px; }
     .sp-stat-num { font-size: 1.6rem; font-weight: 900; color: #fff; }
     .sp-stat-num span.accent { color: var(--accent); }
     .sp-stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
 
     /* ===== ACTIONS ===== */
-    .sp-actions-box { display: flex; justify-content: center; gap: 12px; margin-top: 24px; width: 100%; }
+    .sp-actions-box { display: flex; justify-content: flex-start; gap: 12px; margin-top: 24px; width: 100%; flex-wrap: wrap; }
     .btn-sp {
         padding: 12px 28px; border-radius: 99px; font-weight: 800; font-size: 0.9rem; font-family: var(--font); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex; align-items: center; gap: 8px; justify-content: center;
@@ -70,7 +71,7 @@
     .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
 
     /* ===== BADGES ===== */
-    .sp-badges-wrap { position: absolute; top: 32px; right: 32px; display: flex; gap: 8px; flex-direction: column; align-items: flex-end; }
+    .sp-badges-wrap { position: absolute; top: 24px; right: 24px; display: flex; gap: 10px; flex-direction: row; align-items: center; }
     .sp-badge {
         width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.08);
         border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
@@ -107,7 +108,10 @@
     .sp-grid-tab.active { color: var(--accent); }
     .sp-grid-tab.active::after { transform: scaleX(1); }
 
-    .sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; margin-bottom: 60px; }
+    .sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; margin-bottom: 60px; }
+    @@media (min-width: 1200px) {
+        .sp-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    }
     .sp-grid-item {
         aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; position: relative;
         background: #111; cursor: pointer;
@@ -286,7 +290,7 @@
 
             card.innerHTML = `
                 ${badgesHtml}
-                <div class="sp-top-row">
+                <div class="sp-info-main">
                     <div class="sp-avatar-wrap">
                         <div class="sp-avatar-ring">${avatarHTML(u.ProfilResmi, u.AdSoyad, 120)}</div>
                     </div>
@@ -313,18 +317,22 @@
                 
                 <div class="sp-stats-row">
                     <div class="sp-stat">
+                        <div class="sp-stat-icon"><i class="fa-solid fa-photo-film"></i></div>
                         <div class="sp-stat-num">${u.GonderiSayisi}</div>
                         <div class="sp-stat-label">Gönderi</div>
                     </div>
                     <div class="sp-stat">
+                        <div class="sp-stat-icon"><i class="fa-solid fa-user-group"></i></div>
                         <div class="sp-stat-num">${u.TakipciSayisi}</div>
                         <div class="sp-stat-label">Takipçi</div>
                     </div>
                     <div class="sp-stat">
+                        <div class="sp-stat-icon"><i class="fa-solid fa-user-plus"></i></div>
                         <div class="sp-stat-num">${u.TakipSayisi}</div>
                         <div class="sp-stat-label">Takip</div>
                     </div>
                     <div class="sp-stat">
+                        <div class="sp-stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
                         <div class="sp-stat-num"><span class="accent">${u.ToplamXP || 0}</span></div>
                         <div class="sp-stat-label">XP Puanı</div>
                     </div>

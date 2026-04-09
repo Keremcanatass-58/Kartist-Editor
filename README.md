@@ -21,20 +21,6 @@
   </a>
 </p>
 
-<br>
-
-<table align="center">
-  <tr>
-    <td align="center">
-      <h3>📋 Vize Proje Raporu</h3>
-      <p>
-        <a href="https://htmlpreview.github.io/?https://github.com/Keremcanatass-58/Kartist-Editor/blob/main/docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html"><strong>📄 Detaylı Vize Raporu — Tıkla ve Görüntüle »</strong></a><br>
-        <em>10 sayfa • Ekran görüntüleri • Kod örnekleri • Mimari diyagramlar</em>
-      </p>
-    </td>
-  </tr>
-</table>
-
 ---
 
 ## 🌟 Proje Hakkında
@@ -98,21 +84,8 @@ CI/CD:      GitHub Actions
 - ✅ Canlı canvas tasarım kaydetme, JSON veri kaydı ve önizleme görseli üretme
 - ✅ Kullanıcı odaklı tasarım akışı ve performans optimizasyonu
 
-### Sprint 4 — Kartist Social (Ağ) (Hafta 7-8)
-- ✅ Sosyal Akış (Social Feed) modülünün inşası ve mock veri otomasyonu
-- ✅ Dinamik post yönetimi (Sil/Düzenle) ve yetkilendirme (Server Claim Check)
-- ✅ `AiModerationService` ile şüpheli içeriklerin yapay zeka ile taranması
-- ✅ Gönderiler için kaydırılabilir X-Ray (Öncesi/Sonrası) araç entegrasyonu
-- ✅ GitHub Actions CI/CD Pipeline hata ayıklaması ve stabilizasyon
-- 📄 **[Sprint 4 Detaylı Teknik Raporunu Görüntüle »](docs/Sprint_4_Raporu.md)**
-
 ### 📄 Vize Proje Raporu
-
-| Doküman | Açıklama |
-|---------|----------|
-| [📋 Detaylı Vize Raporu (HTML)](docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html) | 10 sayfalık detaylı rapor — ekran görüntüleri, kod örnekleri, mimari diyagramlar |
-| [📋 Vize Raporu (PDF)](KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf) | PDF sürümü |
-| [📂 Tüm Dokümantasyon](docs/) | Sprint raporları, ekran görüntüleri ve teknik belgeler |
+Proje raporunun PDF sürümü repoda eklendi: [KARTIST v2.0 - Vize Proje Raporu.pdf](KARTIST v2.0 - Vize Proje Raporu.pdf)
 
 ---
 

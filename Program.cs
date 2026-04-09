@@ -16,6 +16,8 @@ builder.Services.Configure<DeploymentOptions>(builder.Configuration.GetSection("
 builder.Services.AddScoped<IAiPromptService, AiPromptService>();
 builder.Services.AddScoped<IAiImageService, AiImageService>();
 builder.Services.AddScoped<AiModerationService>();
+builder.Services.AddScoped<Kartist.Data.Repositories.ISocialRepository, Kartist.Data.Repositories.SocialRepository>();
+builder.Services.AddScoped<Kartist.Services.Business.ISocialService, Kartist.Services.Business.SocialService>();
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -114,6 +116,7 @@ app.UseAuthorization();
 
 app.MapHub<Kartist.Hubs.AdminHub>("/adminHub");
 app.MapHub<Kartist.Hubs.NotificationHub>("/notificationHub");
+app.MapHub<Kartist.Hubs.NotificationHub>("/notifHub"); // Alias for /notificationHub
 
 app.MapControllers();
 

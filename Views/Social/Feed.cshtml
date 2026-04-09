@@ -134,7 +134,11 @@
 @section Scripts {
 <script>
     const MY_USER_ID = parseInt('@myIdStr') || 0;
-    let feedPage = 0, feedFiltre = 'yeni', hasMore = true, isLoading = false;
+    let feedPage = 0, feedFiltre = '@(ViewBag.Filtre ?? "yeni")', hasMore = true, isLoading = false;
+    
+    document.querySelectorAll('.feed-tab').forEach(t => {
+        t.classList.toggle('active', (feedFiltre === 'takip' ? t.id === 'tabFollowing' : t.id === 'tabAll'));
+    });
     
     // --- Omnibox ---
     const textInput = document.getElementById('postTextInput');
@@ -275,78 +279,102 @@
             document.getElementById('loadingMore').style.display = 'none';
             if(refresh) container.innerHTML = '';
 
-            if (data.success) {
-                const items = data.posts || data.gonderiler || [];
-                if (items.length === 0) {
-                    hasMore = false;
-                    if(feedPage > 0) document.getElementById('noMorePosts').style.display = 'block';
-                    else container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
-                        <i class="fa-regular fa-face-smile" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
-                        Henüz gönderi yok. İlk paylaşan sen ol!
-                    </div>`;
-                } else {
-                    items.forEach(g => renderPost(g, container));
-                    feedPage++;
-                    hasMore = data.hasMore !== false;
-                }
+            if (!data.success) {
+                hasMore = false;
+                const msg = data.message || 'Akış yüklenemedi. Lütfen sayfayı yenileyin.';
+                container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+                    <i class="fa-regular fa-face-frown" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
+                    ${escapeHtml(msg)}
+                </div>`;
+                return;
+            }
+
+            const items = data.posts || data.gonderiler || [];
+            if (items.length === 0) {
+                hasMore = false;
+                if(feedPage > 0) document.getElementById('noMorePosts').style.display = 'block';
+                else container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+                    <i class="fa-regular fa-face-smile" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
+                    Henüz gönderi yok. İlk paylaşan sen ol!
+                </div>`;
+            } else {
+                items.forEach(g => renderPost(g, container));
+                feedPage++;
+                hasMore = data.hasMore !== false;
             }
         } catch(e) { console.error('Feed error:', e); }
         finally { isLoading = false; }
     }
 
+    function getField(obj, pascal, camel) {
+        if (!obj) return undefined;
+        return obj[pascal] ?? obj[camel];
+    }
+
     function renderPost(g, container) {
         const div = document.createElement('article');
         div.className = 'post-card slide-up';
-        div.id = `post-${g.Id}`;
+        div.id = `post-${getField(g, 'Id', 'id')}`;
         
-        const userName = g.AdSoyad || g.KullaniciAd || '?';
-        const userPhoto = g.ProfilResmi || g.KullaniciFoto;
-        const isMyPost = g.IsMyPost === 1 || g.IsMyPost === true;
+        const userName = getField(g, 'AdSoyad', 'adSoyad') || getField(g, 'KullaniciAd', 'kullaniciAd') || '?';
+        const userPhoto = getField(g, 'ProfilResmi', 'profilResmi') || getField(g, 'KullaniciFoto', 'kullaniciFoto');
+        const isMyPost = getField(g, 'IsMyPost', 'isMyPost') === 1 || getField(g, 'IsMyPost', 'isMyPost') === true;
         
         // Vibe badge
-        const vibeHtml = g.AiVibe ? `<div class="vibe-badge">${g.AiVibe} Vibe</div>` : '';
+        const vibeHtml = getField(g, 'AiVibe', 'aiVibe') ? `<div class="vibe-badge">${getField(g, 'AiVibe', 'aiVibe')} Vibe</div>` : '';
         
         // Media
         let mediaHtml = '';
-        if (g.OnceSonraResim && g.GorselUrl) {
+        const gorselUrl = getField(g, 'GorselUrl', 'gorselUrl');
+        const onceSonraResim = getField(g, 'OnceSonraResim', 'onceSonraResim');
+        const kodSinipet = getField(g, 'KodSinipet', 'kodSinipet');
+        const bodyText = getField(g, 'Icerik', 'icerik') || '';
+        const isLiked = getField(g, 'Begenildi', 'begeniildi') === 1 || getField(g, 'Begenildi', 'begeniildi') === true;
+        const likeCount = getField(g, 'BegeniSayisi', 'begeniSayisi') || 0;
+        const commentCount = getField(g, 'YorumSayisi', 'yorumSayisi') || 0;
+        const isSaved = getField(g, 'Kaydedildi', 'kaydedildi') === 1 || getField(g, 'Kaydedildi', 'kaydedildi') === true;
+        
+        if (onceSonraResim && gorselUrl) {
             mediaHtml = `<div class="xray-container" onmousemove="xrayMove(event,this)" ontouchmove="xrayTouch(event,this)">
-                <img src="${g.GorselUrl}" class="xray-img">
-                <img src="${g.OnceSonraResim}" class="xray-img xray-after">
+                <img src="${normalizeMediaUrl(gorselUrl)}" class="xray-img">
+                <img src="${normalizeMediaUrl(onceSonraResim)}" class="xray-img xray-after">
                 <div class="xray-handle"></div>
                 <span class="xray-label before">Önce</span>
                 <span class="xray-label after">Sonra</span>
             </div>`;
-        } else if (g.GorselUrl) {
-            mediaHtml = `<div class="post-image-wrap" ondblclick="doubleTapLike(${g.Id}, this)">
-                <img src="${g.GorselUrl}" class="post-image" loading="lazy">
+        } else if (gorselUrl) {
+            mediaHtml = `<div class="post-image-wrap" ondblclick="doubleTapLike(${getField(g, 'Id', 'id')}, this)">
+                <img src="${normalizeMediaUrl(gorselUrl)}" class="post-image" loading="lazy">
                 <i class="fa-solid fa-heart double-tap-heart"></i>
             </div>`;
         }
 
         // Code snippet
-        const codeHtml = g.KodSinipet ? `<div class="code-snippet"><pre><code>${escapeHtml(g.KodSinipet)}</code></pre></div>` : '';
+        const codeHtml = kodSinipet ? `<div class="code-snippet"><pre><code>${escapeHtml(kodSinipet)}</code></pre></div>` : '';
 
         // Post body (truncate long text)
-        const bodyText = g.Icerik || '';
         const truncated = bodyText.length > 280;
         const bodyClass = truncated ? 'post-body truncated' : 'post-body';
         const showMoreBtn = truncated ? `<button class="show-more-btn" onclick="this.previousElementSibling.classList.remove('truncated');this.remove();">devamını gör</button>` : '';
+        const postId = getField(g, 'Id', 'id');
+        const authorId = getField(g, 'KullaniciId', 'kullaniciId');
+        const createdAt = getField(g, 'OlusturmaTarihi', 'olusturmaTarihi');
 
         div.innerHTML = `
-            <div class="avatar-wrapper"><a href="/Social/Profil/${g.KullaniciId}">${avatarHTML(userPhoto, userName, 44)}</a></div>
+            <div class="avatar-wrapper"><a href="/Social/Profil/${authorId}">${avatarHTML(userPhoto, userName, 44)}</a></div>
             <div class="post-content">
                 <div class="post-meta">
-                    <a href="/Social/Profil/${g.KullaniciId}" class="post-author">${userName}</a>
+                    <a href="/Social/Profil/${authorId}" class="post-author">${userName}</a>
                     <span class="post-dot">·</span>
-                    <span class="post-time">${timeAgo(g.OlusturmaTarihi)}</span>
+                    <span class="post-time">${timeAgo(createdAt)}</span>
                     <div style="flex:1"></div>
-                    <button class="post-menu-btn" onclick="togglePostMenu(${g.Id})"><i class="fa-solid fa-ellipsis"></i></button>
+                    <button class="post-menu-btn" onclick="togglePostMenu(${postId})"><i class="fa-solid fa-ellipsis"></i></button>
                 </div>
-                <div id="postMenu-${g.Id}" class="post-dropdown">
-                    ${isMyPost ? `<div class="post-dropdown-item" onclick="editPost(${g.Id})"><i class="fa-solid fa-pen"></i> Düzenle</div>` : ''}
-                    ${isMyPost ? `<div class="post-dropdown-item danger" onclick="deletePost(${g.Id})"><i class="fa-solid fa-trash"></i> Sil</div>` : ''}
-                    <div class="post-dropdown-item" onclick="copyPostLink(${g.Id})"><i class="fa-solid fa-link"></i> Bağlantıyı Kopyala</div>
-                    ${!isMyPost ? `<div class="post-dropdown-item danger" onclick="reportPost(${g.Id})"><i class="fa-solid fa-flag"></i> Bildir</div>` : ''}
+                <div id="postMenu-${postId}" class="post-dropdown">
+                    ${isMyPost ? `<div class="post-dropdown-item" onclick="editPost(${postId})"><i class="fa-solid fa-pen"></i> Düzenle</div>` : ''}
+                    ${isMyPost ? `<div class="post-dropdown-item danger" onclick="deletePost(${postId})"><i class="fa-solid fa-trash"></i> Sil</div>` : ''}
+                    <div class="post-dropdown-item" onclick="copyPostLink(${postId})"><i class="fa-solid fa-link"></i> Bağlantıyı Kopyala</div>
+                    ${!isMyPost ? `<div class="post-dropdown-item danger" onclick="reportPost(${postId})"><i class="fa-solid fa-flag"></i> Bildir</div>` : ''}
                 </div>
                 ${vibeHtml}
                 <div class="${bodyClass}">${parseText(bodyText)}</div>
@@ -355,34 +383,34 @@
                 ${mediaHtml}
                 
                 <div class="post-actions">
-                    <button class="action-btn like-btn ${g.Begenildi ? 'liked' : ''}" onclick="begen(${g.Id})" id="btn-like-${g.Id}">
-                        <i class="${g.Begenildi ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
-                        <span id="like-count-${g.Id}">${g.BegeniSayisi > 0 ? g.BegeniSayisi : ''}</span>
+                    <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="begen(${postId})" id="btn-like-${postId}">
+                        <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                        <span id="like-count-${postId}">${likeCount > 0 ? likeCount : ''}</span>
                         <div class="like-particles"></div>
                     </button>
-                    <button class="action-btn comment-btn" onclick="toggleComments(${g.Id})">
+                    <button class="action-btn comment-btn" onclick="toggleComments(${postId})">
                         <i class="fa-regular fa-comment"></i>
-                        <span>${g.YorumSayisi > 0 ? g.YorumSayisi : ''}</span>
+                        <span>${commentCount > 0 ? commentCount : ''}</span>
                     </button>
-                    <button class="action-btn repost-btn" onclick="repost(${g.Id})" id="btn-repost-${g.Id}">
+                    <button class="action-btn repost-btn" onclick="repost(${postId})" id="btn-repost-${postId}">
                         <i class="fa-solid fa-retweet"></i>
                     </button>
-                    <button class="action-btn save-btn ${g.Kaydedildi ? 'saved' : ''}" onclick="kaydet(${g.Id})" id="btn-save-${g.Id}">
-                        <i class="${g.Kaydedildi ? 'fa-solid' : 'fa-regular'} fa-bookmark"></i>
+                    <button class="action-btn save-btn ${isSaved ? 'saved' : ''}" onclick="kaydet(${postId})" id="btn-save-${postId}">
+                        <i class="${isSaved ? 'fa-solid' : 'fa-regular'} fa-bookmark"></i>
                     </button>
-                    ${!isMyPost ? `<button class="action-btn collab-btn" onclick="sendCollabRequest(${g.KullaniciId}, ${g.Id})" title="İş Birliği">
+                    ${!isMyPost ? `<button class="action-btn collab-btn" onclick="sendCollabRequest(${authorId}, ${postId})" title="İş Birliği">
                         <i class="fa-solid fa-bolt"></i>
                     </button>` : ''}
-                    <button class="action-btn share-btn" onclick="copyPostLink(${g.Id})">
+                    <button class="action-btn share-btn" onclick="copyPostLink(${postId})">
                         <i class="fa-solid fa-arrow-up-from-bracket"></i>
                     </button>
                 </div>
                 
-                <div class="comments-section" id="comments-${g.Id}" style="display:none;">
-                    <div id="comment-list-${g.Id}"></div>
+                <div class="comments-section" id="comments-${postId}" style="display:none;">
+                    <div id="comment-list-${postId}"></div>
                     <div class="comment-input-row">
-                        <input type="text" id="comment-input-${g.Id}" class="comment-input" placeholder="Yanıtla..." onkeydown="if(event.key==='Enter')makeComment(${g.Id})">
-                        <button class="comment-send" onclick="makeComment(${g.Id})">Gönder</button>
+                        <input type="text" id="comment-input-${postId}" class="comment-input" placeholder="Yanıtla..." onkeydown="if(event.key==='Enter')makeComment(${postId})">
+                        <button class="comment-send" onclick="makeComment(${postId})">Gönder</button>
                     </div>
                 </div>
             </div>

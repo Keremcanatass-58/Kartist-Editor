@@ -54,6 +54,22 @@ namespace Kartist.Controllers
                         ORDER BY s.Id DESC";
 
                     var kartlar = baglanti.Query<Sablon>(sql, new { mail = email, take }, commandTimeout: 5).ToList();
+
+                    // TÜMLÜ TEMIZLEME: Tüm eski resim URL'lerini temizle, sadece Unsplash kullan
+                    kartlar = kartlar.Select((k, idx) => {
+                        // Sadece http(s) ile başlayan ve unsplash.com içeren URL'leri kabul et
+                        // Başka her şey → fallback resim
+                        bool validUrl = !string.IsNullOrEmpty(k.ResimUrl)
+                            && k.ResimUrl.StartsWith("http")
+                            && (k.ResimUrl.Contains("unsplash.com") || k.ResimUrl.Contains("cloudinary.com"));
+
+                        if (!validUrl)
+                        {
+                            k.ResimUrl = GetFallbackImageUrl(k.Kategori ?? "Genel", idx);
+                        }
+                        return k;
+                    }).ToList();
+
                     return View(kartlar);
                 }
             }
@@ -61,6 +77,32 @@ namespace Kartist.Controllers
             {
                 return View(new List<Sablon>());
             }
+        }
+
+        private string GetFallbackImageUrl(string kategori, int index)
+        {
+            // CDN'den hızlı ve güvenilir resimler
+            var resimler = new Dictionary<string, string>()
+            {
+                { "Doğum Günü", "https://via.placeholder.com/600x800?text=Doğum+Günü" },
+                { "Düğün", "https://via.placeholder.com/600x800?text=Düğün" },
+                { "Kurumsal", "https://via.placeholder.com/600x800?text=Kurumsal" },
+                { "Teknoloji", "https://via.placeholder.com/600x800?text=Teknoloji" },
+                { "Sağlık", "https://via.placeholder.com/600x800?text=Sağlık" },
+                { "Eğitim", "https://via.placeholder.com/600x800?text=Eğitim" },
+                { "Sanat", "https://via.placeholder.com/600x800?text=Sanat" },
+                { "Seyahat", "https://via.placeholder.com/600x800?text=Seyahat" },
+                { "Yemek", "https://via.placeholder.com/600x800?text=Yemek" },
+                { "Moda", "https://via.placeholder.com/600x800?text=Moda" },
+                { "Genel", "https://via.placeholder.com/600x800?text=Tasarım" }
+            };
+
+            if (resimler.TryGetValue(kategori, out var url))
+            {
+                return url;
+            }
+
+            return "https://via.placeholder.com/600x800?text=Tasarım";
         }
 
         [HttpPost]

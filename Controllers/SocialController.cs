@@ -6,22 +6,25 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Kartist.Controllers
 {
-    public class SocialController : Controller
+    public class SocialController : Kartist.Controllers.Base.BaseController
     {
         private readonly string _conn;
         private readonly IConfiguration _config;
         private readonly Kartist.Services.AiModerationService _aiModerator;
         private readonly Microsoft.AspNetCore.SignalR.IHubContext<Kartist.Hubs.NotificationHub> _hubContext;
+        private readonly Kartist.Services.Business.ISocialService _socialService;
 
         public SocialController(
             IConfiguration config, 
             Kartist.Services.AiModerationService aiModerator,
-            Microsoft.AspNetCore.SignalR.IHubContext<Kartist.Hubs.NotificationHub> hubContext)
+            Microsoft.AspNetCore.SignalR.IHubContext<Kartist.Hubs.NotificationHub> hubContext,
+            Kartist.Services.Business.ISocialService socialService)
         {
             _config = config;
             _conn = config.GetConnectionString("DefaultConnection");
             _aiModerator = aiModerator;
             _hubContext = hubContext;
+            _socialService = socialService;
         }
 
         private string GetEmail() => User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value : null;
@@ -41,200 +44,63 @@ namespace Kartist.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetFeed(int sayfa = 0, string filtre = "yeni")
+        public async Task<IActionResult> GetFeed(int sayfa = 0, string filtre = "yeni")
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false });
+            if (CurrentUserId == 0)
+                return Json(new { success = false, message = "Oturumunuz süresi dolmuş olabilir. Lütfen tekrar giriş yapın." });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-            int pageSize = 10;
-            int offset = sayfa * pageSize;
-
-            string orderBy = filtre switch
+            try
             {
-                "populer" => "g.BegeniSayisi DESC, g.OlusturmaTarihi DESC",
-                "takip" => "g.OlusturmaTarihi DESC",
-                _ => "g.OlusturmaTarihi DESC"
-            };
-
-            string whereExtra = filtre == "takip"
-                ? "AND (g.KullaniciId IN (SELECT TakipEdilenId FROM Takipciler WHERE TakipEdenId = @uid) OR g.KullaniciId = @uid)"
-                : "";
-
-            string sql = $@"
-                SELECT g.Id, g.Icerik, g.GorselUrl, g.BegeniSayisi, g.YorumSayisi, g.OlusturmaTarihi,
-                       g.KodSinipet, g.OnceSonraResim, g.AiVibe,
-                       k.Id as KullaniciId, k.AdSoyad, k.ProfilResmi, k.UyelikTipi,
-                       CASE WHEN b.Id IS NOT NULL THEN 1 ELSE 0 END as Begenildi,
-                       CASE WHEN kay.Id IS NOT NULL THEN 1 ELSE 0 END as Kaydedildi,
-                       CASE WHEN g.KullaniciId = @uid THEN 1 ELSE 0 END as IsMyPost
-                FROM SosyalGonderiler g
-                JOIN Kullanicilar k ON g.KullaniciId = k.Id
-                LEFT JOIN SosyalBegeniler b ON b.GonderiId = g.Id AND b.KullaniciId = @uid
-                LEFT JOIN Kaydedilenler kay ON kay.GonderiId = g.Id AND kay.KullaniciId = @uid
-                WHERE 1=1 {whereExtra}
-                ORDER BY {orderBy}
-                OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY";
-
-
-            var posts = db.Query(sql, new { uid = userId, offset, size = pageSize }).ToList();
-            return Json(new { success = true, posts, hasMore = posts.Count == pageSize });
+                var result = await _socialService.GetFeedAsync(CurrentUserId, sayfa, filtre);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Akış yüklenemedi: {ex.Message}" });
+            }
         }
 
         // ===== GÖNDERİ OLUŞTUR =====
         [HttpPost]
         public async Task<IActionResult> GonderiOlustur(string icerik, IFormFile gorsel, IFormFile onceSonraGorsel, string kodSinipet)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-            if (userId == 0) return Json(new { success = false, message = "Kullanici bulunamadi." });
-
-            string gorselUrl = null;
-            if (gorsel != null && gorsel.Length > 0)
+            string webRootPath = System.IO.Directory.GetCurrentDirectory() + "/wwwroot";
+            
+            dynamic result = await _socialService.CreatePostAsync(CurrentUserId, icerik, gorsel, onceSonraGorsel, kodSinipet, webRootPath);
+            
+            if (result.success)
             {
-                if (!gorsel.ContentType.StartsWith("image/"))
-                    return Json(new { success = false, message = "Sadece resim yükleyebilirsiniz." });
-                if (gorsel.Length > 5 * 1024 * 1024)
-                    return Json(new { success = false, message = "Resim max 5MB olabilir." });
-
-                var dosyaAdi = $"social_{Guid.NewGuid():N}.{gorsel.ContentType.Split('/').Last()}";
-                var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/social");
-                if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
-
-                var yol = Path.Combine(klasor, dosyaAdi);
-                await using var stream = new FileStream(yol, FileMode.Create);
-                await gorsel.CopyToAsync(stream);
-                gorselUrl = "/uploads/social/" + dosyaAdi;
+                // Gamification triggers after successful creation
+                using var db = new SqlConnection(_conn);
+                KazanXP(db, CurrentUserId, 50, "gonderi", "Yeni gönderi paylaştın");
+                GunlukGorevIlerle(db, CurrentUserId, "gonderi");
+                RozetKontrol(db, CurrentUserId);
             }
 
-            string onceSonraUrl = null;
-            if (onceSonraGorsel != null && onceSonraGorsel.Length > 0)
-            {
-                var dosyaAdi = $"xray_{Guid.NewGuid():N}.{onceSonraGorsel.ContentType.Split('/').Last()}";
-                var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/social");
-                if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
-                var yol = Path.Combine(klasor, dosyaAdi);
-                await using var stream = new FileStream(yol, FileMode.Create);
-                await onceSonraGorsel.CopyToAsync(stream);
-                onceSonraUrl = "/uploads/social/" + dosyaAdi;
-            }
-
-            if (string.IsNullOrWhiteSpace(icerik) && string.IsNullOrWhiteSpace(gorselUrl) && string.IsNullOrWhiteSpace(kodSinipet))
-                return Json(new { success = false, message = "Lütfen bir içerik girin." });
-
-            var modResult = await _aiModerator.AnalyzeContentAsync(icerik);
-            if (modResult.IsToxic)
-            {
-                if (gorselUrl != null)
-                {
-                    try { System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", gorselUrl.TrimStart('/'))); } catch {}
-                }
-                return Json(new { success = false, message = modResult.Message });
-            }
-
-            icerik = Helpers.InputValidator.SanitizeHtml(icerik ?? "");
-
-            // Hashtag'leri çıkar
-            var hashtags = System.Text.RegularExpressions.Regex.Matches(icerik, @"#(\w+)")
-                .Select(m => m.Groups[1].Value.ToLowerInvariant()).Distinct().ToList();
-
-            // Ai Vibe Matcher
-            string vibe = "🔥";
-            var lowIc = icerik.ToLower();
-            if (lowIc.Contains("kod") || lowIc.Contains("css") || lowIc.Contains("c#") || !string.IsNullOrEmpty(kodSinipet)) vibe = "💻";
-            else if (lowIc.Contains("tasarım") || lowIc.Contains("design") || lowIc.Contains("renk") || lowIc.Contains("çizim")) vibe = "🎨";
-            else if (lowIc.Contains("fikir") || lowIc.Contains("proje") || lowIc.Contains("idea")) vibe = "💡";
-            else if (lowIc.Contains("başarı") || lowIc.Contains("özellik")) vibe = "🚀";
-
-            int gonderiId = db.ExecuteScalar<int>(
-                @"INSERT INTO SosyalGonderiler (KullaniciId, Icerik, GorselUrl, OnceSonraResim, KodSinipet, AiVibe) OUTPUT INSERTED.Id VALUES (@uid, @icerik, @gorsel, @xray, @kod, @vibe)",
-                new { uid = userId, icerik, gorsel = gorselUrl, xray = onceSonraUrl, kod = kodSinipet, vibe });
-
-            foreach (var tag in hashtags)
-            {
-                db.Execute("INSERT INTO Hashtagler (Etiket, GonderiId) VALUES (@tag, @gid)", new { tag, gid = gonderiId });
-            }
-
-            KazanXP(db, userId, 50, "gonderi", "Yeni gönderi paylaştın");
-            GunlukGorevIlerle(db, userId, "gonderi");
-            RozetKontrol(db, userId);
-
-            return Json(new { success = true, id = gonderiId, xp = 50 });
+            return Json(result);
         }
 
         // ===== GÖNDERİ SİL =====
         [HttpPost]
-        public IActionResult GonderiSil(int gonderiId)
+        public async Task<IActionResult> GonderiSil(int gonderiId)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
-
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-
-            var gonderi = db.QueryFirstOrDefault("SELECT Id, KullaniciId, GorselUrl, OnceSonraResim FROM SosyalGonderiler WHERE Id = @gid", new { gid = gonderiId });
-            if (gonderi == null) return Json(new { success = false, message = "Gönderi bulunamadı." });
-            if ((int)gonderi.KullaniciId != userId) return Json(new { success = false, message = "Bu gönderiyi silme yetkiniz yok." });
-
-            // Dosyaları temizle
-            string gorselUrl = gonderi.GorselUrl as string;
-            string xrayUrl = gonderi.OnceSonraResim as string;
-            if (!string.IsNullOrEmpty(gorselUrl) && gorselUrl.StartsWith("/uploads/"))
-            {
-                try { System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", gorselUrl.TrimStart('/'))); } catch {}
-            }
-            if (!string.IsNullOrEmpty(xrayUrl) && xrayUrl.StartsWith("/uploads/"))
-            {
-                try { System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", xrayUrl.TrimStart('/'))); } catch {}
-            }
-
-            // Cascade delete handles comments, likes, hashtags etc.
-            db.Execute("DELETE FROM Hashtagler WHERE GonderiId = @gid", new { gid = gonderiId });
-            db.Execute("DELETE FROM SosyalGonderiler WHERE Id = @gid", new { gid = gonderiId });
-
-            return Json(new { success = true });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
+            
+            string webRootPath = System.IO.Directory.GetCurrentDirectory() + "/wwwroot";
+            var result = await _socialService.DeletePostAsync(gonderiId, CurrentUserId, webRootPath);
+            return Json(result);
         }
 
         // ===== GÖNDERİ DÜZENLE =====
         [HttpPost]
         public async Task<IActionResult> GonderiDuzenle(int gonderiId, string icerik)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false, message = "Giriş yapmalısın." });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-
-            var gonderi = db.QueryFirstOrDefault("SELECT Id, KullaniciId FROM SosyalGonderiler WHERE Id = @gid", new { gid = gonderiId });
-            if (gonderi == null) return Json(new { success = false, message = "Gönderi bulunamadı." });
-            if ((int)gonderi.KullaniciId != userId) return Json(new { success = false, message = "Bu gönderiyi düzenleme yetkiniz yok." });
-
-            if (string.IsNullOrWhiteSpace(icerik))
-                return Json(new { success = false, message = "İçerik boş olamaz." });
-
-            // AI Moderasyon
-            var modResult = await _aiModerator.AnalyzeContentAsync(icerik);
-            if (modResult.IsToxic)
-                return Json(new { success = false, message = modResult.Message });
-
-            icerik = Helpers.InputValidator.SanitizeHtml(icerik);
-
-            // Eski hashtag'leri sil, yenilerini ekle
-            db.Execute("DELETE FROM Hashtagler WHERE GonderiId = @gid", new { gid = gonderiId });
-            var hashtags = System.Text.RegularExpressions.Regex.Matches(icerik, @"#(\w+)")
-                .Select(m => m.Groups[1].Value.ToLowerInvariant()).Distinct().ToList();
-            foreach (var tag in hashtags)
-            {
-                db.Execute("INSERT INTO Hashtagler (Etiket, GonderiId) VALUES (@tag, @gid)", new { tag, gid = gonderiId });
-            }
-
-            db.Execute("UPDATE SosyalGonderiler SET Icerik = @icerik WHERE Id = @gid", new { icerik, gid = gonderiId });
-
-            return Json(new { success = true });
+            var result = await _socialService.EditPostAsync(gonderiId, CurrentUserId, icerik);
+            return Json(result);
         }
 
         // ===== REPOST (RETWEET) =====
@@ -264,121 +130,100 @@ namespace Kartist.Controllers
         // Hikaye metodları aşağıda tanımlı olduğu için burası silindi.
 
         // ===== BEĞENİ =====
+        // ===== BEĞENİ =====
         [HttpPost]
         public async Task<IActionResult> Begen(int gonderiId)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false });
+            if (CurrentUserId == 0) return Json(new { success = false });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
+            // Call Service
+            var result = await _socialService.ToggleLikeAsync(gonderiId, CurrentUserId);
 
-            var varMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM SosyalBegeniler WHERE GonderiId = @gid AND KullaniciId = @uid",
-                new { gid = gonderiId, uid = userId });
+            int xpGained = 0;
 
-            if (varMi > 0)
+            if (result.liked)
             {
-                db.Execute("DELETE FROM SosyalBegeniler WHERE GonderiId = @gid AND KullaniciId = @uid", new { gid = gonderiId, uid = userId });
-                db.Execute("UPDATE SosyalGonderiler SET BegeniSayisi = BegeniSayisi - 1 WHERE Id = @id AND BegeniSayisi > 0", new { id = gonderiId });
-                int yeniSayi = db.ExecuteScalar<int>("SELECT BegeniSayisi FROM SosyalGonderiler WHERE Id = @id", new { id = gonderiId });
-                return Json(new { success = true, liked = false, count = yeniSayi });
-            }
-            else
-            {
-                db.Execute("INSERT INTO SosyalBegeniler (GonderiId, KullaniciId) VALUES (@gid, @uid)", new { gid = gonderiId, uid = userId });
-                db.Execute("UPDATE SosyalGonderiler SET BegeniSayisi = BegeniSayisi + 1 WHERE Id = @id", new { id = gonderiId });
-                int yeniSayi = db.ExecuteScalar<int>("SELECT BegeniSayisi FROM SosyalGonderiler WHERE Id = @id", new { id = gonderiId });
-
-                // Bildirim gönder
-                var gonderiSahibi = db.QueryFirstOrDefault("SELECT KullaniciId, (SELECT Email FROM Kullanicilar k WHERE k.Id = g.KullaniciId) as Email FROM SosyalGonderiler g WHERE Id = @id", new { id = gonderiId });
-                if (gonderiSahibi != null && gonderiSahibi.KullaniciId != userId)
+                // Send Notification if we liked someone else's post
+                if (result.ownerId != 0 && result.ownerId != CurrentUserId)
                 {
-                    var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = userId });
+                    using var db = new SqlConnection(_conn);
+                    var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = CurrentUserId });
                     string msg = $"{ad} gönderini beğendi ❤️";
+                    
                     db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
                                  VALUES (@kid, 'begeni', @msg, @gid, @sid)",
-                        new { kid = gonderiSahibi.KullaniciId, msg, gid = gonderiId, sid = userId });
+                        new { kid = result.ownerId, msg, gid = gonderiId, sid = CurrentUserId });
                         
-                    if (!string.IsNullOrEmpty((string)gonderiSahibi.Email) && Kartist.Hubs.NotificationHub.UserConnections.TryGetValue((string)gonderiSahibi.Email, out var connId))
+                    if (!string.IsNullOrEmpty(result.ownerEmail) && Kartist.Hubs.NotificationHub.UserConnections.TryGetValue(result.ownerEmail, out var connId))
                     {
-                        await _hubContext.Clients.Client(connId).SendAsync("ReceiveNotification", msg, $"/Social/Profil/{userId}", "begeni");
+                        await _hubContext.Clients.Client(connId).SendAsync("ReceiveNotification", msg, $"/Social/Profil/{CurrentUserId}", "begeni");
                     }
                 }
 
-                KazanXP(db, userId, 5, "begeni");
-                GunlukGorevIlerle(db, userId, "begeni");
-                RozetKontrol(db, userId);
-
-                return Json(new { success = true, liked = true, count = yeniSayi, xp = 5 });
+                // Internal Gamification
+                using var db2 = new SqlConnection(_conn);
+                KazanXP(db2, CurrentUserId, 5, "begeni");
+                GunlukGorevIlerle(db2, CurrentUserId, "begeni");
+                RozetKontrol(db2, CurrentUserId);
+                xpGained = 5;
             }
+
+            return Json(new { success = true, liked = result.liked, count = result.begeniSayisi, xp = xpGained });
         }
 
         // ===== YORUM =====
         [HttpPost]
         public async Task<IActionResult> YorumYap(int gonderiId, string icerik, int? ustYorumId = null)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false });
-            if (string.IsNullOrWhiteSpace(icerik)) return Json(new { success = false, message = "Yorum boş olamaz." });
+            if (CurrentUserId == 0) return Json(new { success = false });
 
-            var modResult = await _aiModerator.AnalyzeContentAsync(icerik);
-            if (modResult.IsToxic) return Json(new { success = false, message = modResult.Message });
-
-            icerik = Helpers.InputValidator.SanitizeHtml(icerik);
-            if (icerik.Length > 1000) icerik = icerik[..1000];
-
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-
-            db.Execute("INSERT INTO SosyalYorumlar (GonderiId, KullaniciId, Icerik, UstYorumId) VALUES (@gid, @uid, @icerik, @ustId)",
-                new { gid = gonderiId, uid = userId, icerik, ustId = ustYorumId });
-            db.Execute("UPDATE SosyalGonderiler SET YorumSayisi = YorumSayisi + 1 WHERE Id = @id", new { id = gonderiId });
-
-            var gonderiSahibi = db.QueryFirstOrDefault("SELECT KullaniciId, (SELECT Email FROM Kullanicilar k WHERE k.Id = g.KullaniciId) as Email FROM SosyalGonderiler g WHERE Id = @id", new { id = gonderiId });
-            if (gonderiSahibi != null && gonderiSahibi.KullaniciId != userId)
+            dynamic result = await _socialService.CreateCommentAsync(CurrentUserId, gonderiId, icerik, ustYorumId);
+            
+            if (result.success)
             {
-                var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = userId });
-                string msg = $"{ad} gönderine yorum yaptı 💬";
-                db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
-                             VALUES (@kid, 'yorum', @msg, @gid, @sid)",
-                    new { kid = gonderiSahibi.KullaniciId, msg, gid = gonderiId, sid = userId });
-                    
-                if (!string.IsNullOrEmpty((string)gonderiSahibi.Email) && Kartist.Hubs.NotificationHub.UserConnections.TryGetValue((string)gonderiSahibi.Email, out var connId))
+                // Bildirim gönder (Gonderi Sahibine)
+                using var db = new SqlConnection(_conn);
+                var gonderiSahibiID = db.ExecuteScalar<int>("SELECT KullaniciId FROM SosyalGonderiler WHERE Id = @gid", new { gid = gonderiId });
+                
+                if (gonderiSahibiID != 0 && gonderiSahibiID != CurrentUserId)
                 {
-                    await _hubContext.Clients.Client(connId).SendAsync("ReceiveNotification", msg, $"/Social/Profil/{userId}", "yorum");
+                    var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = CurrentUserId });
+                    var email = db.ExecuteScalar<string>("SELECT Email FROM Kullanicilar WHERE Id = @id", new { id = gonderiSahibiID });
+                    string msg = $"{ad} gönderine yorum yaptı 💬";
+                    
+                    db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
+                                 VALUES (@kid, 'yorum', @msg, @gid, @sid)",
+                        new { kid = gonderiSahibiID, msg, gid = gonderiId, sid = CurrentUserId });
+                        
+                    if (!string.IsNullOrEmpty(email) && Kartist.Hubs.NotificationHub.UserConnections.TryGetValue(email, out var connId))
+                    {
+                        await _hubContext.Clients.Client(connId).SendAsync("ReceiveNotification", msg, $"/Social/Profil/{CurrentUserId}", "yorum");
+                    }
                 }
+
+                KazanXP(db, CurrentUserId, 15, "yorum");
+                GunlukGorevIlerle(db, CurrentUserId, "yorum");
+                RozetKontrol(db, CurrentUserId);
+
+                return Json(new { success = true, id = result.id, xp = 15 });
             }
 
-            KazanXP(db, userId, 15, "yorum");
-            GunlukGorevIlerle(db, userId, "yorum");
-            RozetKontrol(db, userId);
-
-            return Json(new { success = true, xp = 15 });
+            return Json(result);
         }
-        public IActionResult GetYorumlar(int gonderiId)
+        
+        [HttpGet]
+        public async Task<IActionResult> GetYorumlar(int gonderiId)
         {
-            using var db = new SqlConnection(_conn);
-            var yorumlar = db.Query(@"SELECT y.Id, y.Icerik, y.Tarih, k.Id as KullaniciId, k.AdSoyad, k.ProfilResmi
-                                      FROM SosyalYorumlar y JOIN Kullanicilar k ON y.KullaniciId = k.Id
-                                      WHERE y.GonderiId = @gid ORDER BY y.Tarih ASC", new { gid = gonderiId }).ToList();
-            return Json(new { success = true, yorumlar });
+            var result = await _socialService.GetCommentsAsync(gonderiId);
+            return Json(result);
         }
 
         [HttpPost]
-        public IActionResult YorumSil(int yorumId)
+        public async Task<IActionResult> YorumSil(int yorumId)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false });
-
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-
-            var yorum = db.QueryFirstOrDefault("SELECT GonderiId, KullaniciId FROM SosyalYorumlar WHERE Id = @id", new { id = yorumId });
-            if (yorum == null || (int)yorum.KullaniciId != userId) return Json(new { success = false });
-
-            db.Execute("DELETE FROM SosyalYorumlar WHERE Id = @id", new { id = yorumId });
-            db.Execute("UPDATE SosyalGonderiler SET YorumSayisi = YorumSayisi - 1 WHERE Id = @gid AND YorumSayisi > 0", new { gid = (int)yorum.GonderiId });
-            return Json(new { success = true });
+            if (CurrentUserId == 0) return Json(new { success = false });
+            var result = await _socialService.DeleteCommentAsync(yorumId, CurrentUserId);
+            return Json(result);
         }
 
         // ===== TAKİP =====
