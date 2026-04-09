@@ -98,6 +98,14 @@ CI/CD:      GitHub Actions
 - ✅ Canlı canvas tasarım kaydetme, JSON veri kaydı ve önizleme görseli üretme
 - ✅ Kullanıcı odaklı tasarım akışı ve performans optimizasyonu
 
+### Sprint 4 — Kartist Social (Ağ) (Hafta 7-8)
+- ✅ Sosyal Akış (Social Feed) modülünün inşası ve mock veri otomasyonu
+- ✅ Dinamik post yönetimi (Sil/Düzenle) ve yetkilendirme (Server Claim Check)
+- ✅ `AiModerationService` ile şüpheli içeriklerin yapay zeka ile taranması
+- ✅ Gönderiler için kaydırılabilir X-Ray (Öncesi/Sonrası) araç entegrasyonu
+- ✅ GitHub Actions CI/CD Pipeline hata ayıklaması ve stabilizasyon
+- 📄 **[Sprint 4 Detaylı Teknik Raporunu Görüntüle »](docs/Sprint_4_Raporu.md)**
+
 ### 📄 Vize Proje Raporu
 
 | Doküman | Açıklama |
