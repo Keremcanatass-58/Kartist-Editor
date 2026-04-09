@@ -1,4 +1,4 @@
-﻿using Dapper;
+using Dapper;
 using Kartist.Helpers;
 using Kartist.Hubs;
 using Microsoft.AspNetCore.Authentication;
@@ -156,7 +156,8 @@ namespace Kartist.Controllers
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, (string)(user.AdSoyad ?? name)),
-                    new Claim(ClaimTypes.Email, (string)user.Email)
+                    new Claim(ClaimTypes.Email, (string)user.Email),
+                    new Claim("Id", user.Id.ToString())
                 };
 
                 await HttpContext.SignInAsync("KartistCookie", new ClaimsPrincipal(new ClaimsIdentity(claims, "KartistCookie")));
@@ -289,7 +290,7 @@ namespace Kartist.Controllers
                     return RedirectToAction("IkiFactorDogrula");
                 }
 
-                var claims = new List<Claim> { new Claim(ClaimTypes.Name, (string)user.AdSoyad), new Claim(ClaimTypes.Email, (string)user.Email) };
+                var claims = new List<Claim> { new Claim(ClaimTypes.Name, (string)user.AdSoyad), new Claim(ClaimTypes.Email, (string)user.Email), new Claim("Id", user.Id.ToString()) };
                 await HttpContext.SignInAsync("KartistCookie", new ClaimsPrincipal(new ClaimsIdentity(claims, "KartistCookie")));
                 TempData["Mesaj"] = $"Hos geldin {user.AdSoyad}!";
                 TempData["Tur"] = "success";
@@ -725,10 +726,10 @@ namespace Kartist.Controllers
 
                 db.Execute("UPDATE IkiFactorKodlari SET Kullanildi = 1 WHERE Id = @id", new { id = (int)gecerliKod.Id });
 
-                var user = db.QueryFirstOrDefault("SELECT AdSoyad, Email FROM Kullanicilar WHERE Email = @e", new { e = email });
+                var user = db.QueryFirstOrDefault("SELECT Id, AdSoyad, Email FROM Kullanicilar WHERE Email = @e", new { e = email });
                 if (user == null) return RedirectToAction("Giris");
 
-                var claims = new List<Claim> { new Claim(ClaimTypes.Name, (string)user.AdSoyad), new Claim(ClaimTypes.Email, (string)user.Email) };
+                var claims = new List<Claim> { new Claim(ClaimTypes.Name, (string)user.AdSoyad), new Claim(ClaimTypes.Email, (string)user.Email), new Claim("Id", user.Id.ToString()) };
                 await HttpContext.SignInAsync("KartistCookie", new ClaimsPrincipal(new ClaimsIdentity(claims, "KartistCookie")));
                 TempData["Mesaj"] = $"Hos geldin {user.AdSoyad}!";
                 TempData["Tur"] = "success";

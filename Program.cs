@@ -3,6 +3,7 @@ using System.Text;
 using Kartist.Models;
 using Kartist.Middleware;
 using Kartist.Services;
+using Kartist.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
@@ -14,6 +15,7 @@ builder.Services.Configure<AiOptions>(builder.Configuration.GetSection("Ai"));
 builder.Services.Configure<DeploymentOptions>(builder.Configuration.GetSection("Deployment"));
 builder.Services.AddScoped<IAiPromptService, AiPromptService>();
 builder.Services.AddScoped<IAiImageService, AiImageService>();
+builder.Services.AddScoped<AiModerationService>();
 
 builder.Services.AddResponseCompression(options =>
 {
@@ -77,7 +79,7 @@ var app = builder.Build();
 var autoSchema = builder.Configuration.GetValue<bool>("Database:AutoSchema", true);
 if (autoSchema)
 {
-    EnsureDatabaseSchema(builder.Configuration.GetConnectionString("DefaultConnection"));
+    Kartist.Data.DatabaseInitializer.Initialize(builder.Configuration.GetConnectionString("DefaultConnection"));
 }
 
 if (!app.Environment.IsDevelopment())
@@ -111,6 +113,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<Kartist.Hubs.AdminHub>("/adminHub");
+app.MapHub<Kartist.Hubs.NotificationHub>("/notificationHub");
 
 app.MapControllers();
 
@@ -275,76 +278,5 @@ static string ComputeDeploySignature(string secret, string timestamp)
     return Convert.ToHexString(hash).ToLowerInvariant();
 }
 
-static void EnsureDatabaseSchema(string connectionString)
-{
-    if (string.IsNullOrWhiteSpace(connectionString))
-    {
-        return;
-    }
 
-    const string sql = @"
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'BasarisizGirisSayisi')
-    ALTER TABLE Kullanicilar ADD BasarisizGirisSayisi INT NOT NULL DEFAULT 0;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'HesapKilitliMi')
-    ALTER TABLE Kullanicilar ADD HesapKilitliMi BIT NOT NULL DEFAULT 0;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'KilitBitisTarihi')
-    ALTER TABLE Kullanicilar ADD KilitBitisTarihi DATETIME NULL;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'IkiFactorAktif')
-    ALTER TABLE Kullanicilar ADD IkiFactorAktif BIT NOT NULL DEFAULT 0;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'Biyografi')
-    ALTER TABLE Kullanicilar ADD Biyografi NVARCHAR(500) NULL;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'SosyalMedya')
-    ALTER TABLE Kullanicilar ADD SosyalMedya NVARCHAR(500) NULL;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'ProfilResmi')
-    ALTER TABLE Kullanicilar ADD ProfilResmi NVARCHAR(500) NULL;
-
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'UyelikBitisTarihi')
-    ALTER TABLE Kullanicilar ADD UyelikBitisTarihi DATETIME NULL;
-
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('IkiFactorKodlari') AND type = 'U')
-BEGIN
-    CREATE TABLE IkiFactorKodlari (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        KullaniciEmail NVARCHAR(256) NOT NULL,
-        Kod NVARCHAR(6) NOT NULL,
-        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
-        BitisTarihi DATETIME NOT NULL,
-        Kullanildi BIT NOT NULL DEFAULT 0
-    );
-    CREATE INDEX IX_IkiFactorKodlari_Email ON IkiFactorKodlari(KullaniciEmail);
-END
-
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('GirisLoglari') AND type = 'U')
-BEGIN
-    CREATE TABLE GirisLoglari (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        KullaniciEmail NVARCHAR(256) NULL,
-        IpAdresi NVARCHAR(50) NULL,
-        BasariliMi BIT NULL,
-        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
-        UserAgent NVARCHAR(500) NULL
-    );
-    CREATE INDEX IX_GirisLoglari_Email ON GirisLoglari(KullaniciEmail);
-    CREATE INDEX IX_GirisLoglari_Tarih ON GirisLoglari(Tarih);
-END
-";
-
-    try
-    {
-        using var connection = new SqlConnection(connectionString);
-        connection.Open();
-        using var command = new SqlCommand(sql, connection);
-        command.ExecuteNonQuery();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"DB schema check failed: {ex.Message}");
-    }
-}
 
