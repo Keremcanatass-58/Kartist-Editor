@@ -23,7 +23,10 @@ function normalizeMediaUrl(url) {
 // --- Secure Fetch Helper ---
 async function secureFetch(url, method = 'GET', body = null) {
     try {
-        const opts = { method };
+        const opts = {
+            method,
+            credentials: 'same-origin'
+        };
         if (body) {
             opts.body = body;
             // FormData doesn't need Content-Type header
