@@ -302,7 +302,14 @@
                 feedPage++;
                 hasMore = data.hasMore !== false;
             }
-        } catch(e) { console.error('Feed error:', e); }
+        } catch(e) {
+            console.error('Feed error:', e);
+            hasMore = false;
+            container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+                <i class="fa-regular fa-face-frown" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
+                Bir şeyler ters gitti, lütfen sayfayı yenileyin.
+            </div>`;
+        }
         finally { isLoading = false; }
     }
 
