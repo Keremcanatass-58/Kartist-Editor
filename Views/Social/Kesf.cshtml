@@ -1,0 +1,310 @@
+@{
+    Layout = "_SocialLayout";
+    ViewData["Title"] = "Keşfet";
+}
+
+<style>
+    /* ===== SEARCH ===== */
+    .kesf-search-bar { display: flex; gap: 10px; margin: 20px 20px 20px; }
+    .kesf-search-wrap { position: relative; flex: 1; }
+    .kesf-search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; }
+    .kesf-search {
+        width: 100%; background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-pill);
+        padding: 12px 20px 12px 42px; color: #fff; font-size: 0.9rem; outline: none;
+        font-family: var(--font); transition: var(--transition);
+    }
+    .kesf-search:focus { border-color: rgba(var(--accent-rgb),0.3); box-shadow: var(--shadow-glow); }
+
+    .search-results {
+        position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+        background: var(--bg-surface-solid); border: 1px solid var(--border);
+        border-radius: var(--radius-md); z-index: 100; max-height: 320px; overflow-y: auto;
+        display: none; box-shadow: var(--shadow-lg);
+    }
+    .search-results.open { display: block; animation: dropIn 0.15s ease; }
+    .search-result-item {
+        display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+        cursor: pointer; transition: var(--transition); text-decoration: none; color: #fff;
+    }
+    .search-result-item:hover { background: var(--bg-hover); }
+    .search-result-item .name { font-weight: 700; font-size: 0.9rem; }
+    .search-result-item .bio { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* ===== CATEGORY FILTERS ===== */
+    .kesf-categories { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 24px; overflow-x: auto; scrollbar-width: none; }
+    .kesf-categories::-webkit-scrollbar { display: none; }
+    .cat-btn {
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-pill);
+        padding: 8px 18px; color: var(--text-secondary); font-size: 0.82rem;
+        font-weight: 700; cursor: pointer; transition: var(--transition);
+        white-space: nowrap; font-family: var(--font); flex-shrink: 0;
+    }
+    .cat-btn:hover { border-color: rgba(var(--accent-rgb),0.2); color: var(--text-primary); }
+    .cat-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+    /* ===== SECTION TITLE ===== */
+    .kesf-section-title {
+        font-weight: 900; font-size: 1rem; color: var(--text-primary); margin-bottom: 14px;
+        display: flex; align-items: center; gap: 8px; padding: 0 20px;
+    }
+    .kesf-section-title i { color: var(--accent); }
+
+    /* ===== TAGS ===== */
+    .kesf-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; padding: 0 20px; }
+    .kesf-tag {
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-pill);
+        padding: 8px 16px; color: #fff; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+        transition: var(--transition); text-decoration: none; display: flex; align-items: center; gap: 6px;
+    }
+    .kesf-tag:hover { border-color: rgba(var(--accent-rgb),0.3); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .kesf-tag .hash { color: var(--accent); font-weight: 900; }
+    .kesf-tag .count {
+        color: var(--text-muted); font-weight: 500; font-size: 0.7rem;
+        background: var(--bg-hover); padding: 2px 8px; border-radius: 99px;
+    }
+
+    /* ===== MASONRY GRID ===== */
+    .kesf-masonry {
+        columns: 3; column-gap: 4px; padding: 0 4px; margin-bottom: 28px;
+    }
+    .kesf-masonry-item {
+        break-inside: avoid; margin-bottom: 4px; border-radius: var(--radius-sm);
+        overflow: hidden; position: relative; cursor: pointer; background: var(--bg-surface-solid);
+    }
+    .kesf-masonry-item img { width: 100%; display: block; transition: 0.3s; }
+    .kesf-masonry-item:hover img { transform: scale(1.04); filter: brightness(0.7); }
+    .kesf-masonry-item .overlay {
+        position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center; gap: 14px;
+        opacity: 0; transition: 0.25s; color: #fff; font-weight: 800; font-size: 0.88rem;
+    }
+    .kesf-masonry-item:hover .overlay { opacity: 1; }
+
+    /* ===== SUGGESTIONS ===== */
+    .kesf-suggestions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 20px; margin-bottom: 40px; }
+    .suggest-card {
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-lg);
+        padding: 20px 16px; text-align: center; transition: var(--transition);
+    }
+    .suggest-card:hover { border-color: rgba(var(--accent-rgb),0.2); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .suggest-card .s-name { font-weight: 900; font-size: 0.9rem; margin-top: 12px; margin-bottom: 4px; }
+    .suggest-card .s-info { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px; }
+    .suggest-follow-btn {
+        background: var(--text-primary); color: var(--bg-base);
+        border: none; border-radius: var(--radius-pill); padding: 7px 0; width: 100%;
+        font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: var(--transition); font-family: var(--font);
+    }
+    .suggest-follow-btn:hover { opacity: 0.85; }
+
+    @@media (max-width: 768px) {
+        .kesf-masonry { columns: 2; }
+        .kesf-suggestions { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="kesf-wrapper">
+    <!-- SEARCH -->
+    <div class="kesf-search-bar">
+        <div class="kesf-search-wrap">
+            <i class="fa-solid fa-search kesf-search-icon"></i>
+            <input class="kesf-search" id="kesfSearch" placeholder="Kullanıcı veya etiket ara..."
+                oninput="searchUsers(this.value)"
+                onfocus="document.getElementById('searchResults').classList.add('open')"
+                onblur="setTimeout(()=>document.getElementById('searchResults').classList.remove('open'), 200)">
+            <div class="search-results" id="searchResults"></div>
+        </div>
+    </div>
+
+    <!-- CATEGORY FILTERS -->
+    <div class="kesf-categories">
+        <button class="cat-btn active" onclick="filterCategory('tumu', this)">🌐 Tümü</button>
+        <button class="cat-btn" onclick="filterCategory('tasarim', this)">🎨 Tasarım</button>
+        <button class="cat-btn" onclick="filterCategory('kod', this)">💻 Kod</button>
+        <button class="cat-btn" onclick="filterCategory('illustrasyon', this)">🖌️ İllüstrasyon</button>
+        <button class="cat-btn" onclick="filterCategory('fotograf', this)">📷 Fotoğraf</button>
+        <button class="cat-btn" onclick="filterCategory('muzik', this)">🎵 Müzik</button>
+    </div>
+
+    <div id="kesfContent">
+        <div style="text-align:center;padding:60px;color:var(--text-muted)">
+            <div class="skel skel-line w60" style="margin:0 auto 8px;height:14px;"></div>
+            <div class="skel skel-line w40" style="margin:0 auto 20px;height:14px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+                <div class="skel skel-image" style="height:150px;"></div>
+                <div class="skel skel-image" style="height:150px;"></div>
+                <div class="skel skel-image" style="height:150px;"></div>
+            </div>
+        </div>
+    </div>
+    <div id="hashtagContent" style="display:none"></div>
+</div>
+
+@section Scripts {
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const hashtagParam = params.get('hashtag');
+    let currentCategory = 'tumu';
+
+    function filterCategory(cat, btn) {
+        currentCategory = cat;
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadKesf();
+    }
+
+    async function loadKesf() {
+        const data = await secureFetch('/Social/GetKesf');
+        if (!data || !data.success) return;
+
+        let html = '';
+
+        if (data.tags?.length > 0) {
+            html += '<div class="kesf-section-title"><i class="fa-solid fa-hashtag"></i> Trend Etiketler</div>';
+            html += '<div class="kesf-tags">';
+            data.tags.forEach(t => {
+                html += `<a class="kesf-tag" href="/Social/Kesf?hashtag=${t.Etiket}">
+                    <span class="hash">#</span>${t.Etiket} <span class="count">${t.Sayi}</span>
+                </a>`;
+            });
+            html += '</div>';
+        }
+
+        if (data.trending?.length > 0) {
+            html += '<div class="kesf-section-title"><i class="fa-solid fa-fire"></i> Popüler Eserler</div>';
+            html += '<div class="kesf-masonry">';
+            data.trending.forEach((g, i) => {
+                // Random height for masonry effect
+                const heights = [180, 220, 260, 200, 240, 280];
+                const h = heights[i % heights.length];
+                html += `<div class="kesf-masonry-item" onclick="window.location.href='/Social/Feed'">
+                    <img src="${g.GorselUrl}" loading="lazy" style="min-height:${h}px;object-fit:cover;">
+                    <div class="overlay">
+                        <span><i class="fa-solid fa-heart" style="color:var(--red)"></i> ${g.BegeniSayisi}</span>
+                        <span><i class="fa-solid fa-comment"></i> ${g.YorumSayisi || 0}</span>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        if (data.oneriler?.length > 0) {
+            html += '<div class="kesf-section-title"><i class="fa-solid fa-user-plus"></i> Senin İçin Önerilenler</div>';
+            html += '<div class="kesf-suggestions">';
+            data.oneriler.forEach(u => {
+                html += `<div class="suggest-card">
+                    ${avatarHTML(u.ProfilResmi, u.AdSoyad, 56)}
+                    <div class="s-name">${u.AdSoyad}</div>
+                    <div class="s-info">${u.TakipciSayisi} takipçi</div>
+                    <button class="suggest-follow-btn" onclick="suggestFollow(this, ${u.Id})">Takip Et</button>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        if (!html) html = `<div style="text-align:center;padding:60px;color:var(--text-muted)">
+            <i class="fa-solid fa-compass" style="font-size:3rem;opacity:0.15;display:block;margin-bottom:16px"></i>
+            Henüz keşfedilecek içerik yok
+        </div>`;
+
+        document.getElementById('kesfContent').innerHTML = html;
+    }
+
+    async function loadHashtag(tag) {
+        document.getElementById('kesfContent').style.display = 'none';
+        const hc = document.getElementById('hashtagContent');
+        hc.style.display = 'block';
+        hc.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-muted)">
+            <div class="skel skel-line w40" style="margin:0 auto;height:16px;"></div>
+        </div>`;
+
+        const data = await secureFetch(`/Social/GetKesf?hashtag=${tag}`);
+        if (!data || !data.success) return;
+
+        let html = `<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div style="width:48px;height:48px;border-radius:50%;background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;">#</div>
+                <div>
+                    <h3 style="margin:0;font-size:1.1rem;font-weight:900;">${tag}</h3>
+                    <div style="color:var(--text-muted);font-size:0.82rem;">${data.posts?.length || 0} Gönderi</div>
+                </div>
+            </div>
+            <button onclick="backToKesf()" style="background:transparent;border:1px solid var(--border);color:#fff;padding:8px 18px;border-radius:var(--radius-pill);font-weight:700;cursor:pointer;font-family:var(--font);font-size:0.85rem;transition:var(--transition);" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''"><i class="fa-solid fa-arrow-left"></i> Geri</button>
+        </div>`;
+
+        if (data.posts?.length > 0) {
+            html += '<div class="kesf-masonry">';
+            data.posts.forEach((p, i) => {
+                if (p.GorselUrl) {
+                    const h = [180,220,260,200][i % 4];
+                    html += `<div class="kesf-masonry-item">
+                        <img src="${p.GorselUrl}" loading="lazy" style="min-height:${h}px;object-fit:cover;">
+                        <div class="overlay"><span><i class="fa-solid fa-heart" style="color:var(--red)"></i> ${p.BegeniSayisi}</span></div>
+                    </div>`;
+                }
+            });
+            html += '</div>';
+        }
+
+        hc.innerHTML = html;
+    }
+
+    function backToKesf() {
+        document.getElementById('hashtagContent').style.display = 'none';
+        document.getElementById('kesfContent').style.display = '';
+        history.replaceState(null, '', '/Social/Kesf');
+    }
+
+    async function suggestFollow(btn, userId) {
+        const fd = new FormData();
+        fd.append('hedefId', userId);
+        fd.append('__RequestVerificationToken', CSRF());
+        const data = await secureFetch('/Social/TakipEt', 'POST', fd);
+        if (data && data.success) {
+            if (data.following) {
+                btn.textContent = 'Takipte';
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text-primary)';
+                btn.style.border = '1px solid var(--border)';
+            } else {
+                btn.textContent = 'Takip Et';
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.border = '';
+            }
+        }
+    }
+
+    let searchTimeout;
+    async function searchUsers(q) {
+        clearTimeout(searchTimeout);
+        if (q.length < 2) { document.getElementById('searchResults').innerHTML = ''; return; }
+        searchTimeout = setTimeout(async () => {
+            const data = await secureFetch(`/Social/Ara?q=${encodeURIComponent(q)}`);
+            const container = document.getElementById('searchResults');
+            container.innerHTML = '';
+            if (data && data.success) {
+                if (data.sonuclar.length === 0) {
+                    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Sonuç bulunamadı</div>';
+                    return;
+                }
+                data.sonuclar.forEach(u => {
+                    container.innerHTML += `<a class="search-result-item" href="/Social/Profil/${u.Id}">
+                        ${avatarHTML(u.ProfilResmi, u.AdSoyad, 40)}
+                        <div><div class="name">${u.AdSoyad}</div><div class="bio">${u.Biyografi || ''}</div></div>
+                    </a>`;
+                });
+            }
+        }, 250);
+    }
+
+    if (hashtagParam) {
+        loadHashtag(hashtagParam);
+    } else {
+        loadKesf();
+    }
+</script>
+}

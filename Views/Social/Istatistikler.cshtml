@@ -1,0 +1,391 @@
+@{
+    Layout = "_SocialLayout";
+    ViewData["Title"] = "Performans Panosu";
+}
+
+<style>
+    .dashboard-wrapper { padding: 24px 20px; }
+
+    /* ===== GREETING HERO ===== */
+    .dash-hero {
+        background: linear-gradient(135deg, rgba(198,255,0,0.06) 0%, rgba(91,141,239,0.04) 50%, rgba(255,71,87,0.04) 100%);
+        border: 1px solid var(--border); border-radius: var(--radius-lg);
+        padding: 28px 28px 24px; margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .dash-hero::before {
+        content: ''; position: absolute; top: -60px; right: -60px;
+        width: 200px; height: 200px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(198,255,0,0.08), transparent 70%);
+        pointer-events: none;
+    }
+    .dash-hero-greeting { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; margin-bottom: 4px; }
+    .dash-hero-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .dash-hero-subtitle { color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5; }
+
+    /* ===== XP PROGRESS BAR ===== */
+    .xp-progress-wrap { margin-top: 18px; }
+    .xp-progress-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .xp-progress-level { font-size: 0.78rem; font-weight: 800; color: var(--accent); }
+    .xp-progress-text { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; }
+    .xp-progress-bar { height: 8px; background: var(--bg-hover); border-radius: 99px; overflow: hidden; position: relative; }
+    .xp-progress-fill {
+        height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background: linear-gradient(90deg, var(--accent), #7ab800);
+        box-shadow: 0 0 12px rgba(198,255,0,0.3);
+    }
+
+    /* ===== STATS CARDS ===== */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card {
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-lg);
+        padding: 20px 16px; text-align: center; transition: var(--transition);
+        position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: var(--card-accent, var(--accent)); opacity: 0; transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .stat-card:hover::before { opacity: 1; }
+    .stat-icon-wrap {
+        width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 14px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+        background: var(--icon-bg, rgba(198,255,0,0.08));
+    }
+    .stat-val { font-size: 1.9rem; font-weight: 900; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .stat-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; }
+    .stat-change { font-size: 0.7rem; margin-top: 6px; font-weight: 700; }
+    .stat-change.up { color: var(--green); }
+    .stat-change.down { color: var(--red); }
+
+    /* ===== CHARTS ===== */
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; min-width: 0; }
+    .chart-card {
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+        border: 1px solid var(--border); border-radius: var(--radius-lg);
+        padding: 22px; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .chart-title { font-size: 0.95rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .chart-badge { font-size: 0.65rem; background: var(--bg-hover); padding: 4px 10px; border-radius: 99px; color: var(--text-muted); font-weight: 700; }
+    .chart-container { flex: 1; position: relative; width: 100%; min-height: 220px; max-height: 280px; }
+
+    /* ===== ACTIVITY FEED ===== */
+    .activity-section { margin-bottom: 24px; }
+    .activity-title { font-size: 0.95rem; font-weight: 900; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .activity-list { display: flex; flex-direction: column; gap: 8px; }
+    .activity-item {
+        display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+        background: var(--bg-glass); border: 1px solid var(--border);
+        border-radius: var(--radius-md); transition: var(--transition);
+    }
+    .activity-item:hover { background: var(--bg-hover); border-color: rgba(var(--accent-rgb),0.15); }
+    .activity-icon {
+        width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        font-size: 0.95rem; flex-shrink: 0;
+    }
+    .activity-text { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+    .activity-text strong { color: var(--text-primary); font-weight: 800; }
+    .activity-time { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; white-space: nowrap; }
+
+    /* ===== QUICK STATS ROW ===== */
+    .quick-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .quick-stat {
+        background: var(--bg-glass); border: 1px solid var(--border); border-radius: var(--radius-md);
+        padding: 16px; display: flex; align-items: center; gap: 14px;
+    }
+    .quick-stat-icon { font-size: 1.5rem; }
+    .quick-stat-info { flex: 1; }
+    .quick-stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; margin-bottom: 2px; }
+    .quick-stat-value { font-size: 1.1rem; font-weight: 900; }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 900px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .charts-grid { grid-template-columns: 1fr; }
+        .quick-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    }
+    @@media (max-width: 768px) {
+        .dashboard-wrapper { padding: 12px; }
+        .dash-hero { padding: 20px 16px; margin-bottom: 16px; }
+        .dash-hero::before { width: 140px; height: 140px; top: -30px; right: -30px; }
+        .dash-hero-title { font-size: 1.3rem; }
+        .stat-card { padding: 16px 12px; }
+        .stat-val { font-size: 1.5rem; }
+        .chart-card { padding: 16px; }
+    }
+    @@media (max-width: 480px) {
+        .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stat-icon-wrap { width: 36px; height: 36px; font-size: 1rem; margin-bottom: 8px; }
+        .stat-label { font-size: 0.6rem; letter-spacing: 0.8px; }
+        .quick-stats { grid-template-columns: 1fr; }
+        .quick-stat { padding: 12px; }
+        .chart-container { min-height: 200px; max-height: 240px; }
+    }
+
+    /* Number counter animation */
+    @@keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .stat-val { animation: countUp 0.6s ease backwards; }
+    .stat-card:nth-child(2) .stat-val { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) .stat-val { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) .stat-val { animation-delay: 0.3s; }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Hero Greeting -->
+    <div class="dash-hero">
+        <div class="dash-hero-greeting" id="greetingText">İyi günler</div>
+        <div class="dash-hero-title">
+            <span id="heroName">Performans Panosu</span>
+            <span style="font-size:1.4rem;">📊</span>
+        </div>
+        <div class="dash-hero-subtitle">Sosyal medyadaki etkinliğini ve gelişimini burada analiz edebilirsin.</div>
+        <div class="xp-progress-wrap">
+            <div class="xp-progress-info">
+                <span class="xp-progress-level" id="xpLevelText">Seviye 1</span>
+                <span class="xp-progress-text" id="xpProgressText">0 / 500 XP</span>
+            </div>
+            <div class="xp-progress-bar">
+                <div class="xp-progress-fill" id="xpFill" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--card-accent: var(--accent); --icon-bg: rgba(198,255,0,0.08);">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-pen-nib" style="color:var(--accent)"></i></div>
+            <div class="stat-val" id="valPosts">—</div>
+            <div class="stat-label">Gönderi</div>
+        </div>
+        <div class="stat-card" style="--card-accent: #ff4757; --icon-bg: rgba(255,71,87,0.08);">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-heart" style="color:#ff4757"></i></div>
+            <div class="stat-val" id="valLikes">—</div>
+            <div class="stat-label">Beğeni</div>
+        </div>
+        <div class="stat-card" style="--card-accent: #5b8def; --icon-bg: rgba(91,141,239,0.08);">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-comment" style="color:#5b8def"></i></div>
+            <div class="stat-val" id="valComments">—</div>
+            <div class="stat-label">Yorum</div>
+        </div>
+        <div class="stat-card" style="--card-accent: #2ed573; --icon-bg: rgba(46,213,115,0.08);">
+            <div class="stat-icon-wrap"><i class="fa-solid fa-bookmark" style="color:#2ed573"></i></div>
+            <div class="stat-val" id="valBookmarks">—</div>
+            <div class="stat-label">Kaydedilen</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fa-solid fa-chart-line" style="color:var(--accent)"></i> XP Gelişimi</div>
+                <div class="chart-badge">Son 7 Gün</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-header">
+                <div class="chart-title"><i class="fa-solid fa-chart-pie" style="color:#a55eea"></i> Etkileşim Dağılımı</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="doughnutChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="quick-stat">
+            <div class="quick-stat-icon">🔥</div>
+            <div class="quick-stat-info">
+                <div class="quick-stat-label">Günlük Seri</div>
+                <div class="quick-stat-value" id="qsStreak">0 gün</div>
+            </div>
+        </div>
+        <div class="quick-stat">
+            <div class="quick-stat-icon">⚡</div>
+            <div class="quick-stat-info">
+                <div class="quick-stat-label">Toplam XP</div>
+                <div class="quick-stat-value" id="qsXP">0</div>
+            </div>
+        </div>
+        <div class="quick-stat">
+            <div class="quick-stat-icon">🏆</div>
+            <div class="quick-stat-info">
+                <div class="quick-stat-label">Toplam Rozet</div>
+                <div class="quick-stat-value" id="qsBadges">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+        <div class="activity-title"><i class="fa-solid fa-clock-rotate-left" style="color:var(--accent)"></i> Son Aktiviteler</div>
+        <div class="activity-list" id="activityList">
+            <div class="activity-item">
+                <div class="activity-icon" style="background:rgba(198,255,0,0.08);color:var(--accent)"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="activity-text">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Greeting
+    const hour = new Date().getHours();
+    const greetEl = document.getElementById('greetingText');
+    if (hour < 6) greetEl.textContent = '🌙 İyi geceler';
+    else if (hour < 12) greetEl.textContent = '☀️ Günaydın';
+    else if (hour < 18) greetEl.textContent = '🌤️ İyi günler';
+    else greetEl.textContent = '🌆 İyi akşamlar';
+
+    async function loadDashboard() {
+        try {
+            const [dataRes, statsRes] = await Promise.all([
+                secureFetch('/Social/GetDashboardStats'),
+                secureFetch('/Social/GetMyStats')
+            ]);
+            
+            const data = dataRes || {};
+            const stats = (statsRes && statsRes.success) ? statsRes.stats : {};
+            
+            if (data && data.success) {
+                const e = data.etkilesim || {};
+                animateNumber('valPosts', e.posts || 0);
+                animateNumber('valLikes', e.likes || 0);
+                animateNumber('valComments', e.comments || 0);
+                animateNumber('valBookmarks', e.bookmarks || 0);
+
+                // XP Progress
+                const totalXP = stats.toplamXP || 0;
+                const level = Math.floor(totalXP / 500) + 1;
+                const xpInLevel = totalXP % 500;
+                const pct = (xpInLevel / 500) * 100;
+                document.getElementById('xpLevelText').textContent = `⚡ Seviye ${level}`;
+                document.getElementById('xpProgressText').textContent = `${xpInLevel} / 500 XP`;
+                setTimeout(() => { document.getElementById('xpFill').style.width = pct + '%'; }, 300);
+
+                // Quick stats
+                document.getElementById('qsStreak').textContent = (stats.streak || 0) + ' gün';
+                document.getElementById('qsXP').textContent = totalXP.toLocaleString('tr-TR');
+                document.getElementById('qsBadges').textContent = stats.rozetSayisi || 0;
+
+                // Line Chart
+                const lineCtx = document.getElementById('lineChart').getContext('2d');
+                const gradient = lineCtx.createLinearGradient(0, 0, 0, 280);
+                gradient.addColorStop(0, 'rgba(198, 255, 0, 0.18)');
+                gradient.addColorStop(1, 'rgba(198, 255, 0, 0.0)');
+
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: (data.haftalikGelisim || []).map(x => {
+                            const d = new Date(x.tarih);
+                            return d.toLocaleDateString('tr-TR', { weekday: 'short' });
+                        }),
+                        datasets: [{
+                            label: 'XP',
+                            data: (data.haftalikGelisim || []).map(x => x.xp || 0),
+                            borderColor: '#c6ff00',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#08080a',
+                            pointBorderColor: '#c6ff00',
+                            pointBorderWidth: 2,
+                            pointHoverBackgroundColor: '#c6ff00',
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.92)', titleFont: { size: 13, weight: 'bold' },
+                                bodyFont: { size: 14, weight: 'bold' }, padding: 12, cornerRadius: 10,
+                                displayColors: false,
+                                callbacks: { label: ctx => `⚡ ${ctx.parsed.y} XP` }
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#555', font: { weight: 'bold', size: 11 } } },
+                            x: { grid: { display: false }, ticks: { color: '#555', font: { weight: 'bold', size: 11 } } }
+                        }
+                    }
+                });
+
+                // Doughnut Chart
+                const pieCtx = document.getElementById('doughnutChart').getContext('2d');
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Beğeniler', 'Yorumlar', 'Kaydedilenler'],
+                        datasets: [{
+                            data: [e.likes || 0, e.comments || 0, e.bookmarks || 0],
+                            backgroundColor: ['#ff4757', '#5b8def', '#ffd700'],
+                            borderWidth: 0, hoverOffset: 8,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        cutout: '74%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#aaa', font: { size: 11, weight: 'bold' }, padding: 16, usePointStyle: true, pointStyleWidth: 10 } },
+                            tooltip: { backgroundColor: 'rgba(0,0,0,0.92)', titleFont: { size: 13 }, bodyFont: { size: 14, weight: 'bold' }, padding: 12, cornerRadius: 10 }
+                        }
+                    }
+                });
+
+                // Activities
+                buildActivities(e);
+            }
+        } catch(err) { console.error('Dashboard error:', err); }
+    }
+
+    function animateNumber(id, target) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const duration = 800;
+        const start = performance.now();
+        const from = 0;
+        function update(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(from + (target - from) * eased);
+            if (progress < 1) requestAnimationFrame(update);
+        }
+        requestAnimationFrame(update);
+    }
+
+    function buildActivities(e) {
+        const list = document.getElementById('activityList');
+        const activities = [
+            { icon: 'fa-pen-nib', color: 'var(--accent)', bg: 'rgba(198,255,0,0.08)', text: `<strong>${e.posts || 0}</strong> gönderi paylaştın`, time: 'Toplam' },
+            { icon: 'fa-heart', color: '#ff4757', bg: 'rgba(255,71,87,0.08)', text: `<strong>${e.likes || 0}</strong> beğeni aldın`, time: 'Toplam' },
+            { icon: 'fa-comment', color: '#5b8def', bg: 'rgba(91,141,239,0.08)', text: `<strong>${e.comments || 0}</strong> yorum aldın`, time: 'Toplam' },
+            { icon: 'fa-bookmark', color: '#ffd700', bg: 'rgba(255,215,0,0.08)', text: `<strong>${e.bookmarks || 0}</strong> kez kaydettin`, time: 'Toplam' },
+        ];
+        list.innerHTML = activities.map(a => `
+            <div class="activity-item">
+                <div class="activity-icon" style="background:${a.bg};color:${a.color}"><i class="fa-solid ${a.icon}"></i></div>
+                <div class="activity-text">${a.text}</div>
+                <div class="activity-time">${a.time}</div>
+            </div>
+        `).join('');
+    }
+
+    loadDashboard();
+</script>
+}
