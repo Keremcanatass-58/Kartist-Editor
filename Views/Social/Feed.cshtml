@@ -318,6 +318,14 @@
         return obj[pascal] ?? obj[camel];
     }
 
+    function safeNormalizeMediaUrl(url) {
+        if (typeof normalizeMediaUrl === 'function') {
+            return normalizeMediaUrl(url);
+        }
+        if (!url) return url;
+        return url;
+    }
+
     function renderPost(g, container) {
         const div = document.createElement('article');
         div.className = 'post-card slide-up';
@@ -343,15 +351,15 @@
         
         if (onceSonraResim && gorselUrl) {
             mediaHtml = `<div class="xray-container" onmousemove="xrayMove(event,this)" ontouchmove="xrayTouch(event,this)">
-                <img src="${normalizeMediaUrl(gorselUrl)}" class="xray-img">
-                <img src="${normalizeMediaUrl(onceSonraResim)}" class="xray-img xray-after">
+                <img src="${safeNormalizeMediaUrl(gorselUrl)}" class="xray-img">
+                <img src="${safeNormalizeMediaUrl(onceSonraResim)}" class="xray-img xray-after">
                 <div class="xray-handle"></div>
                 <span class="xray-label before">Önce</span>
                 <span class="xray-label after">Sonra</span>
             </div>`;
         } else if (gorselUrl) {
             mediaHtml = `<div class="post-image-wrap" ondblclick="doubleTapLike(${getField(g, 'Id', 'id')}, this)">
-                <img src="${normalizeMediaUrl(gorselUrl)}" class="post-image" loading="lazy">
+                <img src="${safeNormalizeMediaUrl(gorselUrl)}" class="post-image" loading="lazy">
                 <i class="fa-solid fa-heart double-tap-heart"></i>
             </div>`;
         }
