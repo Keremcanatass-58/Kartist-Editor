@@ -9,7 +9,7 @@ function CSRF() {
 }
 
 // --- Media URL Normalizer ---
-function normalizeMediaUrl(url) {
+window.normalizeMediaUrl = function(url) {
     if (!url) return url;
     url = url.trim().replace(/\\/g, '/');
     if (url.startsWith('~/')) return '/' + url.slice(2);
