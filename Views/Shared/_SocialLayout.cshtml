@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    @Html.AntiForgeryToken()
+    <title>@ViewData["Title"] - KARTIST</title>
+    
+    <link rel="icon" type="image/svg+xml" href="~/img/k-icon.svg?v=2">
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Core CSS -->
+    <link href="~/css/kartist-social.css" rel="stylesheet" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="social-body">
+
+    <div class="social-layout @(ViewContext.RouteData.Values["Action"]?.ToString() == "Mesajlar" ? "layout-wide" : "")">
+        
+        <!-- LEFT SIDEBAR -->
+        <aside class="social-sidebar-left">
+            <a class="social-brand" href="/">
+                <i class="fa-solid fa-bolt"></i> <span>KARTIST</span>
+            </a>
+            
+            <nav class="social-nav">
+                <a href="/Social/Feed" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Feed" ? "active" : "")">
+                    <i class="fa-solid fa-house"></i> <span>Ana Akış</span>
+                </a>
+                <a href="/Social/Kesf" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Kesf" ? "active" : "")">
+                    <i class="fa-solid fa-compass"></i> <span>Keşfet</span>
+                </a>
+                <a href="javascript:void(0)" class="social-nav-item" id="notifNavBtn" onclick="toggleNotifPanel()">
+                    <i class="fa-solid fa-bell"></i> <span>Bildirimler</span>
+                    <div class="nav-badge" id="notifBadge" style="display:none">0</div>
+                </a>
+                <a href="/Social/Mesajlar" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Mesajlar" ? "active" : "")">
+                    <i class="fa-solid fa-envelope"></i> <span>Mesajlar</span>
+                </a>
+                <a href="/Social/Liderlik" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Liderlik" ? "active" : "")">
+                    <i class="fa-solid fa-trophy"></i> <span>Liderlik</span>
+                </a>
+                <a href="/Social/Istatistikler" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Istatistikler" ? "active" : "")">
+                    <i class="fa-solid fa-chart-pie"></i> <span>Pano</span>
+                </a>
+                <a href="/Social/Profil/me" class="social-nav-item @(ViewContext.RouteData.Values["Action"]?.ToString() == "Profil" ? "active" : "")">
+                    <i class="fa-solid fa-circle-user"></i> <span>Profil</span>
+                </a>
+            </nav>
+
+            <button class="btn-post-massive" onclick="document.getElementById('postTextInput')?.focus(); window.scrollTo({top:0,behavior:'smooth'})">
+                <i class="fa-solid fa-pen" style="display:none"></i> <span>Oluştur</span>
+            </button>
+
+            <!-- User Mini Profile -->
+            <div class="nav-user-profile" onclick="window.location.href='/Account/Cikis'">
+                <div class="avatar-initial" style="width: 38px; height: 38px; font-size:14px;">
+                    @(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "?")
+                </div>
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-weight: 700; font-size:0.85rem; color:#fff">@(User.Identity.Name?.Split('@')[0])</div>
+                    <div style="font-size: 0.72rem; color:var(--text-muted); text-overflow:ellipsis; white-space:nowrap; overflow:hidden">@User.Identity.Name</div>
+                </div>
+                <i class="fa-solid fa-arrow-right-from-bracket" style="color:var(--red); font-size:0.9rem"></i>
+            </div>
+        </aside>
+
+        <!-- CENTER CONTENT -->
+        <main class="social-center">
+            @RenderBody()
+        </main>
+
+        <!-- RIGHT SIDEBAR -->
+        <aside class="social-sidebar-right">
+            <!-- Search Widget -->
+            <div class="sidebar-search">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="globalSearch" placeholder="Kartist'te Ara..." oninput="globalSearchHandler(this.value)">
+            </div>
+            <div id="globalSearchResults" style="display:none; background:var(--bg-surface-solid); border:1px solid var(--border); border-radius:var(--radius-md); margin-top:-16px; margin-bottom:16px; max-height:300px; overflow-y:auto; box-shadow:var(--shadow-lg);"></div>
+
+            @if (IsSectionDefined("RightWidgets"))
+            {
+                @await RenderSectionAsync("RightWidgets", required: false)
+            }
+            else
+            {
+                <!-- Trend Widget -->
+                <div class="widget-card">
+                    <div class="widget-title"><i class="fa-solid fa-arrow-trend-up" style="color:var(--accent)"></i> Trendler</div>
+                    <div id="trendWidget">
+                        <div class="trend-item">
+                            <div class="trend-category">Tasarım · Trending</div>
+                            <div class="trend-tag">#UIUX</div>
+                            <div class="trend-count">12.5K gönderi</div>
+                        </div>
+                        <div class="trend-item">
+                            <div class="trend-category">Yazılım · Trending</div>
+                            <div class="trend-tag">#ReactJS</div>
+                            <div class="trend-count">8K gönderi</div>
+                        </div>
+                        <div class="trend-item">
+                            <div class="trend-category">Sanat · Trending</div>
+                            <div class="trend-tag">#DigitalArt</div>
+                            <div class="trend-count">5.2K gönderi</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Who to follow -->
+                <div class="widget-card" id="suggestWidget">
+                    <div class="widget-title"><i class="fa-solid fa-user-plus" style="color:var(--blue)"></i> Kimi Takip Etmeli</div>
+                    <div id="suggestList"></div>
+                </div>
+                
+                <div style="font-size: 0.7rem; color: var(--text-muted); padding: 0 8px; line-height: 1.6;">
+                    &copy; 2026 Kartist Social · <a href="/" style="color:var(--text-muted)">Ana Sayfa</a> · Tüm Hakları Saklıdır
+                </div>
+            }
+        </aside>
+
+    </div>
+
+    <!-- NOTIFICATION PANEL (Slide-in) -->
+    <div class="notif-overlay" id="notifOverlay" onclick="toggleNotifPanel()"></div>
+    <div class="notif-dropdown" id="notifPanel">
+        <div class="notif-header">
+            <h3>Bildirimler</h3>
+            <button class="notif-close" onclick="toggleNotifPanel()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="notif-list" id="notifList">
+            <div style="text-align:center; padding:60px 20px; color:var(--text-muted)">
+                <i class="fa-regular fa-bell" style="font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.3"></i>
+                Bildirim yok
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/kartist-social.js"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

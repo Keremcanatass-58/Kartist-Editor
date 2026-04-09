@@ -1,0 +1,374 @@
+@{
+    Layout = "_SocialLayout";
+    ViewData["Title"] = "Mesajlar";
+}
+
+<style>
+    .dm-layout { 
+        display: grid; 
+        grid-template-columns: 320px 1fr; 
+        height: calc(100vh - 0px);
+    }
+
+    /* ===== SIDEBAR ===== */
+    .dm-sidebar { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg-glass); backdrop-filter: var(--blur); }
+    .dm-sidebar-header {
+        padding: 20px; font-weight: 900; font-size: 1.15rem; display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 1px solid var(--border);
+    }
+    .dm-new-chat-btn {
+        width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim);
+        border: none; color: var(--accent); cursor: pointer; font-size: 1rem;
+        display: flex; align-items: center; justify-content: center; transition: var(--transition);
+    }
+    .dm-new-chat-btn:hover { background: var(--accent); color: #000; }
+    
+    .dm-search { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .dm-search input {
+        width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
+        border-radius: var(--radius-pill); padding: 10px 16px; color: #fff; outline: none;
+        font-family: var(--font); font-size: 0.85rem; transition: var(--transition);
+    }
+    .dm-search input:focus { border-color: rgba(var(--accent-rgb),0.3); }
+    
+    .dm-chat-list { flex: 1; overflow-y: auto; }
+    .dm-chat-item {
+        display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+        cursor: pointer; transition: var(--transition); border-left: 3px solid transparent;
+    }
+    .dm-chat-item:hover { background: var(--bg-hover); }
+    .dm-chat-item.active { background: var(--bg-hover-strong); border-left-color: var(--accent); }
+    .dm-chat-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .dm-chat-info { flex: 1; min-width: 0; }
+    .dm-chat-name { font-weight: 700; font-size: 0.9rem; }
+    .dm-chat-preview { color: var(--text-muted); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
+    .dm-chat-time { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+    
+    .dm-unread-badge {
+        width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #000;
+        font-size: 0.65rem; font-weight: 900; display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+
+    /* ===== CHAT AREA ===== */
+    .dm-chat-area { display: flex; flex-direction: column; background: var(--bg-base); }
+    .dm-chat-header {
+        display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+        border-bottom: 1px solid var(--border); background: var(--bg-glass); backdrop-filter: var(--blur);
+    }
+    .dm-back-btn {
+        display: none; width: 36px; height: 36px; border-radius: 50%; background: var(--bg-hover);
+        border: none; color: #fff; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;
+    }
+    .dm-chat-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .dm-chat-header .name { font-weight: 700; font-size: 1rem; }
+    .dm-chat-header .status { color: var(--accent); font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .dm-chat-header .status::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+    .dm-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+    .dm-msg {
+        max-width: 70%; padding: 12px 16px; border-radius: 18px; font-size: 0.9rem;
+        line-height: 1.45; word-break: break-word; animation: msgPop 0.2s ease;
+    }
+    @@keyframes msgPop { from { opacity: 0; transform: scale(0.95) translateY(8px); } }
+    .dm-msg.sent {
+        background: var(--accent); color: #000; align-self: flex-end;
+        border-bottom-right-radius: 6px; font-weight: 600;
+    }
+    .dm-msg.received {
+        background: var(--bg-surface-solid); color: var(--text-primary); align-self: flex-start;
+        border-bottom-left-radius: 6px; border: 1px solid var(--border);
+    }
+    .dm-msg.collab-msg {
+        background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(198,255,0,0.05));
+        border: 1px solid rgba(255,215,0,0.2); align-self: flex-start;
+        border-bottom-left-radius: 6px; color: var(--text-primary);
+    }
+    .dm-msg .time { font-size: 0.68rem; opacity: 0.6; margin-top: 4px; display: block; text-align: right; }
+    .dm-msg .read-tick { font-size: 0.7rem; margin-left: 4px; }
+    .dm-msg .read-tick.read { color: var(--blue); }
+
+    .dm-typing {
+        padding: 0 20px 10px; font-size: 0.78rem; color: var(--text-muted); font-style: italic;
+        display: none;
+    }
+
+    .dm-input-area {
+        display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border);
+        background: var(--bg-glass); backdrop-filter: var(--blur);
+    }
+    .dm-input {
+        flex: 1; background: var(--bg-hover); border: 1px solid var(--border);
+        border-radius: var(--radius-pill); padding: 12px 18px; color: #fff; font-size: 0.9rem;
+        outline: none; font-family: var(--font); transition: var(--transition);
+    }
+    .dm-input:focus { border-color: rgba(var(--accent-rgb),0.3); }
+    .dm-send-btn {
+        width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none;
+        color: #000; font-size: 1.1rem; cursor: pointer; transition: var(--bounce);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .dm-send-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-glow); }
+
+    .dm-empty {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        flex-direction: column; color: var(--text-muted); gap: 12px;
+    }
+    .dm-empty i { font-size: 3.5rem; opacity: 0.15; }
+
+    /* New Chat Modal */
+    .new-chat-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000;
+        display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+    }
+    .new-chat-overlay.open { display: flex; }
+    .new-chat-modal {
+        background: var(--bg-surface-solid); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); width: 90%; max-width: 400px; padding: 24px;
+        box-shadow: var(--shadow-lg); animation: dropIn 0.2s ease;
+    }
+    .new-chat-search {
+        width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
+        border-radius: var(--radius-pill); padding: 12px 16px; color: #fff;
+        font-family: var(--font); font-size: 0.9rem; outline: none; margin: 12px 0;
+    }
+    
+    @@media (max-width: 768px) {
+        .dm-layout { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+        .dm-sidebar { flex: 1; max-height: none; width: 100%; display: flex; }
+        .dm-chat-area { display: none; flex: 1; }
+        .dm-layout.chat-open .dm-sidebar { display: none; }
+        .dm-layout.chat-open .dm-chat-area { display: flex; }
+        .dm-back-btn { display: flex; }
+        .dm-msg { max-width: 85%; }
+        .dm-input-area { padding: 10px; }
+    }
+</style>
+
+<div class="dm-layout" id="dmLayout">
+    <!-- SIDEBAR -->
+    <div class="dm-sidebar">
+        <div class="dm-sidebar-header">
+            <span>Mesajlar</span>
+            <button class="dm-new-chat-btn" onclick="openNewChatModal()" title="Yeni Sohbet"><i class="fa-solid fa-pen-to-square"></i></button>
+        </div>
+        <div class="dm-search"><input placeholder="Sohbetlerde ara..." id="dmSearchInput" oninput="searchChats(this.value)"></div>
+        <div class="dm-chat-list" id="chatList"></div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="dm-chat-area" id="chatArea">
+        <div class="dm-empty" id="chatEmpty">
+            <i class="fa-regular fa-comments"></i>
+            <h3 style="margin:0;font-weight:900;">Mesajlarınız</h3>
+            <p style="font-size:0.88rem;color:var(--text-muted);">Bir sohbet seçin veya yeni bir konuşma başlatın.</p>
+            <button class="btn-primary" onclick="openNewChatModal()"><i class="fa-solid fa-plus" style="margin-right:6px"></i> Yeni Sohbet</button>
+        </div>
+    </div>
+</div>
+
+<!-- New Chat Modal -->
+<div class="new-chat-overlay" id="newChatOverlay" onclick="closeNewChatModal()">
+    <div class="new-chat-modal" onclick="event.stopPropagation()">
+        <h3 style="margin:0;font-weight:900;font-size:1.1rem;">Yeni Sohbet Başlat</h3>
+        <input class="new-chat-search" id="newChatSearch" placeholder="Kullanıcı ara..." oninput="searchNewChat(this.value)">
+        <div id="newChatResults" style="max-height:250px;overflow-y:auto;"></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let activeChatId = null;
+    let chatPollTimer = null;
+
+    const params = new URLSearchParams(window.location.search);
+    const hedefParam = params.get('hedef');
+
+    function timeShort(dateStr) {
+        const d = new Date(dateStr);
+        const now = new Date();
+        const diff = Math.floor((now - d) / 1000);
+        if (diff < 3600) return Math.floor(diff / 60) + 'dk';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'sa';
+        return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' });
+    }
+
+    async function loadChats() {
+        const data = await secureFetch('/Social/GetSohbetler');
+        if (!data || !data.success) return;
+
+        const list = document.getElementById('chatList');
+        list.innerHTML = '';
+
+        if (data.sohbetler.length === 0 && hedefParam) {
+            openChat(parseInt(hedefParam));
+            return;
+        }
+
+        data.sohbetler.forEach(s => {
+            const div = document.createElement('div');
+            div.className = `dm-chat-item ${activeChatId === s.Id ? 'active' : ''}`;
+            div.onclick = () => openChat(s.Id);
+            div.innerHTML = `
+                ${avatarHTML(s.ProfilResmi, s.AdSoyad, 46)}
+                <div class="dm-chat-info">
+                    <div class="dm-chat-name">${s.AdSoyad}</div>
+                    <div class="dm-chat-preview">${s.SonMesaj || 'Henüz mesaj yok'}</div>
+                </div>
+                ${s.OkunmamisSayi > 0 ? `<div class="dm-unread-badge">${s.OkunmamisSayi}</div>` : ''}
+            `;
+            list.appendChild(div);
+        });
+
+        if (hedefParam && !activeChatId) openChat(parseInt(hedefParam));
+    }
+
+    async function openChat(hedefId) {
+        activeChatId = hedefId;
+        const data = await secureFetch(`/Social/GetMesajlar?hedefId=${hedefId}`);
+        if (!data || !data.success) return;
+
+        // Mobile layout switch
+        document.getElementById('dmLayout').classList.add('chat-open');
+
+        const area = document.getElementById('chatArea');
+        area.innerHTML = `
+            <div class="dm-chat-header">
+                <button class="dm-back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
+                ${avatarHTML(data.hedef?.ProfilResmi, data.hedef?.AdSoyad, 40)}
+                <div>
+                    <div class="name">${data.hedef?.AdSoyad || 'Kullanıcı'}</div>
+                    <div class="status">Çevrimiçi</div>
+                </div>
+                <div style="flex:1"></div>
+                <a href="/Social/Profil/${hedefId}" style="color:var(--text-muted);font-size:0.8rem;text-decoration:none;">
+                    <i class="fa-solid fa-user"></i> Profil
+                </a>
+            </div>
+            <div class="dm-messages" id="messagesContainer"></div>
+            <div class="dm-typing" id="typingIndicator">yazıyor...</div>
+            <div class="dm-input-area">
+                <input class="dm-input" id="dmInput" placeholder="Mesaj yaz..." onkeydown="if(event.key==='Enter')sendDM()">
+                <button class="dm-send-btn" onclick="sendDM()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        `;
+
+        renderMessages(data.mesajlar, data.myId);
+        loadChats();
+
+        clearInterval(chatPollTimer);
+        chatPollTimer = setInterval(() => refreshMessages(hedefId), 3000);
+        
+        // Focus input
+        setTimeout(() => document.getElementById('dmInput')?.focus(), 100);
+    }
+
+    function closeChatMobile() {
+        document.getElementById('dmLayout').classList.remove('chat-open');
+        clearInterval(chatPollTimer);
+        activeChatId = null;
+    }
+
+    function renderMessages(mesajlar, myId) {
+        const container = document.getElementById('messagesContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (mesajlar.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:0.88rem;">
+                <i class="fa-regular fa-hand-peace" style="font-size:2rem;display:block;margin-bottom:10px;opacity:0.3"></i>
+                Henüz mesaj yok. İlk mesajı sen gönder!
+            </div>`;
+            return;
+        }
+
+        mesajlar.forEach(m => {
+            const isMine = m.GonderenId === myId;
+            const isCollab = m.Tip === 'Collab';
+            let msgClass = isMine ? 'sent' : 'received';
+            if (isCollab) msgClass = 'collab-msg';
+            
+            const collabIcon = isCollab ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-weight:800;color:var(--gold);font-size:0.8rem;"><i class="fa-solid fa-bolt"></i> İş Birliği Teklifi</div>' : '';
+            
+            container.innerHTML += `<div class="dm-msg ${msgClass}">
+                ${collabIcon}
+                ${m.Mesaj}
+                <span class="time">${timeShort(m.Tarih)}${isMine ? ' <span class="read-tick read">✓✓</span>' : ''}</span>
+            </div>`;
+        });
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function refreshMessages(hedefId) {
+        if (activeChatId !== hedefId) return;
+        const data = await secureFetch(`/Social/GetMesajlar?hedefId=${hedefId}`);
+        if (data && data.success) renderMessages(data.mesajlar, data.myId);
+    }
+
+    async function sendDM() {
+        const input = document.getElementById('dmInput');
+        if (!input?.value.trim() || !activeChatId) return;
+
+        const fd = new FormData();
+        fd.append('aliciId', activeChatId);
+        fd.append('mesaj', input.value);
+        fd.append('__RequestVerificationToken', CSRF());
+
+        const msg = input.value;
+        input.value = '';
+
+        const res = await secureFetch('/Social/MesajGonder', 'POST', fd);
+        if (res && res.success) {
+            refreshMessages(activeChatId);
+        }
+    }
+
+    function searchChats(q) {
+        document.querySelectorAll('.dm-chat-item').forEach(item => {
+            const name = item.querySelector('.dm-chat-name')?.textContent?.toLowerCase() || '';
+            item.style.display = name.includes(q.toLowerCase()) ? '' : 'none';
+        });
+    }
+
+    // New Chat Modal
+    function openNewChatModal() {
+        document.getElementById('newChatOverlay').classList.add('open');
+        document.getElementById('newChatSearch').focus();
+    }
+    function closeNewChatModal() {
+        document.getElementById('newChatOverlay').classList.remove('open');
+        document.getElementById('newChatResults').innerHTML = '';
+        document.getElementById('newChatSearch').value = '';
+    }
+
+    let newChatTimer;
+    async function searchNewChat(q) {
+        clearTimeout(newChatTimer);
+        if (q.length < 2) { document.getElementById('newChatResults').innerHTML = ''; return; }
+        
+        newChatTimer = setTimeout(async () => {
+            const data = await secureFetch(`/Social/Ara?q=${encodeURIComponent(q)}`);
+            const container = document.getElementById('newChatResults');
+            if (!data || !data.success) return;
+            
+            if (data.sonuclar.length === 0) {
+                container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:0.85rem;">Kullanıcı bulunamadı</div>';
+                return;
+            }
+            
+            container.innerHTML = data.sonuclar.map(u => `
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;cursor:pointer;border-radius:var(--radius-sm);transition:0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="closeNewChatModal();openChat(${u.Id})">
+                    ${avatarHTML(u.ProfilResmi, u.AdSoyad, 40)}
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem;">${u.AdSoyad}</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);">${u.Biyografi || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }, 250);
+    }
+
+    loadChats();
+</script>
+}
+
