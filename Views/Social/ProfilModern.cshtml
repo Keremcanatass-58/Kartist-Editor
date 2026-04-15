@@ -1,0 +1,401 @@
+@{
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Profil";
+    var isOwnProfile = ViewBag.IsOwnProfile ?? true;
+    var user = ViewBag.UserData as dynamic;
+}
+
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold">Profil</h1>
+    </div>
+    
+    <div class="flex items-center gap-2">
+        @if (isOwnProfile)
+        {
+            <a href="/Social/Settings" class="flex items-center gap-2 rounded-xl bg-secondary px-4 py-2 text-sm font-bold transition-all hover:bg-secondary/80 text-foreground">
+                <i data-lucide="settings" class="h-4 w-4"></i>
+                <span class="hidden sm:inline">Profili Duzenle</span>
+            </a>
+            <button class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-foreground">
+                <i data-lucide="share" class="h-4 w-4"></i>
+            </button>
+        }
+        else
+        {
+            <button onclick="followDesigner(@(ViewBag.ProfileUserId ?? 0))" id="followBtn" class="follow-btn flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                <i data-lucide="user-plus" class="h-4 w-4"></i>
+                Takip Et
+            </button>
+            <button class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary hover:bg-secondary/80 transition-colors text-foreground">
+                <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+            </button>
+        }
+    </div>
+</header>
+
+<div class="p-4 sm:p-6 pb-20">
+    <!-- Profile Hero Card -->
+    <div class="relative mt-2 rounded-3xl overflow-hidden glass-card border-none shadow-xl">
+        <!-- Banner Image -->
+        <div class="h-48 sm:h-64 w-full bg-secondary overflow-hidden relative">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&q=80" class="h-full w-full object-cover blur-[2px] brightness-75 scale-105" />
+            <div class="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent"></div>
+        </div>
+
+        <!-- Profile Info Overlay -->
+        <div class="px-6 pb-8 relative -mt-16 sm:-mt-20">
+            <div class="flex flex-col sm:flex-row sm:items-end gap-6">
+                <!-- Avatar -->
+                <div class="relative shrink-0 z-10 w-fit group">
+                    <img id="profileAvatarImg" src="@(ViewBag.UserAvatar ?? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(ViewBag.UserName ?? "U") + "&background=random")" class="h-32 w-32 sm:h-40 sm:w-40 rounded-full object-cover ring-4 ring-background shadow-xl transition-transform group-hover:scale-105 bg-card" />
+                    
+                    <div class="absolute bottom-2 right-2 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary text-sm sm:text-base font-bold text-primary-foreground border-4 border-background shadow-lg shadow-primary/20">
+                        @(ViewBag.UserLevel ?? 1)
+                    </div>
+
+                    @if(isOwnProfile) {
+                        <input type="file" id="avatarUploadInput" class="hidden" accept="image/*" />
+                        <button onclick="document.getElementById('avatarUploadInput').click()" class="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100">
+                            <i id="avatarUploadIcon" data-lucide="camera" class="h-4 w-4"></i>
+                        </button>
+                    }
+                </div>
+                
+                <!-- Details -->
+                <div class="flex-1 min-w-0 pb-2">
+                    <div class="flex flex-wrap items-center gap-3 mb-1">
+                        <h1 class="text-3xl sm:text-4xl font-black text-foreground truncate">@(ViewBag.UserName ?? "Kullanici")</h1>
+                        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-primary" title="Onaylı Tasarımcı">
+                            <i data-lucide="badge-check" class="h-4 w-4 fill-primary text-background"></i>
+                        </div>
+                    </div>
+                    
+                    <p class="text-lg text-primary font-medium mb-3">@@@(ViewBag.UserHandle ?? "kullanici")</p>
+                    
+                    <p class="text-sm sm:text-base text-muted-foreground max-w-2xl leading-relaxed whitespace-pre-wrap">@(ViewBag.UserBio ?? "Dijital Ürün Tasarımcısı | UI/UX Meraklısı | Kartist üzerinden en iyi tasarımlarımı paylaşıyorum. 🚀")</p>
+                    
+                    <div class="mt-5 flex flex-wrap items-center gap-4 text-sm font-medium text-muted-foreground">
+                        <div class="flex items-center gap-1.5 bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
+                            <i data-lucide="map-pin" class="h-4 w-4"></i>
+                            <span>Istanbul, TR</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
+                            <i data-lucide="calendar" class="h-4 w-4"></i>
+                            <span>Ekim 2023'ten beri üye</span>
+                        </div>
+                        <a href="#" class="flex items-center gap-1.5 hover:text-primary transition-colors bg-secondary/50 px-3 py-1.5 rounded-full border border-border/50">
+                            <i data-lucide="link" class="h-4 w-4"></i>
+                            <span>dribbble.com/kullanici</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 border-t border-border/50 pt-8">
+                <div class="flex flex-col border-r border-border/50 px-4 items-center sm:items-start text-center sm:text-left">
+                    <p class="text-3xl font-black text-foreground">@(ViewBag.DesignCount ?? 42)</p>
+                    <p class="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Tasarim</p>
+                </div>
+                <div class="flex flex-col border-r border-border/50 px-4 items-center sm:items-start text-center sm:text-left">
+                    <p class="text-3xl font-black text-foreground">@(ViewBag.Followers ?? "12.4k")</p>
+                    <p class="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Takipci</p>
+                </div>
+                <div class="flex flex-col border-r border-border/50 px-4 items-center sm:items-start text-center sm:text-left">
+                    <p class="text-3xl font-black text-foreground">@(ViewBag.Following ?? 567)</p>
+                    <p class="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Takip</p>
+                </div>
+                <div class="flex flex-col px-4 items-center sm:items-start text-center sm:text-left">
+                    <p class="text-3xl font-black text-primary">@(ViewBag.TotalLikes ?? "89k")</p>
+                    <p class="text-sm text-primary/70 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                        <i data-lucide="heart" class="h-3 w-3 fill-primary"></i> Begeni
+                    </p>
+                </div>
+            </div>
+            
+            <!-- XP Progress -->
+            <div class="mt-8 bg-secondary/30 rounded-2xl p-5 border border-border/50">
+                <div class="flex items-center justify-between text-sm sm:text-base font-bold mb-3">
+                    <span class="flex items-center gap-2">
+                        <i data-lucide="star" class="h-5 w-5 text-yellow-500 fill-yellow-500/20"></i>
+                        Seviye @(ViewBag.UserLevel ?? 1)
+                    </span>
+                    <span class="text-primary font-black">@(ViewBag.UserXP ?? 0) <span class="text-muted-foreground font-medium text-sm">/ @(ViewBag.UserMaxXP ?? 100) XP</span></span>
+                </div>
+                <div class="h-3 w-full rounded-full bg-secondary overflow-hidden ring-1 ring-inset ring-border">
+                    <div class="h-full rounded-full bg-gradient-to-r from-primary to-accent relative" style="width: @((ViewBag.UserXP ?? 0) * 100 / (ViewBag.UserMaxXP ?? 100))%">
+                        <div class="absolute inset-0 bg-white/20" style="background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 1rem 1rem;"></div>
+                    </div>
+                </div>
+                <p class="text-xs text-muted-foreground mt-3 text-right">Sonraki seviyeye @((ViewBag.UserMaxXP ?? 100) - (ViewBag.UserXP ?? 0)) XP kaldı</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievements Section -->
+    <div class="mt-8 mb-8">
+        <div class="flex items-center justify-between mb-4 px-2">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i data-lucide="trophy" class="h-5 w-5 text-primary"></i> Basarilar
+            </h2>
+            <button class="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">Tumunu Gor</button>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="group flex items-center gap-4 rounded-2xl glass-card p-4 hover:border-orange-500/50 transition-all cursor-default">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-lg shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="flame" class="h-6 w-6"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm truncate">Atesli Tasarimci</p>
+                    <p class="text-xs text-muted-foreground">7 Gun Streak</p>
+                </div>
+            </div>
+            
+            <div class="group flex items-center gap-4 rounded-2xl glass-card p-4 hover:border-pink-500/50 transition-all cursor-default relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-400 to-rose-600 text-white shadow-lg shadow-pink-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="swords" class="h-6 w-6"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm truncate">Yenilmez</p>
+                    <p class="text-xs text-muted-foreground">3 Duello Galibi</p>
+                </div>
+            </div>
+            
+            <div class="group flex items-center gap-4 rounded-2xl glass-card p-4 hover:border-yellow-500/50 transition-all cursor-default">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-yellow-300 to-amber-500 text-black shadow-lg shadow-yellow-500/20 group-hover:scale-110 transition-transform relative">
+                    <i data-lucide="award" class="h-6 w-6"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm truncate">Sampiyon</p>
+                    <p class="text-xs text-muted-foreground">1 Yarisma #1</p>
+                </div>
+            </div>
+            
+            <div class="group flex items-center gap-4 rounded-2xl bg-secondary/50 border border-border/50 p-4 opacity-70 grayscale hover:grayscale-0 hover:opacity-100 transition-all cursor-not-allowed">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-card text-muted-foreground border border-border">
+                    <i data-lucide="lock" class="h-5 w-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="font-bold text-sm truncate text-muted-foreground">Gizli</p>
+                    <p class="text-xs text-muted-foreground/50">Kilidi ac</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="sticky top-16 z-20 bg-background/95 backdrop-blur-md pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div class="flex gap-2 overflow-x-auto scrollbar-hide py-1">
+            <button onclick="setTab('designs')" id="tab-designs" class="shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card border-2 border-primary text-foreground shadow-sm shadow-primary/10">
+                Tasarimlar <span class="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">@(ViewBag.DesignCount ?? 42)</span>
+            </button>
+            <button onclick="setTab('liked')" id="tab-liked" class="shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card/50 border-2 border-transparent text-muted-foreground hover:bg-card hover:text-foreground">
+                Begenilen <span class="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">@(ViewBag.LikedCount ?? 156)</span>
+            </button>
+            <button onclick="setTab('saved')" id="tab-saved" class="shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card/50 border-2 border-transparent text-muted-foreground hover:bg-card hover:text-foreground">
+                Kaydedilen <span class="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">@(ViewBag.SavedCount ?? 89)</span>
+            </button>
+            @if(isOwnProfile) {
+                <button onclick="setTab('drafts')" id="tab-drafts" class="shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card/50 border-2 border-transparent text-muted-foreground hover:bg-card hover:text-foreground">
+                    Taslaklar <span class="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold">3</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="mt-4 min-h-[400px]">
+        <!-- Designs Tab -->
+        <div id="content-designs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in duration-500">
+            @if (ViewBag.UserPosts != null)
+            {
+                foreach (var post in ViewBag.UserPosts)
+                {
+                    <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:shadow-xl hover:border-primary/40 focus-within:border-primary">
+                        <a href="/Social/Design/@post.Id" class="block outline-none">
+                            <div class="relative aspect-[4/3] overflow-hidden bg-secondary">
+                                <img src="@(post.ImageUrl ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800")" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                            </div>
+                        </a>
+                        
+                        <div class="p-4 border-t border-border/50 bg-card absolute bottom-0 left-0 right-0 translate-y-[100%] transition-transform duration-300 group-hover:translate-y-0 group-focus-within:translate-y-0 z-10">
+                            <h3 class="font-bold text-foreground truncate text-sm">@(post.Title ?? "Tasarim Adi")</h3>
+                            <div class="mt-3 flex items-center justify-between">
+                                <div class="flex items-center gap-3 text-muted-foreground">
+                                    <div class="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer">
+                                        <i data-lucide="heart" class="h-4 w-4"></i>
+                                        <span class="text-xs font-semibold">@(post.Likes ?? 0)</span>
+                                    </div>
+                                    <div class="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
+                                        <i data-lucide="message-circle" class="h-4 w-4"></i>
+                                        <span class="text-xs font-semibold">12</span>
+                                    </div>
+                                </div>
+                                @if (isOwnProfile)
+                                {
+                                    <button class="h-8 w-8 flex items-center justify-center rounded-full hover:bg-secondary text-foreground transition-colors">
+                                        <i data-lucide="more-horizontal" class="h-4 w-4"></i>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            } else {
+                <!-- Mock Data For Layout Testing -->
+                @for(int i = 0; i < 4; i++) {
+                    <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:shadow-xl hover:border-primary/40 cursor-pointer">
+                        <div class="relative aspect-[4/3] overflow-hidden bg-secondary">
+                            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80" loading="lazy" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 mix-blend-overlay" style="filter: hue-rotate(@(i*45)deg)" />
+                        </div>
+                        <div class="p-4 border-t border-border/50 bg-card">
+                            <h3 class="font-bold text-foreground truncate text-sm">Design Project @(i+1)</h3>
+                            <div class="mt-3 flex items-center justify-between text-muted-foreground">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-1">
+                                        <i data-lucide="heart" class="h-4 w-4"></i><span class="text-xs font-semibold">@(r.Next(50, 500))</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <i data-lucide="eye" class="h-4 w-4"></i><span class="text-xs font-semibold">@(r.Next(1000, 5000))</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                
+                @if (isOwnProfile) {
+                    <button onclick="openCreateModal()" class="group flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-border/50 bg-card/30 p-8 min-h-[250px] transition-all hover:bg-card/80 hover:border-primary/50">
+                        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all shadow-xl">
+                            <i data-lucide="plus" class="h-8 w-8"></i>
+                        </div>
+                        <p class="font-bold text-foreground">Yeni Tasarım Ekle</p>
+                    </button>
+                }
+            }
+        </div>
+
+        <!-- Liked Tab (Lazy Loaded) -->
+        <div id="content-liked" class="hidden animate-in fade-in zoom-in-95 duration-300">
+            <!-- Loading state managed by JS -->
+        </div>
+
+        <!-- Saved Tab (Lazy Loaded) -->
+        <div id="content-saved" class="hidden animate-in fade-in zoom-in-95 duration-300">
+             <!-- Loading state managed by JS -->
+        </div>
+        
+        @if(isOwnProfile) {
+            <!-- Drafts Tab -->
+            <div id="content-drafts" class="hidden animate-in fade-in zoom-in-95 duration-300">
+                <div class="flex flex-col items-center justify-center p-12 text-center rounded-2xl glass-card border border-dashed border-border">
+                    <div class="h-16 w-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+                        <i data-lucide="file-edit" class="h-8 w-8 text-muted-foreground"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Taslakların</h3>
+                    <p class="text-muted-foreground mb-6 max-w-sm">Henüz yayınlamadığın çalışmalarını burada bulabilirsin.</p>
+                    <button class="bg-secondary text-foreground px-6 py-2.5 rounded-xl font-bold hover:bg-secondary/80 transition-colors">Taslak Ekle</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    Random r = new Random();
+}
+
+@section Scripts {
+    <script>
+        var tabDataLoaded = { designs: true, liked: false, saved: false, drafts: true };
+        
+        function setTab(tab) {
+            var tabs = ['designs', 'liked', 'saved'];
+            var isOwn = @(isOwnProfile.ToString().ToLower());
+            if(isOwn) tabs.push('drafts');
+            
+            for (var i = 0; i < tabs.length; i++) {
+                var tabBtn = document.getElementById('tab-' + tabs[i]);
+                var content = document.getElementById('content-' + tabs[i]);
+                
+                if (!tabBtn || !content) continue;
+                
+                if (tabs[i] === tab) {
+                    tabBtn.className = 'shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card border-2 border-primary text-foreground shadow-sm shadow-primary/10';
+                    content.classList.remove('hidden');
+                } else {
+                    tabBtn.className = 'shrink-0 rounded-full px-6 py-2.5 text-sm font-bold transition-all bg-card/50 border-2 border-transparent text-muted-foreground hover:bg-card hover:text-foreground';
+                    content.classList.add('hidden');
+                }
+            }
+            
+            // Lazy load specific tabs
+            if (tab === 'liked' && !tabDataLoaded.liked) {
+                tabDataLoaded.liked = true;
+                loadEmptyDisplay('liked', 'heart', 'Henüz Beğenilmiş Tasarım Yok', 'Beğendiğiniz veya ilham aldığınız tasarımlar burada görünür.');
+            } else if (tab === 'saved' && !tabDataLoaded.saved) {
+                tabDataLoaded.saved = true;
+                loadEmptyDisplay('saved', 'bookmark', 'Koleksiyonun Bos', 'Daha sonra kolayca bulmak için tasarımları kaydedin.');
+            }
+        }
+        
+        function loadEmptyDisplay(tab, iconName, title, desc) {
+            var container = document.getElementById('content-' + tab);
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-16 text-center rounded-2xl glass-card mx-auto max-w-2xl mt-8 border border-border/50">
+                    <div class="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6 ring-8 ring-background shadow-lg">
+                        <i data-lucide="${iconName}" class="h-10 w-10 ${tab === 'liked' ? 'text-primary' : 'text-accent'}"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">${title}</h3>
+                    <p class="text-muted-foreground text-sm sm:text-base mb-8">${desc}</p>
+                    <a href="/Social/Feed" class="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 neon-glow transition-all flex items-center gap-2">
+                        Kesfetmeye Basla <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </a>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Handle Avatar Upload
+        var avatarInput = document.getElementById('avatarUploadInput');
+        if (avatarInput) {
+            avatarInput.addEventListener('change', async function(e) {
+                if (!e.target.files || e.target.files.length === 0) return;
+                
+                var file = e.target.files[0];
+                try {
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    var formData = new FormData();
+                    formData.append('foto', file);
+                    if (token) formData.append('__RequestVerificationToken', token);
+                    
+                    var res = await fetch('/Social/ProfilResmiYukle', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    var data = await res.json();
+                    if (data.success) {
+                        document.getElementById('profileAvatarImg').src = data.url;
+                        // Alert user or show toast here implicitly success
+                    } else {
+                        alert(data.message || 'Resim yuklenirken bir hata olustu.');
+                    }
+                } catch (err) {
+                    alert('Sunucuya baglanilamadi.');
+                } finally {
+                    icon.setAttribute('data-lucide', 'camera');
+                    icon.classList.remove('animate-spin');
+                    lucide.createIcons();
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,373 @@
+@{
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Swipe";
+}
+
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold">Swipe</h1>
+        <p class="text-sm text-muted-foreground hidden sm:block">Tasarimlari kaydir, kesfet, begen!</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <button class="flex h-9 w-9 items-center justify-center rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
+            <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+        </button>
+    </div>
+</header>
+
+<div class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden min-h-[calc(100vh-4rem)]">
+    <!-- Swipe Container -->
+    <div class="relative w-full max-w-md h-[70vh] max-h-[700px] flex flex-col items-center justify-center perspective-1000">
+        
+        <!-- Next Card (Preview) -->
+        <div id="nextCard" class="absolute inset-0 -z-10 bg-card rounded-[2rem] shadow-xl border border-border/50 transition-all duration-300" style="transform: scale(0.95) translateY(5%); opacity: 0.8;">
+            <div class="relative w-full h-full overflow-hidden rounded-[2rem]">
+                <img id="nextImage" src="https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800" class="h-full w-full object-cover blur-sm brightness-75 scale-110" />
+            </div>
+        </div>
+
+        <!-- Current Card -->
+        <div id="currentCard" class="relative w-full h-full bg-card rounded-[2rem] shadow-2xl border border-border/50 overflow-hidden cursor-grab active:cursor-grabbing transition-shadow hover:shadow-primary/5" style="transform-origin: center center; touch-action: none;">
+            <img id="cardImage" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" class="h-full w-full object-cover pointer-events-none select-none" draggable="false" />
+            
+            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none"></div>
+            
+            <!-- Interact Labels -->
+            <div id="likeLabel" class="absolute left-8 top-8 rounded-xl border-[6px] border-green-500 px-6 py-2 opacity-0 transition-opacity rotate-[-15deg] pointer-events-none">
+                <span class="text-4xl font-black text-green-500 tracking-wider">BEGEN</span>
+            </div>
+            <div id="nopeLabel" class="absolute right-8 top-8 rounded-xl border-[6px] border-destructive px-6 py-2 opacity-0 transition-opacity rotate-[15deg] pointer-events-none">
+                <span class="text-4xl font-black text-destructive tracking-wider">GEC</span>
+            </div>
+            <div id="superLabel" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-xl border-[6px] border-primary px-6 py-2 opacity-0 transition-opacity bg-background/50 backdrop-blur-sm pointer-events-none z-20">
+                <span class="text-4xl font-black text-primary tracking-wider text-center flex flex-col items-center">
+                    <i data-lucide="bookmark" class="h-10 w-10 mb-2"></i>
+                    KAYDET
+                </span>
+            </div>
+            
+            <!-- Info Details -->
+            <div class="absolute bottom-0 left-0 right-0 p-8 pointer-events-none">
+                <div class="flex items-end justify-between gap-4">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-3 mb-4 inline-flex rounded-full bg-white/10 pr-4 p-1 backdrop-blur-md border border-white/10">
+                            <img id="userAvatar" src="https://ui-avatars.com/api/?name=Designer&background=random" class="h-10 w-10 rounded-full object-cover shrink-0 ring-2 ring-background" />
+                            <div class="truncate">
+                                <h3 id="userName" class="font-bold text-white text-sm truncate">Tasarimci</h3>
+                                <p id="userLevel" class="text-[10px] text-white/70 font-semibold uppercase tracking-wider">Level 12</p>
+                            </div>
+                        </div>
+                        
+                        <h2 id="designTitle" class="text-3xl font-black text-white mb-2 leading-tight drop-shadow-md">Modern UI Design</h2>
+                        <p id="designDesc" class="text-sm text-white/80 line-clamp-2 leading-relaxed">Minimalist bir yaklaşım ile tasarlanmış modern kullanıcı arayüzü konsept çalışması.</p>
+                    </div>
+                </div>
+                
+                <!-- Stats Row -->
+                <div class="mt-6 flex items-center justify-between border-t border-white/20 pt-4">
+                    <div class="flex gap-4">
+                        <div class="flex items-center gap-1.5 text-white bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                            <i data-lucide="heart" class="h-4 w-4 fill-white/20"></i>
+                            <span id="likeCount" class="text-sm font-bold">128</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-white bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                            <i data-lucide="eye" class="h-4 w-4"></i>
+                            <span id="viewCount" class="text-sm font-bold">456</span>
+                        </div>
+                    </div>
+                    <button class="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm text-white hover:bg-white/20 transition-colors pointer-events-auto">
+                        <i data-lucide="info" class="h-5 w-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Controls Action Bar -->
+    <div class="mt-8 flex items-center justify-center gap-4 sm:gap-6 z-10">
+        <button onclick="swipe('left')" class="group flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-lg shadow-destructive/5 hover:shadow-destructive/20 border-2 border-border transition-all hover:scale-110 hover:border-destructive hover:bg-destructive/10">
+            <i data-lucide="x" class="h-8 w-8 text-muted-foreground group-hover:text-destructive transition-colors"></i>
+        </button>
+        
+        <button onclick="swipe('up')" class="group flex h-14 w-14 items-center justify-center rounded-full bg-card shadow-lg shadow-primary/5 hover:shadow-primary/20 border-2 border-border transition-all hover:scale-110 hover:border-primary hover:bg-primary/10">
+            <i data-lucide="bookmark" class="h-6 w-6 text-muted-foreground group-hover:text-primary group-hover:fill-primary/20 transition-colors"></i>
+        </button>
+        
+        <button onclick="swipe('right')" class="group flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-lg shadow-green-500/5 hover:shadow-green-500/20 border-2 border-border transition-all hover:scale-110 hover:border-green-500 hover:bg-green-500/10">
+            <i data-lucide="heart" class="h-8 w-8 text-muted-foreground group-hover:text-green-500 group-hover:fill-green-500/20 transition-colors"></i>
+        </button>
+    </div>
+    
+    <!-- Keyboard Shortcuts Hint -->
+    <div class="mt-6 text-center hidden md:block">
+        <p class="text-xs text-muted-foreground flex items-center justify-center gap-4">
+            <span class="flex items-center gap-1"><kbd class="bg-secondary rounded px-2 py-0.5 border border-border">←</kbd> Gec</span>
+            <span class="flex items-center gap-1"><kbd class="bg-secondary rounded px-2 py-0.5 border border-border">↑</kbd> Kaydet</span>
+            <span class="flex items-center gap-1"><kbd class="bg-secondary rounded px-2 py-0.5 border border-border">→</kbd> Begen</span>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var designs = [];
+        var currentIndex = 0;
+        var isDragging = false;
+        var startX = 0;
+        var startY = 0;
+        var currentX = 0;
+        var currentY = 0;
+        
+        // Disable body scroll when touching the card to prevent pull-to-refresh on mobile
+        document.body.addEventListener('touchmove', function(e) {
+            if (isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Load data from API
+        fetch('/Social/GetSwipeData')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.designs && data.designs.length > 0) {
+                    designs = data.designs.map(function(d) {
+                        return {
+                            id: d.id || d.Id,
+                            title: d.title || d.Title || 'Tasarim',
+                            desc: '',
+                            image: d.imageUrl || d.ImageUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800',
+                            user: d.userName || d.UserName || 'Tasarimci',
+                            level: d.userLevel || d.UserLevel || 1,
+                            likes: d.likes || d.Likes || 0,
+                            views: d.views || d.Views || 0,
+                            avatar: d.userAvatar || d.UserAvatar || ''
+                        };
+                    });
+                } else {
+                    // Fallback
+                    designs = [
+                        { id: 0, title: "Dark Mode Dashboard", desc: "Modern bir sirket icin tasarlanmis analitik dashboard arayuzu. Oklch renk paleti kullanilmistir.", image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800", user: "Kerem", level: 14, likes: 342, views: 1205, avatar: '' },
+                        { id: 1, title: "Mobile Banking App", desc: "Minimalist bankacilik uygulamasi konsepti. Clean UI yaklasimi.", image: "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800", user: "Ayse", level: 8, likes: 124, views: 890, avatar: '' }
+                    ];
+                }
+                updateCard();
+            })
+            .catch(function() {
+                designs = [
+                    { id: 0, title: "Swipe Modulu Eklendi!", desc: "Kaydirmaya baslayin.", image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800", user: "Kartist", level: 99, likes: 999, views: 9999, avatar: '' }
+                ];
+                updateCard();
+            });
+        
+        function updateCard() {
+            var currentContainer = document.getElementById('currentCard');
+            var nextContainer = document.getElementById('nextCard');
+            
+            if (currentIndex >= designs.length) {
+                // Out of cards
+                currentContainer.innerHTML = `
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-card">
+                        <div class="h-24 w-24 rounded-full bg-secondary flex items-center justify-center mb-6">
+                            <i data-lucide="check-circle" class="h-12 w-12 text-primary"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-2">Bugunluk Bu Kadar!</h2>
+                        <p class="text-muted-foreground mb-8">Tum yeni tasarimlari inceledin. Daha fazlasi icin daha sonra tekrar gel.</p>
+                        <button onclick="location.reload()" class="rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                            Yenile
+                        </button>
+                    </div>`;
+                lucide.createIcons();
+                nextContainer.style.display = 'none';
+                return;
+            }
+            
+            var design = designs[currentIndex];
+            document.getElementById('cardImage').src = design.image;
+            document.getElementById('userAvatar').src = design.avatar || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(design.user) + '&background=random');
+            document.getElementById('userName').textContent = design.user;
+            document.getElementById('userLevel').textContent = 'Level ' + design.level;
+            document.getElementById('designTitle').textContent = design.title;
+            document.getElementById('designDesc').textContent = design.desc;
+            document.getElementById('likeCount').textContent = design.likes;
+            document.getElementById('viewCount').textContent = design.views;
+            
+            if (currentIndex + 1 < designs.length) {
+                nextContainer.style.display = 'block';
+                document.getElementById('nextImage').src = designs[currentIndex + 1].image;
+                
+                // Remove blur right before it becomes active card
+                setTimeout(() => {
+                   document.getElementById('nextImage').classList.remove('blur-sm'); 
+                }, 200);
+            } else {
+                nextContainer.style.display = 'none';
+            }
+        }
+        
+        function swipe(direction) {
+            var card = document.getElementById('currentCard');
+            var nextCard = document.getElementById('nextCard');
+            
+            if (!card || currentIndex >= designs.length) return;
+            
+            var designId = designs[currentIndex].id;
+            var duration = "500ms";
+            card.style.transition = `transform ${duration} cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity ${duration} ease-out`;
+            
+            if (direction === 'right') {
+                card.style.transform = 'translate(150%, 50px) rotate(30deg)';
+                card.style.opacity = '0';
+                showLabel('likeLabel');
+                
+                if (designId > 0) {
+                    fetch('/Social/Begen?gonderiId=' + designId, { method: 'POST' })
+                        .catch(e => console.error(e));
+                }
+            } else if (direction === 'left') {
+                card.style.transform = 'translate(-150%, 50px) rotate(-30deg)';
+                card.style.opacity = '0';
+                showLabel('nopeLabel');
+            } else if (direction === 'up') {
+                card.style.transform = 'translateY(-150%) scale(0.8)';
+                card.style.opacity = '0';
+                showLabel('superLabel');
+                
+                if (designId > 0) {
+                    fetch('/Social/Kaydet?gonderiId=' + designId, { method: 'POST' })
+                        .catch(e => console.error(e));
+                }
+            }
+            
+            if (nextCard && currentIndex + 1 < designs.length) {
+                nextCard.style.transition = `transform ${duration} cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity ${duration} ease-out`;
+                nextCard.style.transform = 'scale(1) translateY(0)';
+                nextCard.style.opacity = '1';
+                
+                 // Remove blur right before it becomes active card
+                document.getElementById('nextImage').classList.remove('blur-sm', 'brightness-75', 'scale-110'); 
+            }
+            
+            setTimeout(function() {
+                currentIndex++;
+                
+                // Reset current card styles to be ready for next update
+                card.style.transition = 'none';
+                card.style.transform = 'translate(0, 0) rotate(0) scale(1)';
+                card.style.opacity = '1';
+                
+                // Reset next card to background position
+                if (nextCard) {
+                    nextCard.style.transition = 'none';
+                    nextCard.style.transform = 'scale(0.95) translateY(5%)';
+                    nextCard.style.opacity = '0.8';
+                    document.getElementById('nextImage').classList.add('blur-sm', 'brightness-75', 'scale-110');
+                }
+                
+                updateCard();
+            }, 500);
+        }
+        
+        function showLabel(id) {
+            var label = document.getElementById(id);
+            if(label) {
+                label.style.opacity = '1';
+                label.style.transform = label.style.transform.replace('scale(0.8)', 'scale(1)');
+                setTimeout(function() {
+                    label.style.opacity = '0';
+                }, 400);
+            }
+        }
+        
+        // Touch / Mouse Drag Logic
+        var card = document.getElementById('currentCard');
+        
+        function handleDragStart(e) {
+            if (currentIndex >= designs.length) return;
+            
+            isDragging = true;
+            card.style.transition = 'none';
+            
+            if (e.type === 'touchstart') {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            } else {
+                startX = e.clientX;
+                startY = e.clientY;
+                card.style.cursor = 'grabbing';
+            }
+        }
+        
+        function handleDragMove(e) {
+            if (!isDragging) return;
+            
+            var clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+            var clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+            
+            currentX = clientX - startX;
+            currentY = clientY - startY;
+            
+            var rotate = currentX * 0.05; // Less rotation
+            card.style.transform = 'translate(' + currentX + 'px, ' + currentY + 'px) rotate(' + rotate + 'deg)';
+            
+            // Opacity calculations for labels based on threshold (100px)
+            var xRatio = Math.min(Math.abs(currentX) / 100, 1);
+            var yRatio = Math.min(Math.abs(currentY) / 100, 1);
+            
+            document.getElementById('likeLabel').style.opacity = currentX > 20 ? xRatio : 0;
+            document.getElementById('nopeLabel').style.opacity = currentX < -20 ? xRatio : 0;
+            document.getElementById('superLabel').style.opacity = currentY < -50 && Math.abs(currentX) < 50 ? yRatio : 0;
+        }
+        
+        function handleDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            card.style.cursor = 'grab';
+            
+            var thresholdAction = 100;
+            var velocityX = Math.abs(currentX);
+            var velocityY = Math.abs(currentY);
+            
+            if (currentX > thresholdAction) {
+                swipe('right');
+            } else if (currentX < -thresholdAction) {
+                swipe('left');
+            } else if (currentY < -thresholdAction && velocityX < 50) {
+                swipe('up');
+            } else {
+                // Return to center
+                card.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.transform = 'translate(0, 0) rotate(0)';
+                
+                document.getElementById('likeLabel').style.opacity = '0';
+                document.getElementById('nopeLabel').style.opacity = '0';
+                document.getElementById('superLabel').style.opacity = '0';
+            }
+            
+            currentX = 0;
+            currentY = 0;
+        }
+        
+        // Event Listeners
+        card.addEventListener('mousedown', handleDragStart);
+        document.addEventListener('mousemove', handleDragMove);
+        document.addEventListener('mouseup', handleDragEnd);
+        
+        card.addEventListener('touchstart', handleDragStart, {passive: false});
+        document.addEventListener('touchmove', handleDragMove, {passive: false});
+        document.addEventListener('touchend', handleDragEnd);
+        
+        // Keyboard Support
+        document.addEventListener('keydown', function(e) {
+            if (currentIndex >= designs.length) return;
+            
+            if (e.key === 'ArrowRight') {
+                swipe('right');
+            } else if (e.key === 'ArrowLeft') {
+                swipe('left');
+            } else if (e.key === 'ArrowUp') {
+                swipe('up');
+            }
+        });
+    </script>
+}

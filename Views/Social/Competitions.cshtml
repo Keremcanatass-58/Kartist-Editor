@@ -1,0 +1,392 @@
+@{
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Yarismalar";
+}
+
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold">Yarismalar</h1>
+    </div>
+</header>
+
+<div class="p-6 text-foreground bg-background">
+    <!-- Hero Section -->
+    <div class="rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 p-8 relative overflow-hidden border border-yellow-500/10">
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-xl shadow-yellow-500/20">
+                    <i data-lucide="trophy" class="h-8 w-8 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">Tasarim Yarismalari</h1>
+                    <p class="text-muted-foreground mt-1">Yarismaya katil, yetenegini sergile, oduller kazan!</p>
+                </div>
+            </div>
+            
+            <button class="flex h-fit items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 gold-glow whitespace-nowrap">
+                <i data-lucide="sparkles" class="h-5 w-5"></i>
+                Nasil Calisir?
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="target" class="h-4 w-4 text-yellow-500"></i>
+                    <span class="text-sm font-medium">Aktif Yarisma</span>
+                </div>
+                <p class="text-3xl font-bold">@(ViewBag.ActiveCompetitions ?? 2)</p>
+            </div>
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="users" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Toplam Katilimci</span>
+                </div>
+                <p class="text-3xl font-bold">@(ViewBag.TotalParticipants ?? 323)</p>
+            </div>
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="award" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Toplam Odul</span>
+                </div>
+                <p class="text-3xl font-bold text-accent">30<span class="text-xl">k TL</span></p>
+            </div>
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="medal" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Bu Ay Kazananlar</span>
+                </div>
+                <p class="text-3xl font-bold text-primary">8</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mt-8 flex flex-wrap gap-2" id="compFilters">
+        <button onclick="filterComps('all')" id="comp-all" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground gold-glow">
+            <i data-lucide="grid" class="h-4 w-4 inline-block mr-1"></i> Tumu
+        </button>
+        <button onclick="filterComps('active')" id="comp-active" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            <i data-lucide="zap" class="h-4 w-4 inline-block mr-1"></i> Aktif
+        </button>
+        <button onclick="filterComps('voting')" id="comp-voting" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            <i data-lucide="bar-chart-2" class="h-4 w-4 inline-block mr-1"></i> Oylama
+        </button>
+        <button onclick="filterComps('ended')" id="comp-ended" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            <i data-lucide="check-circle" class="h-4 w-4 inline-block mr-1"></i> Tamamlanan
+        </button>
+    </div>
+
+    <!-- Competitions Grid -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="competitionsGrid">
+        @if (ViewBag.Competitions != null)
+        {
+            foreach (var comp in ViewBag.Competitions)
+            {
+                var isVoting = comp.Status == "voting";
+                var isEnded = comp.Status == "ended";
+                <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-primary/50 flex flex-col" data-status="@comp.Status">
+                    <div class="relative aspect-[16/9] overflow-hidden shrink-0">
+                        <img src="@(comp.CoverImage)" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+                        
+                        <!-- Status Badge -->
+                        <div class="absolute left-4 top-4">
+                            @if(isVoting) {
+                                <div class="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground shadow-lg shadow-accent/20">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                                        <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                                    </span>
+                                    OYLAMA
+                                </div>
+                            } else if (isEnded) {
+                                <div class="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold shadow-lg">
+                                    <i data-lucide="check-circle" class="h-3 w-3"></i>
+                                    TAMAMLANDI
+                                </div>
+                            } else {
+                                <div class="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-card opacity-75"></span>
+                                        <span class="relative inline-flex h-2 w-2 rounded-full bg-card"></span>
+                                    </span>
+                                    AKTIF
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Theme & Title -->
+                        <div class="absolute bottom-0 left-0 right-0 p-5 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                            <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md mb-2 inline-block shadow-sm">@(comp.Theme)</span>
+                            <h3 class="text-xl font-bold text-white line-clamp-2">@(comp.Title)</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="p-5 flex flex-col flex-1 bg-card">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <p class="text-xs text-muted-foreground font-medium mb-1">Odul Havuzu</p>
+                                <p class="font-bold text-primary text-lg flex items-center gap-1">
+                                    <i data-lucide="coins" class="h-4 w-4"></i> @(comp.Prize)
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-muted-foreground font-medium mb-1">Katilimci</p>
+                                <p class="font-bold text-lg flex items-center gap-1 justify-end">
+                                    <i data-lucide="users" class="h-4 w-4 text-muted-foreground"></i> @(comp.Participants)
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-auto pt-4 border-t border-border/50 flex flex-col gap-4">
+                            @if(!isEnded) {
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-sm font-medium @(isVoting ? "text-accent" : "text-muted-foreground")">
+                                        <i data-lucide="clock" class="h-4 w-4"></i>
+                                        <span>@(comp.Deadline) @(isVoting ? "sonuc" : "kaldi")</span>
+                                    </div>
+                                    <div class="flex -space-x-2">
+                                        <img src="https://ui-avatars.com/api/?name=A&background=random" class="h-6 w-6 rounded-full border border-card" />
+                                        <img src="https://ui-avatars.com/api/?name=B&background=random" class="h-6 w-6 rounded-full border border-card" />
+                                        <div class="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-secondary text-[8px] font-bold">+@comp.Participants</div>
+                                    </div>
+                                </div>
+                            }
+                            
+                            <button onclick='@(isEnded ? $"viewResults({comp.Id})" : $"joinCompetition(\"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Theme ?? "")} - {System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\")")' class="w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 @(isVoting ? "bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-accent-foreground pink-glow" : (isEnded ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-primary text-primary-foreground hover:opacity-90 neon-glow"))">
+                                @if(isVoting) {
+                                    <i data-lucide="check-square" class="h-4 w-4"></i> @("Tasarımları Oyla")
+                                } else if(isEnded) {
+                                    <i data-lucide="trophy" class="h-4 w-4 text-yellow-500"></i> @("Sonucları Gör")
+                                } else {
+                                    <i data-lucide="upload" class="h-4 w-4"></i> @("Tasarım Yükle")
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Past Winners Section -->
+    <div class="mt-16 pt-8 border-t border-border/50">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+                <i data-lucide="award" class="h-6 w-6 text-primary"></i>
+                Haftanin Kazananlari
+            </h2>
+            <button class="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                Tumunu Gor <i data-lucide="chevron-right" class="h-4 w-4"></i>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            @for (int i = 1; i <= 4; i++)
+            {
+                <div class="group glass-card rounded-2xl p-5 hover:border-primary/50 transition-all hover:shadow-lg relative overflow-hidden">
+                    <!-- Glow effect -->
+                    <div class="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-primary/10 blur-2xl transition-all group-hover:bg-primary/20"></div>
+                    
+                    <div class="flex items-center gap-3 mb-4 relative z-10">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg shadow-amber-500/20 text-white">
+                            <i data-lucide="trophy" class="h-5 w-5"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-sm truncate">Dark Mode UI Challenge</p>
+                            <p class="text-xs text-muted-foreground flex items-center gap-1">
+                                <i data-lucide="calendar" class="h-3 w-3"></i> @(i) hafta once
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="rounded-xl overflow-hidden aspect-video relative mb-4">
+                        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    </div>
+                    
+                    <div class="flex items-center justify-between relative z-10">
+                        <div class="flex items-center gap-2 min-w-0 flex-1">
+                            <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString("Alican"))&background=random" class="h-8 w-8 rounded-full shrink-0" />
+                            <div class="truncate pr-2">
+                                <p class="text-sm font-semibold truncate">Alican</p>
+                            </div>
+                        </div>
+                        <div class="shrink-0 text-right">
+                            <p class="text-sm font-bold text-primary">5,000 TL</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <!-- Join Competition Modal -->
+    <div id="compJoinModal" class="fixed inset-0 z-50 hidden bg-background/80 backdrop-blur-sm">
+        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
+            <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="upload-cloud" class="h-6 w-6 text-primary"></i> 
+                            Tasarımını Gönder
+                        </h2>
+                        <button onclick="closeCompModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                            <i data-lucide="x" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+
+                    <form action="/Social/CreatePost" method="post" enctype="multipart/form-data" class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Yarışma Teması</label>
+                            <input type="text" id="compThemeInput" name="Baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Açıklama & Etiketler</label>
+                            <textarea name="Icerik" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Çalışmanı Yükle</label>
+                            <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-8 text-center transition-colors hover:border-primary/50 relative overflow-hidden group">
+                                <input type="file" name="Resim" required accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                                <div class="relative z-0">
+                                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-3 shadow-sm">
+                                        <i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i>
+                                    </div>
+                                    <p class="text-sm font-semibold mb-1">Dosya seç veya sürükle</p>
+                                    <p class="text-xs text-muted-foreground">PNG, JPG veya WEBP (Max 5MB)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="mt-4 w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                            Şimdi Katıl!
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterComps(filter) {
+            var buttons = ['all', 'active', 'voting', 'ended'];
+            for (var i = 0; i < buttons.length; i++) {
+                var btn = document.getElementById('comp-' + buttons[i]);
+                if (!btn) continue;
+                if (buttons[i] === filter) {
+                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground gold-glow';
+                } else {
+                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80';
+                }
+            }
+            
+            var comps = document.querySelectorAll('#competitionsGrid > div');
+            comps.forEach(function(comp) {
+                var status = comp.getAttribute('data-status');
+                if (filter === 'all' || status === filter) {
+                    comp.style.display = 'flex';
+                } else {
+                    comp.style.display = 'none';
+                }
+            });
+            console.log('Competition filter set:', filter);
+        }
+        
+        function joinCompetition(title) {
+            document.getElementById('compThemeInput').value = title;
+            document.getElementById('compJoinModal').classList.remove('hidden');
+        }
+
+        function closeCompModal() {
+            document.getElementById('compJoinModal').classList.add('hidden');
+        }
+
+        function viewResults(id) {
+            document.getElementById('resultsModal').classList.remove('hidden');
+            // Mocking a confetti celebration
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        function closeResultsModal() {
+            document.getElementById('resultsModal').classList.add('hidden');
+        }
+    </script>
+    <!-- Add Confetti JS for WOW effect -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+}
+
+    <!-- View Results Modal -->
+    <div id="resultsModal" class="fixed inset-0 z-[60] hidden bg-background/90 backdrop-blur-md">
+        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+            <div class="rounded-3xl border border-border bg-card p-8 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
+                <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md mb-2 inline-block">Yarışma Sonuçları</span>
+                            <h2 class="text-3xl font-black">Podyum Tamamlandı!</h2>
+                        </div>
+                        <button onclick="closeResultsModal()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                            <i data-lucide="x" class="h-5 w-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Podium Layout -->
+                    <div class="flex items-end justify-center gap-4 mt-12 mb-8 h-48">
+                        <!-- 2nd Place -->
+                        <div class="flex flex-col items-center w-28 translate-y-6">
+                            <div class="relative">
+                                <img src="https://ui-avatars.com/api/?name=DesignerB&background=random" class="h-16 w-16 rounded-full border-4 border-gray-300 shadow-xl z-20 relative" />
+                                <div class="absolute -bottom-3 -right-3 h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center font-bold text-gray-800 border-2 border-card z-30 shadow-lg">2</div>
+                            </div>
+                            <p class="font-bold mt-4 line-clamp-1">Ayşe T.</p>
+                            <p class="text-xs text-muted-foreground">3,000 TL</p>
+                            <div class="w-full h-24 bg-gradient-to-t from-gray-300/40 to-gray-300/10 rounded-t-xl mt-3 border-t-2 border-gray-300/50"></div>
+                        </div>
+                        
+                        <!-- 1st Place (Winner) -->
+                        <div class="flex flex-col items-center w-36 relative z-10 -translate-y-4">
+                            <div class="absolute -top-12 h-16 w-16 bg-yellow-400/20 rounded-full blur-xl"></div>
+                            <div class="relative">
+                                <i data-lucide="crown" class="h-8 w-8 text-yellow-400 absolute -top-8 left-1/2 -translate-x-1/2 drop-shadow-lg"></i>
+                                <img src="https://ui-avatars.com/api/?name=Keremcan&background=random" class="h-24 w-24 rounded-full border-4 border-yellow-400 shadow-2xl shadow-yellow-500/30 z-20 relative" />
+                                <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 h-10 w-10 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center font-black text-yellow-950 border-4 border-card z-30 shadow-xl text-lg">1</div>
+                            </div>
+                            <p class="font-black text-lg mt-5 tracking-tight text-yellow-400">Keremcan</p>
+                            <p class="text-sm font-bold text-muted-foreground">15,000 TL</p>
+                            <div class="w-full h-36 bg-gradient-to-t from-yellow-500/40 via-yellow-500/20 to-yellow-500/5 rounded-t-xl mt-3 border-t-2 border-yellow-400/50 shadow-[0_0_30px_rgba(234,179,8,0.2)]"></div>
+                        </div>
+
+                        <!-- 3rd Place -->
+                        <div class="flex flex-col items-center w-28 translate-y-10">
+                            <div class="relative">
+                                <img src="https://ui-avatars.com/api/?name=Cem&background=random" class="h-14 w-14 rounded-full border-4 border-amber-700 shadow-xl z-20 relative" />
+                                <div class="absolute -bottom-2 -left-2 h-7 w-7 rounded-full bg-amber-700 flex items-center justify-center font-bold text-amber-50 border-2 border-card z-30 shadow-lg text-xs">3</div>
+                            </div>
+                            <p class="font-bold mt-4 line-clamp-1">Cem K.</p>
+                            <p class="text-xs text-muted-foreground">1,000 TL</p>
+                            <div class="w-full h-16 bg-gradient-to-t from-amber-700/40 to-amber-700/10 rounded-t-xl mt-3 border-t-2 border-amber-700/50"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="closeResultsModal()" class="w-full rounded-xl bg-secondary py-3.5 text-sm font-bold text-foreground transition-all flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground mt-4">
+                        Tebrik Et & Kapat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>

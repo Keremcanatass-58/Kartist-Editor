@@ -1,474 +1,164 @@
 @{
-    Layout = "_SocialLayout";
-    ViewData["Title"] = "Sosyal Profil";
-    int profilId = ViewBag.ProfilId;
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Profil - Kartist";
 }
 
-<style>
-    /* ===== PROFILE HEADER & BANNER ===== */
-    .profile-header {
-        position: relative; margin: 0 -20px 24px; padding-bottom: 20px;
-    }
-    .sp-banner {
-        height: 260px; border-radius: 0 0 calc(var(--radius-lg)*1.5) calc(var(--radius-lg)*1.5);
-        position: relative; overflow: hidden;
-    }
-    .sp-banner-img { width: 100%; height: 100%; object-fit: cover; }
-    .sp-banner-gradient {
-        position: absolute; inset: 0;
-        background: linear-gradient(180deg, rgba(13,17,23,0) 0%, rgba(13,17,23,0.8) 100%);
-    }
+@{ 
+    var user = ViewBag.User as dynamic;
+    var posts = ViewBag.Posts as List<dynamic>;
+}
 
-    /* ===== PROFILE CARD (Floating) ===== */
-    .sp-info-card {
-        background: rgba(22, 27, 34, 0.75); backdrop-filter: blur(28px);
-        -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255,255,255,0.10);
-        border-radius: var(--radius-xl); margin: -90px auto 0; position: relative; z-index: 10;
-        padding: 36px; box-shadow: 0 28px 64px rgba(0,0,0,0.35); max-width: 1100px;
-    }
-    .sp-top-row { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
-    .sp-info-main { display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-wrap: wrap; width: 100%; }
-    .sp-avatar-wrap { position: relative; flex-shrink: 0; margin-top: -60px; }
-    .sp-avatar-ring {
-        width: 140px; height: 140px; border-radius: 50%; padding: 4px;
-        background: linear-gradient(135deg, var(--accent), #7ab800, var(--blue));
-        box-shadow: 0 0 24px rgba(198,255,0,0.4);
-    }
-    .sp-avatar-ring img, .sp-avatar-ring .avatar-initial {
-        width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
-        border: 4px solid #161b22; display: flex; align-items: center; justify-content: center;
-        background: #111; font-size: 3.5rem; font-weight: 900;
-    }
-
-    .sp-identity { display: flex; flex-direction: column; align-items: flex-start; width: 100%; text-align: left; }
-    .sp-identity h2 { margin: 0 0 10px; font-size: 2rem; font-weight: 900; display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; letter-spacing:-0.5px;}
-    .sp-pro-tag {
-        background: linear-gradient(90deg, #ff9f43, #ff4757); color: #fff; font-size: 0.65rem;
-        padding: 4px 12px; border-radius: 99px; font-weight: 900; letter-spacing: 1px; display:inline-flex; align-items:center; gap:4px;
-    }
-    .sp-level-tag { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); color: #5b8def; font-size: 0.75rem; padding: 4px 12px; border-radius: 99px; font-weight: 800; display:inline-flex; align-items:center; gap:4px; }
-    .sp-bio { color: #a3aab3; font-size: 0.95rem; line-height: 1.6; max-width: 600px; margin: 0 auto; }
-
-    /* ===== STATS BAR ===== */
-    .sp-stats-row { display: flex; gap: 40px; justify-content: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; text-align: center; }
-    .sp-stat { display: flex; flex-direction: column; gap: 4px; min-width: 90px; }
-    .sp-stat-icon { color: var(--accent); font-size: 1rem; margin-bottom: 6px; }
-    .sp-stat-num { font-size: 1.6rem; font-weight: 900; color: #fff; }
-    .sp-stat-num span.accent { color: var(--accent); }
-    .sp-stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
-
-    /* ===== ACTIONS ===== */
-    .sp-actions-box { display: flex; justify-content: flex-start; gap: 12px; margin-top: 24px; width: 100%; flex-wrap: wrap; }
-    .btn-sp {
-        padding: 12px 28px; border-radius: 99px; font-weight: 800; font-size: 0.9rem; font-family: var(--font); cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        display: flex; align-items: center; gap: 8px; justify-content: center;
-    }
-    .btn-follow-main { background: var(--accent); color: #000; border: none; box-shadow: 0 4px 15px rgba(198,255,0,0.3); }
-    .btn-follow-main:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(198,255,0,0.4); }
-    .btn-follow-main.following { background: rgba(198,255,0,0.1); color: var(--accent); border: 2px solid var(--accent); box-shadow: none; }
-    
-    .btn-secondary { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
-    .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
-
-    /* ===== BADGES ===== */
-    .sp-badges-wrap { position: absolute; top: 24px; right: 24px; display: flex; gap: 10px; flex-direction: row; align-items: center; }
-    .sp-badge {
-        width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;
-        font-size: 1.4rem; cursor: pointer; transition: var(--bounce); backdrop-filter: blur(10px);
-    }
-    .sp-badge:hover { transform: scale(1.15) rotate(5deg); background: rgba(255,255,255,0.15); border-color: var(--accent); }
-
-    /* ===== HEATMAP ===== */
-    .sp-section-title { font-size: 1.1rem; font-weight: 900; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-    .sp-heatmap-wrap { margin-top: 32px; padding: 24px; background: rgba(22,27,34,0.4); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow-x: auto; }
-    .sp-heatmap { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
-    .sp-heatmap-cell {
-        aspect-ratio: 1; border-radius: 4px;
-        background: rgba(255,255,255,0.04); transition: all 0.3s ease;
-    }
-    .sp-heatmap-cell:hover { transform: scale(1.1); box-shadow: 0 0 10px rgba(198,255,0,0.5); z-index:2; position:relative; }
-    .sp-heatmap-cell.l1 { background: rgba(198,255,0,0.2); }
-    .sp-heatmap-cell.l2 { background: rgba(198,255,0,0.4); }
-    .sp-heatmap-cell.l3 { background: rgba(198,255,0,0.7); }
-    .sp-heatmap-cell.l4 { background: var(--accent); box-shadow: 0 0 8px rgba(198,255,0,0.4); }
-
-    /* ===== TABS & GRID ===== */
-    .sp-grid-tabs { display: flex; gap: 16px; margin-top: 40px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1px; }
-    .sp-grid-tab {
-        background: none; border: none; color: #8b949e; font-size: 0.95rem; font-weight: 800; padding: 0 16px 16px; cursor: pointer;
-        position: relative; transition: color 0.3s; font-family: var(--font); display: flex; align-items: center; gap: 8px;
-    }
-    .sp-grid-tab::after {
-        content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px;
-        background: var(--accent); transform: scaleX(0); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border-radius: 3px 3px 0 0;
-    }
-    .sp-grid-tab:hover { color: #fff; }
-    .sp-grid-tab.active { color: var(--accent); }
-    .sp-grid-tab.active::after { transform: scaleX(1); }
-
-    .sp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; margin-bottom: 60px; }
-    @@media (min-width: 1200px) {
-        .sp-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    }
-    .sp-grid-item {
-        aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; position: relative;
-        background: #111; cursor: pointer;
-    }
-    .sp-grid-item img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-    .sp-grid-item:hover img { transform: scale(1.08); }
-    .sp-grid-item .overlay {
-        position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
-        display: flex; align-items: flex-end; justify-content: center; gap: 16px; padding: 16px;
-        opacity: 0; transition: opacity 0.3s; color: #fff; font-weight: 900; font-size: 1rem;
-    }
-    .sp-grid-item:hover .overlay { opacity: 1; }
-    
-    /* Text Post Card inside Grid */
-    .sp-text-post {
-        aspect-ratio: 1; background: linear-gradient(135deg, rgba(22,27,34,0.8), rgba(13,17,23,0.9));
-        border-radius: var(--radius-md); padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; border: 1px solid rgba(255,255,255,0.08); transition: var(--transition); cursor: pointer; color: #c9d1d9;
-    }
-    .sp-text-post:hover { border-color: rgba(198,255,0,0.3); color: #fff; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-
-    .sp-empty { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; background: rgba(22,27,34,0.3); border-radius: var(--radius-lg); border: 1px dashed rgba(255,255,255,0.1); margin-top:20px; }
-    .sp-empty-icon { font-size: 3.5rem; color: rgba(255,255,255,0.08); margin-bottom: 16px; }
-    .sp-empty-text { font-size: 1.1rem; font-weight: 700; color: #8b949e; }
-
-    @@media (max-width: 768px) {
-        .sp-info-card { margin: -60px 16px 0; padding: 24px; }
-        .sp-avatar-wrap { margin-top: -45px; }
-        .sp-avatar-ring { width: 110px; height: 110px; }
-        .sp-avatar-ring img, .sp-avatar-ring .avatar-initial { font-size: 2.8rem; }
-        .sp-identity h2 { font-size: 1.6rem; }
-        .sp-stats-row { gap: 24px; margin-top: 16px; padding-top: 16px; }
-        .sp-stat-num { font-size: 1.3rem; }
-        .sp-badges-wrap { top: 16px; right: 16px; flex-direction: row; }
-        .sp-badge { width: 36px; height: 36px; font-size: 1.1rem; }
-    }
-    @@media (max-width: 480px) {
-        .sp-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
-        .sp-actions-box { flex-direction: column; width: 100%; gap: 8px; }
-        .btn-sp { width: 100%; padding: 10px 20px; font-size: 0.85rem; }
-        .sp-info-card { margin: -40px 12px 0; padding: 20px 16px; }
-        .sp-avatar-wrap { margin-top: -40px; }
-        .sp-avatar-ring { width: 90px; height: 90px; }
-        .sp-avatar-ring img, .sp-avatar-ring .avatar-initial { font-size: 2.2rem; }
-        .sp-identity h2 { font-size: 1.35rem; }
-        .sp-bio { font-size: 0.85rem; }
-        .sp-stats-row { gap: 12px; }
-        .sp-stat-num { font-size: 1.15rem; }
-        .sp-stat-label { font-size: 0.7rem; }
-        .sp-grid-tabs { margin-top: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .sp-grid-tab { font-size: 0.85rem; padding: 0 10px 10px; white-space: nowrap; }
-        .edit-modal { padding: 24px 20px; margin: 0 12px; }
-        .edit-modal h3 { font-size: 1.2rem; margin-bottom: 20px; }
-    }
-
-    /* ===== EDIT MODAL ===== */
-    .edit-modal-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-        display: none; align-items: center; justify-content: center; z-index: 9999;
-        opacity: 0; transition: opacity 0.3s ease;
-    }
-    .edit-modal-overlay.active { display: flex; opacity: 1; }
-    .edit-modal {
-        background: var(--bg-glass); border: 1px solid rgba(255,255,255,0.08); margin: 0 16px;
-        border-radius: var(--radius-xl); padding: 32px; width: 100%; max-width: 500px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.6); transform: translateY(20px); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .edit-modal-overlay.active .edit-modal { transform: translateY(0); }
-    .edit-modal h3 { font-size: 1.4rem; font-weight: 900; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
-    .edit-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-    .edit-field label { font-size: 0.85rem; font-weight: 800; color: var(--text-muted); }
-    .edit-field textarea, .edit-field input {
-        background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md);
-        padding: 14px; font-family: var(--font); color: var(--text-primary); resize: vertical; outline: none; transition: var(--transition);
-    }
-    .edit-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(198,255,0,0.1); }
-    .edit-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 32px; }
-</style>
-
-<div class="profile-header">
-    <div class="sp-banner" id="profilBanner">
-        <div class="sp-banner-gradient"></div>
-    </div>
-    
-    <div class="sp-info-card" id="profilCard">
-        <!-- Loader during fetch -->
-        <div style="display:flex; flex-direction:column; align-items:center; opacity:0.5; padding: 20px;">
-            <i class="fa-solid fa-circle-notch fa-spin" style="font-size:2rem; color:var(--accent);"></i>
-            <span style="margin-top:12px; font-weight:700;">Profil yükleniyor...</span>
+<div class="flex min-h-screen bg-background">
+    <!-- Sidebar -->
+    <aside class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
+        <!-- Logo -->
+        <div class="flex h-16 items-center gap-2 border-b border-border px-6">
+            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
+                <svg class="h-5 w-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+            </div>
+            <span class="text-xl font-bold tracking-tight">Kartist</span>
         </div>
-    </div>
-</div>
 
-<div style="padding: 0 20px;">
-    <!-- Heatmap -->
-    <div class="sp-heatmap-wrap" id="heatmapWrap" style="display:none">
-        <div class="sp-section-title"><i class="fa-solid fa-calendar-days" style="color:var(--accent)"></i> Paylaşım Aktivitesi <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600; margin-left:8px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px;">Son 84 Gün</span></div>
-        <div class="sp-heatmap" id="heatmapGrid"></div>
-        <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:12px; align-items:center;">
-            <span style="font-size:0.7rem; color:#8b949e; font-weight:700; margin-right:4px;">Az</span>
-            <div style="width:12px;height:12px;border-radius:3px;background:rgba(255,255,255,0.04)"></div>
-            <div style="width:12px;height:12px;border-radius:3px;background:rgba(198,255,0,0.2)"></div>
-            <div style="width:12px;height:12px;border-radius:3px;background:rgba(198,255,0,0.4)"></div>
-            <div style="width:12px;height:12px;border-radius:3px;background:rgba(198,255,0,0.7)"></div>
-            <div style="width:12px;height:12px;border-radius:3px;background:var(--accent)"></div>
-            <span style="font-size:0.7rem; color:#8b949e; font-weight:700; margin-left:4px;">Fazla</span>
-        </div>
-    </div>
+        <!-- Navigation -->
+        <nav class="mt-6 flex-1 px-3">
+            <ul class="space-y-1">
+                <li><a href="/Social/Feed" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                    Kesfet</a></li>
+                <li><a href="/Social/Trending" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /></svg>
+                    Trendler</a></li>
+                <li><a href="/Competition" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.21 13.89l7.21-4.11m0 0l-7.21-4.11m7.21 4.11v8.21m0-8.21H5.79m6.42 4.11L5.79 8.21m0 0l7.21 4.11M5.79 8.21v8.21" /></svg>
+                    Yarisma</a></li>
+                <li><a href="/Social/Profil/me" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all bg-primary/10 text-primary">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    Profil</a></li>
+            </ul>
+        </nav>
+    </aside>
 
-    <!-- TABS -->
-    <div class="sp-grid-tabs" id="gridTabs"></div>
-    
-    <!-- GRID -->
-    <div class="sp-grid" id="profilGrid"></div>
-</div>
+    <!-- Main Content -->
+    <main class="ml-64 flex-1">
+        <!-- Header -->
+        <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+            <h1 class="text-xl font-bold">Profil</h1>
+        </header>
 
-<!-- Edit Profile Modal (Same Base Structure, Refined Style in SocialLayout if needed) -->
-<div class="edit-modal-overlay" id="editModal">
-    <div class="edit-modal">
-        <h3><i class="fa-solid fa-pen-to-square" style="color:var(--accent)"></i> Profili Düzenle</h3>
-        <div class="edit-field">
-            <label>Biyografi</label>
-            <textarea id="editBio" placeholder="Kendinden bahset... sınırlarını çiz!" maxlength="500"></textarea>
-        </div>
-        <div class="edit-field">
-            <label>Profil Fotoğrafı</label>
-            <input type="file" id="editAvatar" accept="image/*" style="background:transparent; padding:0;">
-            <small style="color:var(--text-muted); display:block; margin-top:6px;">Önerilen boyut 400x400px. Sadece JPG, PNG, WEBP.</small>
-        </div>
-        <div class="edit-actions">
-            <button class="btn-sp btn-secondary" onclick="closeEditModal()">İptal</button>
-            <button class="btn-sp btn-follow-main" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Kaydet</button>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-<script>
-    const profilId = @profilId;
-
-    async function loadProfil(tab = 'gonderiler') {
-        const data = await secureFetch(`/Social/GetProfil?id=${profilId}&list=${tab}`);
-        if (!data || !data.success) return;
-
-        const u = data.user;
-        const isMe = data.benimProfilim;
-        const card = document.getElementById('profilCard');
-
-        // Render Banner
-        const banner = document.getElementById('profilBanner');
-        if (u.KapakResmi) {
-            banner.innerHTML = `<img src="${u.KapakResmi}" class="sp-banner-img"><div class="sp-banner-gradient"></div>`;
-        } else {
-            banner.innerHTML = `<div style="width:100%;height:100%;background:linear-gradient(45deg, #161b22, #21262d);"></div><div class="sp-banner-gradient"></div>`;
-        }
-
-        if (tab === 'gonderiler') {
-            // Badges HTML
-            let badgesHtml = '';
-            if (data.rozetler && data.rozetler.length > 0) {
-                badgesHtml = `<div class="sp-badges-wrap">${data.rozetler.map(r => {
-                    const kod = r.kod || r.Kod || '';
-                    const ad = r.ad || r.Ad || kod;
-                    const aciklama = r.aciklama || r.Aciklama || '';
-                    let iconHtml = '<i class="fa-solid fa-award" style="color:var(--accent)"></i>';
-                    
-                    if(kod.includes('yeni')) iconHtml = '🌱';
-                    else if(kod.includes('yaratici') || kod.includes('sanat')) iconHtml = '<i class="fa-solid fa-palette" style="color:#ff9f43"></i>';
-                    else if(kod.includes('populer') || kod.includes('yildiz')) iconHtml = '<i class="fa-solid fa-star" style="color:#ffcc00"></i>';
-                    else if(kod.includes('ates')) iconHtml = '<i class="fa-solid fa-fire" style="color:#ff4757"></i>';
-                    else if(kod.includes('aktif') || kod.includes('seri')) iconHtml = '<i class="fa-solid fa-bolt" style="color:#5b8def"></i>';
-                    
-                    return `<div class="sp-badge" title="${ad} - ${aciklama}">${iconHtml}</div>`;
-                }).join('')}</div>`;
-            }
-
-            card.innerHTML = `
-                ${badgesHtml}
-                <div class="sp-info-main">
-                    <div class="sp-avatar-wrap">
-                        <div class="sp-avatar-ring">${avatarHTML(u.ProfilResmi, u.AdSoyad, 120)}</div>
-                    </div>
-                    <div class="sp-identity">
-                        <h2>${u.AdSoyad} 
-                            ${u.UyelikTipi === 'Pro' ? '<span class="sp-pro-tag"><i class="fa-solid fa-bolt"></i> PRO</span>' : ''}
-                            <span class="sp-level-tag"><i class="fa-solid fa-star"></i> Lvl.${u.Seviye || 1}</span>
-                        </h2>
-                        <div class="sp-bio">${u.Biyografi ? escapeHtml(u.Biyografi) : '<span style="opacity:0.5;font-style:italic;">Hayal gücü konuşmaya hazır, henüz biyografi eklenmemiş.</span>'}</div>
+        <div class="p-6">
+            <!-- Profile Card -->
+            <div class="rounded-2xl bg-card overflow-hidden">
+                <!-- Banner -->
+                <div class="h-48 bg-gradient-to-r from-primary/20 to-accent/20 relative">
+                    <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-card to-transparent"></div>
+                </div>
+                
+                <!-- Profile Info -->
+                <div class="px-6 pb-6 -mt-16 relative">
+                    <div class="flex items-end gap-6">
+                        <div class="relative">
+                            <div class="h-32 w-32 rounded-full bg-primary p-1">
+                                <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(user?.AdSoyad ?? User.Identity.Name ?? "U"))&background=c6ff00&color=000&size=128" 
+                                     class="h-full w-full rounded-full object-cover" />
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                                @(user?.Seviye ?? 1)
+                            </div>
+                        </div>
                         
-                        <div class="sp-actions-box">
-                            ${!isMe ? `
-                                <button class="btn-sp btn-follow-main ${u.TakipEdiyorum == 1 ? 'following' : ''}" id="followBtn" onclick="toggleFollow()">
-                                    <i class="fa-solid ${u.TakipEdiyorum == 1 ? 'fa-user-check' : 'fa-user-plus'}"></i> 
-                                    <span>${u.TakipEdiyorum == 1 ? 'Takip Ediliyor' : 'Takip Et'}</span>
-                                </button>
-                                <button class="btn-sp btn-secondary" onclick="window.location.href='/Social/Mesajlar?hedef=${profilId}'"><i class="fa-regular fa-paper-plane"></i> Mesaj Gönder</button>
-                            ` : `
-                                <button class="btn-sp btn-secondary" onclick="openEditModal('${(u.Biyografi||'').replace(/'/g,"\\'")}')"><i class="fa-solid fa-sliders"></i> Profili Düzenle</button>
-                            `}
+                        <div class="flex-1 mb-2">
+                            <h2 class="text-2xl font-bold">@(user?.AdSoyad ?? User.Identity.Name)</h2>
+                            <p class="text-muted-foreground">@@@(user?.Email?.Replace("@gmail.com", "") ?? User.Identity.Name?.ToLower().Replace(" ", ""))</p>
+                        </div>
+                        
+                        <div class="flex gap-3 mb-2">
+                            @if (ViewBag.BenimProfilim == true)
+                            {
+                                <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Duzenle</button>
+                            }
+                            else
+                            {
+                                <button onclick="followUser(@(user?.Id))" id="followBtn" class="rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Takip Et</button>
+                                <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Mesaj</button>
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="flex gap-8 mt-6 pt-6 border-t border-border">
+                        <div class="text-center">
+                            <p class="text-2xl font-bold">@(ViewBag.GonderiSayisi ?? 0)</p>
+                            <p class="text-sm text-muted-foreground">Gonderi</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold">@(ViewBag.TakipciSayisi ?? 0)</p>
+                            <p class="text-sm text-muted-foreground">Takipci</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-bold">@(ViewBag.TakipSayisi ?? 0)</p>
+                            <p class="text-sm text-muted-foreground">Takip</p>
+                        </div>
+                        <div class="text-center ml-auto">
+                            <p class="text-2xl font-bold text-primary">@(user?.ToplamXP ?? 0) XP</p>
+                            <p class="text-sm text-muted-foreground">Level @(user?.Seviye ?? 1)</p>
                         </div>
                     </div>
                 </div>
-                
-                <div class="sp-stats-row">
-                    <div class="sp-stat">
-                        <div class="sp-stat-icon"><i class="fa-solid fa-photo-film"></i></div>
-                        <div class="sp-stat-num">${u.GonderiSayisi}</div>
-                        <div class="sp-stat-label">Gönderi</div>
-                    </div>
-                    <div class="sp-stat">
-                        <div class="sp-stat-icon"><i class="fa-solid fa-user-group"></i></div>
-                        <div class="sp-stat-num">${u.TakipciSayisi}</div>
-                        <div class="sp-stat-label">Takipçi</div>
-                    </div>
-                    <div class="sp-stat">
-                        <div class="sp-stat-icon"><i class="fa-solid fa-user-plus"></i></div>
-                        <div class="sp-stat-num">${u.TakipSayisi}</div>
-                        <div class="sp-stat-label">Takip</div>
-                    </div>
-                    <div class="sp-stat">
-                        <div class="sp-stat-icon"><i class="fa-solid fa-gauge-high"></i></div>
-                        <div class="sp-stat-num"><span class="accent">${u.ToplamXP || 0}</span></div>
-                        <div class="sp-stat-label">XP Puanı</div>
-                    </div>
+            </div>
+
+            <!-- Posts Grid -->
+            <div class="mt-8">
+                <h3 class="text-lg font-bold mb-4">Tasarimlar</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    @if (posts != null && posts.Count > 0)
+                    {
+                        foreach (var post in posts)
+                        {
+                            <div class="group relative aspect-square rounded-xl overflow-hidden bg-card cursor-pointer">
+                                <img src="@(post.GorselUrl ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400")" 
+                                     class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                    <span class="flex items-center gap-1 text-white font-semibold">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                        @(post.BegeniSayisi ?? 0)
+                                    </span>
+                                    <span class="flex items-center gap-1 text-white font-semibold">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                        @(post.YorumSayisi ?? 0)
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="col-span-3 text-center py-12 text-muted-foreground">
+                            <p>Henüz tasarim paylasilmamis.</p>
+                        </div>
+                    }
                 </div>
-            `;
+            </div>
+        </div>
+    </main>
+</div>
 
-            // Draw Interaction Heatmap if assessing own profile or high-tier info
-            if (isMe) {
-                buildHeatmap();
-            } else {
-                document.getElementById('heatmapWrap').style.display = 'none';
-            }
-
-            // Tabs UI
-            const tabsContainer = document.getElementById('gridTabs');
-            tabsContainer.innerHTML = `
-                <button class="sp-grid-tab ${tab === 'gonderiler' ? 'active' : ''}" onclick="loadProfil('gonderiler')"><i class="fa-solid fa-shapes"></i> Galeri</button>
-                <button class="sp-grid-tab ${tab === 'begeniler' ? 'active' : ''}" onclick="loadProfil('begeniler')"><i class="fa-solid fa-heart"></i> Beğeniler</button>
-                ${isMe ? `<button class="sp-grid-tab ${tab === 'kaydedilenler' ? 'active' : ''}" onclick="loadProfil('kaydedilenler')"><i class="fa-solid fa-bookmark"></i> Gizli Kasa</button>` : ''}
-            `;
-        } else {
-            document.querySelectorAll('.sp-grid-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.sp-grid-tab').forEach(t => { 
-                if(t.innerHTML.toLowerCase().includes(tab.substring(0,5))) t.classList.add('active'); 
+<script>
+    function followUser(id) {
+        fetch('/Social/TakipEt/' + id, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                const btn = document.getElementById('followBtn');
+                if (data.following) {
+                    btn.textContent = 'Takip Ediliyor';
+                    btn.classList.remove('bg-primary', 'text-primary-foreground');
+                    btn.classList.add('bg-secondary');
+                } else {
+                    btn.textContent = 'Takip Et';
+                    btn.classList.add('bg-primary', 'text-primary-foreground');
+                    btn.classList.remove('bg-secondary');
+                }
             });
-        }
-
-        // Render Grid Items
-        const grid = document.getElementById('profilGrid');
-        grid.innerHTML = '';
-        if (!data.gonderiler || data.gonderiler.length === 0) {
-            grid.innerHTML = `
-                <div class="sp-empty">
-                    <div class="sp-empty-icon"><i class="fa-solid fa-ghost"></i></div>
-                    <div class="sp-empty-text">Burada henüz bir şey yok.</div>
-                </div>`;
-            return;
-        }
-
-        data.gonderiler.forEach(g => {
-            if (g.GorselUrl) {
-                const badge = g.OnceSonraResim ? `<div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);padding:4px 10px;border-radius:6px;font-size:0.7rem;font-weight:900;color:var(--accent);border:1px solid rgba(198,255,0,0.2);"><i class="fa-solid fa-layer-group"></i> X-RAY</div>` : '';
-                grid.innerHTML += `
-                <div class="sp-grid-item" onclick="window.location.href='/Social/Feed'">
-                    <img src="${g.GorselUrl}" loading="lazy" alt="Gönderi">
-                    ${badge}
-                    <div class="overlay">
-                        <span><i class="fa-solid fa-heart" style="color:#ff4757"></i> ${g.BegeniSayisi}</span>
-                        <span><i class="fa-solid fa-comment" style="color:#5b8def"></i> ${g.YorumSayisi}</span>
-                    </div>
-                </div>`;
-            } else if (g.KodSinipet) {
-                grid.innerHTML += `
-                <div class="sp-text-post" onclick="window.location.href='/Social/Feed'">
-                    <i class="fa-solid fa-code" style="font-size:2rem;margin-bottom:12px;color:var(--accent);opacity:0.8;"></i>
-                    <div style="font-family:monospace; font-size:0.8rem; opacity:0.7;">$ CODE SNIPPET</div>
-                </div>`;
-            } else {
-                const vibeHtml = g.AiVibe ? `<div style="font-size:2rem;margin-bottom:8px;filter:drop-shadow(0 0 10px rgba(255,255,255,0.2));">${g.AiVibe}</div>` : `<i class="fa-solid fa-quote-left" style="font-size:1.5rem;color:rgba(255,255,255,0.1);margin-bottom:8px;"></i>`;
-                grid.innerHTML += `
-                <div class="sp-text-post" onclick="window.location.href='/Social/Feed'">
-                    ${vibeHtml}
-                    <div style="font-size:0.9rem;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
-                        ${escapeHtml(g.Icerik || '')}
-                    </div>
-                </div>`;
-            }
-        });
     }
-
-    async function toggleFollow() {
-        const fd = new FormData();
-        fd.append('hedefId', profilId);
-        fd.append('__RequestVerificationToken', CSRF());
-        
-        const data = await secureFetch('/Social/TakipEt', 'POST', fd);
-        if (data && data.success) {
-            const btn = document.getElementById('followBtn');
-            const isFollowing = data.following;
-            
-            btn.className = `btn-sp btn-follow-main ${isFollowing ? 'following' : ''}`;
-            btn.innerHTML = `<i class="fa-solid ${isFollowing ? 'fa-user-check' : 'fa-user-plus'}"></i> <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>`;
-            
-            if (isFollowing) showNeonToast('Sıkı kankalar arasına katıldın!', 'fa-user-astronaut');
-        }
-    }
-
-    // --- Edit Profile ---
-    function openEditModal(currentBio) {
-        document.getElementById('editBio').value = currentBio || '';
-        document.getElementById('editModal').classList.add('active');
-    }
-    function closeEditModal() {
-        document.getElementById('editModal').classList.remove('active');
-    }
-    async function saveProfile() {
-        const fd = new FormData();
-        fd.append('biyografi', document.getElementById('editBio').value);
-        const avatarFile = document.getElementById('editAvatar').files[0];
-        if (avatarFile) fd.append('profilResmi', avatarFile);
-        fd.append('__RequestVerificationToken', CSRF());
-
-        const res = await secureFetch('/Social/ProfilGuncelle', 'POST', fd);
-        if (res.success) {
-            showNeonToast('Profilin yeni görünümüyle parlıyor!', 'fa-wand-magic-sparkles');
-            closeEditModal();
-            loadProfil();
-        } else {
-            Swal.fire({title:'Hata', text: res.message || 'Güncellenemedi.', icon:'error', background:'#111', color:'#fff'});
-        }
-    }
-
-    // --- Heatmap Generator ---
-    function buildHeatmap() {
-        const container = document.getElementById('heatmapWrap');
-        const grid = document.getElementById('heatmapGrid');
-        container.style.display = 'block';
-        
-        let html = '';
-        // Mock data logic for purely visual presentation since user just wants it to "look beautiful"
-        for (let i = 0; i < 84; i++) {
-            const rand = Math.random();
-            let lvl = '';
-            if (rand > 0.9) lvl = 'l4';
-            else if (rand > 0.75) lvl = 'l3';
-            else if (rand > 0.5) lvl = 'l2';
-            else if (rand > 0.3) lvl = 'l1';
-            html += `<div class="sp-heatmap-cell ${lvl}" title="Aktivite Gücü: ${lvl || 'Yok'}"></div>`;
-        }
-        grid.innerHTML = html;
-    }
-
-    function escapeHtml(text) {
-        const d = document.createElement('div'); d.innerText = text; return d.innerHTML;
-    }
-
-    loadProfil();
 </script>
-}

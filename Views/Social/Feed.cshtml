@@ -1,836 +1,443 @@
 @{
-    Layout = "_SocialLayout";
-    ViewData["Title"] = "Sosyal Akış";
-    string myIdStr = User.Claims.FirstOrDefault(c => c.Type == "Id")?.Value ?? "0";
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Keşfet";
 }
 
-@section RightWidgets {
-    <!-- STATS BAR -->
-    <div class="widget-card">
-         <div class="widget-title"><i class="fa-solid fa-bolt" style="color:var(--gold)"></i> Durum & Gelişim</div>
-         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div style="background:var(--bg-hover); border-radius:var(--radius-sm); padding:12px; text-align:center;">
-                <div style="font-size:1.3rem; font-weight:900; color:var(--red);" id="streakVal">0</div>
-                <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; letter-spacing:1px;">STREAK</div>
-            </div>
-            <div style="background:var(--bg-hover); border-radius:var(--radius-sm); padding:12px; text-align:center;">
-                <div style="font-size:1.3rem; font-weight:900; color:var(--blue);" id="levelVal">1</div>
-                <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; letter-spacing:1px;">SEVİYE</div>
-            </div>
-            <div style="background:var(--bg-hover); border-radius:var(--radius-sm); padding:12px; text-align:center;">
-                <div style="font-size:1.3rem; font-weight:900; color:var(--accent);" id="xpVal">0</div>
-                <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; letter-spacing:1px;">XP</div>
-            </div>
-            <div style="background:var(--bg-hover); border-radius:var(--radius-sm); padding:12px; text-align:center;">
-                <div style="font-size:1.3rem; font-weight:900; color:var(--gold);" id="badgeVal">0</div>
-                <div style="font-size:0.65rem; color:var(--text-muted); font-weight:700; letter-spacing:1px;">ROZET</div>
-            </div>
-         </div>
-    </div>
-
-    <!-- DAILY QUESTS -->
-    <div class="widget-card">
-        <div class="widget-title"><i class="fa-solid fa-bullseye" style="color:var(--accent)"></i> Günlük Görevler</div>
-        <div id="questsList" style="display:flex; flex-direction:column; gap:10px;"></div>
-    </div>
+@{
+    var posts = Model as List<dynamic>;
+    var categories = new[] { "Tumu", "UI/UX", "Branding", "3D", "Mobile", "Web", "Typography", "Illustration", "Motion" };
 }
 
-<!-- HEADER with Feed Tabs -->
-<div class="center-header">
-    <h2>Ana Akış</h2>
-    <div class="feed-tabs">
-        <button class="feed-tab active" id="tabAll" onclick="switchFeedTab('yeni', this)">Sana Özel</button>
-        <button class="feed-tab" id="tabFollowing" onclick="switchFeedTab('takip', this)">Takip Edilenler</button>
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <!-- Search Bar -->
+    <div class="flex flex-1 items-center gap-4">
+        <h1 class="text-xl font-bold">Kesfet</h1>
+        <div class="relative hidden max-w-md flex-1 md:block">
+            <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+            <input type="text" placeholder="Tasarim, tasarimci veya etiket ara..." class="h-10 w-full rounded-full border border-border bg-secondary/50 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
     </div>
-</div>
 
-<!-- OMNIBOX -->
-<div class="omnibox">
-    <div class="avatar-wrapper">
-        <div class="avatar-initial" style="width:44px;height:44px;">@(User.Identity.Name?.Substring(0, 1).ToUpper())</div>
+    <!-- Right Actions -->
+    <div class="flex items-center gap-4">
+        <div class="hidden items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-1.5 md:flex">
+            <i data-lucide="flame" class="h-4 w-4 text-orange-500"></i>
+            <span class="text-sm font-medium">12 Gun</span>
+        </div>
+
+        <!-- Mode Toggle -->
+        <a href="/Social/Swipe" class="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-secondary/50 transition-colors hover:bg-secondary relative group" title="Swipe Modu">
+            <i data-lucide="monitor-play" class="h-4 w-4"></i>
+            <div class="absolute -bottom-8 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-xs text-popover-foreground group-hover:block border border-border">Swipe Modu</div>
+        </a>
+
+        <!-- Notifications -->
+        <div class="relative">
+            <button id="notifBtn" onclick="toggleDropdown('notifDropdown')" class="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-secondary/50 transition-colors hover:bg-secondary">
+                <i data-lucide="bell" class="h-4 w-4"></i>
+                <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary neon-glow"></span>
+            </button>
+            <div id="notifDropdown" class="absolute right-0 top-full mt-2 hidden w-80 rounded-2xl border border-border bg-popover p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold">Bildirimler</h3>
+                    <button class="text-xs text-primary hover:underline">Tumunu okundu isaretle</button>
+                </div>
+                <div class="space-y-4">
+                    <!-- Sample Notif -->
+                    <div class="flex items-start gap-3">
+                        <img src="https://ui-avatars.com/api/?name=Ali&background=random" class="h-8 w-8 rounded-full" />
+                        <div>
+                            <p class="text-sm"><span class="font-semibold">Ali</span> tasarimini begendi.</p>
+                            <span class="text-xs text-muted-foreground">5 dk once</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="/Social/Notifications" class="mt-4 block text-center text-sm text-primary hover:underline">Tumunu Gor</a>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="relative">
+            <button id="msgBtn" onclick="toggleDropdown('msgDropdown')" class="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-secondary/50 transition-colors hover:bg-secondary">
+                <i data-lucide="message-square" class="h-4 w-4"></i>
+                <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary neon-glow"></span>
+            </button>
+            <div id="msgDropdown" class="absolute right-0 top-full mt-2 hidden w-80 rounded-2xl border border-border bg-popover p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold">Mesajlar</h3>
+                    <a href="/Social/Mesajlar" class="text-xs text-primary hover:underline">Tumunu Gor</a>
+                </div>
+                <div class="space-y-4">
+                    <!-- Sample Message -->
+                    <div class="flex items-start gap-3">
+                        <div class="relative">
+                            <img src="https://ui-avatars.com/api/?name=Ayse&background=random" class="h-8 w-8 rounded-full" />
+                            <div class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-popover bg-green-500"></div>
+                        </div>
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-semibold">Ayse</span>
+                                <span class="text-xs text-primary">12:30</span>
+                            </div>
+                            <p class="truncate text-sm text-muted-foreground">Harika bir is cikarmissin!</p>
+                        </div>
+                    </div>
+                </div>
+                <a href="/Social/Mesajlar" class="mt-4 block w-full rounded-xl bg-secondary py-2 text-center text-sm font-medium hover:bg-secondary/80">Yeni Mesaj</a>
+            </div>
+        </div>
     </div>
-    <div class="omnibox-input-area">
-        <textarea class="omnibox-input" id="postTextInput" placeholder="Neler oluyor?"></textarea>
+</header>
+
+<div class="flex">
+    <!-- Main Feed Section -->
+    <div class="flex-1 p-6 z-10 w-0">
+        <!-- Category Filter -->
+        <div class="flex gap-2 overflow-x-auto pb-4 hide-scrollbar">
+            @foreach (var cat in categories)
+            {
+                <button onclick="filterCategory('@cat')" id="cat-@cat" 
+                        class="cat-filter-btn flex-shrink-0 rounded-xl px-5 py-2.5 text-sm font-medium transition-all @(cat == "Tumu" ? "bg-primary text-primary-foreground neon-glow" : "bg-secondary text-secondary-foreground hover:bg-secondary/80")">
+                    @cat
+                </button>
+            }
+        </div>
+
+        <!-- Custom My Designs Section -->
+        @{
+            var currentUserId = (int)(ViewBag.CurrentUserId ?? 0);
+            var myPosts = posts?.Where(p => (int)(p.KullaniciId ?? 0) == currentUserId).ToList() ?? new List<dynamic>();
+            var otherPosts = posts?.Where(p => (int)(p.KullaniciId ?? 0) != currentUserId).ToList() ?? new List<dynamic>();
+        }
+
+        @if (myPosts.Any())
+        {
+            <section class="mt-2 mb-8">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="user-circle" class="h-5 w-5 text-accent"></i>
+                    <h2 class="text-lg font-bold">Senin Paylasimlarin</h2>
+                </div>
+                <div class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar">
+                    @foreach (var card in myPosts.Take(5))
+                    {
+                        <a href="/Social/Design/@card.Id" class="group block relative w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-transparent transition-all hover:border-primary/50 hover:shadow-lg">
+                            <div class="aspect-video w-full overflow-hidden">
+                                <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
+                                     onerror="this.src='/img/default-design.svg'; this.onerror=null;"
+                                     alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            </div>
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+                                <h3 class="truncate text-sm font-bold">@(card.Title ?? "Tasarim")</h3>
+                                <div class="mt-1 flex items-center gap-3 text-xs text-white/80">
+                                    <span class="flex items-center gap-1"><i data-lucide="heart" class="h-3 w-3"></i> @(card.Likes ?? 0)</span>
+                                    <span class="flex items-center gap-1"><i data-lucide="message-square" class="h-3 w-3"></i> @(card.Comments ?? 0)</span>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </section>
+        }
+
+        <!-- Featured Designs -->
+        <section class="mt-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="sparkles" class="h-5 w-5 text-primary"></i>
+                    <h2 class="text-lg font-bold">One Cikanlar</h2>
+                </div>
+                <a href="/Social/Trending" class="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Tumu <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                </a>
+            </div>
+
+            <!-- Enhanced Design Grid -->
+            <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                @if (otherPosts != null && otherPosts.Count > 0)
+                {
+                    foreach (var card in otherPosts.Take(2))
+                    {
+                        <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-primary/50">
+                            <div class="relative overflow-hidden aspect-[4/3]">
+                                <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
+                                     onerror="this.src='/img/default-design.svg'; this.onerror=null;"
+                                     alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                                
+                                <!-- Category Badge -->
+                                <div class="absolute left-4 top-4">
+                                    <span class="rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">UI/UX</span>
+                                </div>
+                                
+                                <!-- Tags & Content Overlay -->
+                                <div class="absolute bottom-0 left-0 right-0 p-5 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                    <h3 class="text-lg font-bold text-white">@(card.Title ?? "Tasarim")</h3>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="rounded bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm">#design</span>
+                                        <span class="rounded bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm">#creative</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Actions (Always partially visible but more prominent on hover) -->
+                            <div class="absolute right-4 top-4 flex flex-col gap-3 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 z-10">
+                                <button onclick="likePost('@card.Id')" class="like-btn-@card.Id group/btn flex h-10 w-10 flex-col items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-accent/20">
+                                    <i data-lucide="heart" class="h-4 w-4 transition-transform group-hover/btn:scale-110"></i>
+                                </button>
+                                <button onclick="savePost('@card.Id')" class="save-btn-@card.Id group/btn flex h-10 w-10 flex-col items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-primary/20">
+                                    <i data-lucide="bookmark" class="h-4 w-4 transition-transform group-hover/btn:scale-110"></i>
+                                </button>
+                                <button onclick="navigator.clipboard.writeText(window.location.origin + '/Social/Design/@card.Id'); alert('Bağlantı kopyalandı!')" class="group/btn flex h-10 w-10 flex-col items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-white/20">
+                                    <i data-lucide="share-2" class="h-4 w-4 transition-transform group-hover/btn:scale-110"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Card Footer Info -->
+                            <div class="p-4 bg-card border-t border-border/50">
+                                <div class="flex items-center justify-between">
+                                    <!-- User Info -->
+                                    <a href="/Social/ProfilModern" class="flex items-center gap-3 group/user">
+                                        <div class="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-transparent transition-all group-hover/user:ring-primary">
+                                            <img src="@(string.IsNullOrEmpty(card.UserAvatar) ? ("https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(card.UserName ?? "U") + "&background=random") : card.UserAvatar)" 
+                                                 onerror="this.src='/img/default-user.png'; this.onerror=null;"
+                                                 class="h-full w-full object-cover" />
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-semibold group-hover/user:text-primary transition-colors">@(card.UserName ?? "Kullanici")</p>
+                                            <p class="text-xs text-muted-foreground">@@@(card.UserHandle ?? "kullanici")</p>
+                                        </div>
+                                    </a>
+                                    
+                                    <!-- Stats -->
+                                    <div class="flex items-center gap-4 text-muted-foreground text-sm">
+                                        <div class="flex items-center gap-1.5 hover:text-accent transition-colors cursor-pointer">
+                                            <i data-lucide="heart" class="h-4 w-4"></i>
+                                            <span class="like-count-@card.Id">@(card.Likes ?? 0)</span>
+                                        </div>
+                                        <a href="/Social/Design/@card.Id" class="flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer">
+                                            <i data-lucide="message-square" class="h-4 w-4"></i>
+                                            <span>12</span>
+                                        </a>
+                                        <div class="flex items-center gap-1.5 cursor-help" title="Goruntulenme">
+                                            <i data-lucide="eye" class="h-4 w-4"></i>
+                                            <span>@(card.Views ?? 0)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
         
-        <!-- Image & X-Ray Previews -->
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <div class="post-preview" id="previewContainer" style="display:none; position:relative; flex:1; max-width:140px;">
-                <img id="imagePreview" style="width:100%; border-radius:8px;">
-                <button class="post-preview-remove" onclick="removePreview()"><i class="fa-solid fa-xmark"></i></button>
+        <!-- Canli Yayinlar -->
+        <section class="mt-10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="radio" class="h-5 w-5 text-destructive"></i>
+                    <h2 class="text-lg font-bold">Canli Yayinlar</h2>
+                    <span class="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">@(ViewBag.LiveCount ?? 2) Canli</span>
+                </div>
+                <a href="/Social/Live" class="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                    Tumu <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                </a>
             </div>
             
-            <div class="post-preview" id="xrayPreviewContainer" style="display:none; position:relative; flex:1; max-width:140px; border:2px dashed var(--purple); border-radius:8px; padding:2px;">
-                <img id="xrayImagePreview" style="width:100%; border-radius:6px;">
-                <button class="post-preview-remove" onclick="removeXrayPreview()"><i class="fa-solid fa-xmark"></i></button>
-                <div style="position:absolute; bottom:-12px; left:50%; transform:translateX(-50%); background:var(--purple); color:#fff; font-size:0.6rem; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:5;"><i class="fa-solid fa-arrows-left-right"></i> X-Ray (Sonra)</div>
+            <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                @if (ViewBag.LiveRooms != null)
+                {
+                    foreach (var room in ViewBag.LiveRooms)
+                    {
+                        var isLive = room.IsLive == true;
+                        <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-@(isLive ? "destructive" : "primary")/50">
+                            <div class="relative overflow-hidden aspect-video">
+                                <img src="@room.Thumbnail" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                                
+                                <div class="absolute left-3 top-3">
+                                    @if(isLive) {
+                                        <div class="flex items-center gap-1.5 rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
+                                            <span class="relative flex h-2 w-2">
+                                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                                                <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                                            </span>
+                                            CANLI
+                                        </div>
+                                    } else {
+                                        <div class="flex items-center gap-1.5 rounded-full bg-secondary/80 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold">
+                                            <i data-lucide="calendar" class="h-3 w-3"></i>
+                                            YARIN 20:00
+                                        </div>
+                                    }
+                                </div>
+                                
+                                <div class="absolute bottom-3 left-3 right-3">
+                                    <h3 class="font-bold text-white text-sm line-clamp-1">@room.Title</h3>
+                                    <div class="mt-2 flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(room.HostName))&background=random" class="h-6 w-6 rounded-full" />
+                                            <span class="text-xs font-medium text-white/90">@room.HostName</span>
+                                        </div>
+                                        @if(isLive) {
+                                            <div class="flex items-center gap-1 text-xs text-white/80">
+                                                <i data-lucide="users" class="h-3 w-3"></i>
+                                                <span>1.2k</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+
+        <!-- Son Tasarimlar -->
+        <section class="mt-10">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold">Kesfetmeye Devam Et</h2>
+            </div>
+            <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-6">
+                @if (otherPosts != null && otherPosts.Count > 2)
+                {
+                    foreach (var card in otherPosts.Skip(2))
+                    {
+                        <div class="group border border-transparent hover:border-border cursor-pointer relative overflow-hidden rounded-2xl bg-card transition-all hover:shadow-lg">
+                            <a href="/Social/Design/@card.Id" class="block">
+                                <div class="relative overflow-hidden aspect-[4/3]">
+                                    <img src="@(card.ImageUrl ?? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800")" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                </div>
+                                <div class="px-4 py-3 bg-card flex items-center justify-between group-hover:bg-secondary/20 transition-colors">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(card.UserName ?? "U"))&background=random" class="h-6 w-6 rounded-full" />
+                                        <span class="text-sm font-medium truncate">@card.UserName</span>
+                                    </div>
+                                    <span class="text-xs text-muted-foreground flex items-center gap-1"><i data-lucide="heart" class="h-3 w-3"></i> @card.Likes</span>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+        </section>
+        
+        <!-- Yarisma Banner / Call to Action -->
+        <div class="mt-10 relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-8">
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background"></div>
+            <div class="relative z-10 flex flex-col items-center text-center">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary neon-glow mb-4">
+                    <i data-lucide="trophy" class="h-8 w-8 text-primary-foreground"></i>
+                </div>
+                <h2 class="text-2xl font-bold">UI/UX Yarisma Haftasi!</h2>
+                <p class="mt-2 max-w-lg text-muted-foreground">Kendi tasarimini yukle, oylamaya katil ve buyuk odulu kazanma sansini yakala. Bu hafta premium uye olma sansi!</p>
+                <div class="mt-6 flex flex-wrap gap-4 justify-center">
+                    <a href="/Social/Competitions" class="rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                        Yarismaya Katil
+                    </a>
+                    <button onclick="openCreateModal()" class="rounded-xl bg-secondary px-6 py-3 font-semibold text-secondary-foreground transition-all hover:bg-secondary/80">
+                        Hemen Paylas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="hidden xl:flex w-80 flex-col border-l border-border bg-card/30 p-6 min-h-[calc(100vh-64px)] overflow-y-auto hide-scrollbar z-10">
+        <!-- Weekly Designers -->
+        <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="trending-up" class="h-5 w-5 text-orange-500"></i>
+            <h2 class="text-lg font-bold">Trend Tasarimcilar</h2>
+        </div>
+        
+        <div class="space-y-3">
+            @if (ViewBag.TrendingDesigners != null)
+            {
+                foreach (var d in ViewBag.TrendingDesigners)
+                {
+                    <div class="group flex items-center justify-between rounded-xl border border-transparent p-2 transition-all hover:border-border hover:bg-secondary/50">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="relative h-10 w-10 flex-shrink-0">
+                                <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(d.Name ?? "U"))&background=random" class="h-full w-full rounded-full object-cover" />
+                                @if(d.Rank <= 3) {
+                                    <div class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground border-2 border-background">
+                                        @d.Rank
+                                    </div>
+                                }
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold hover:text-primary cursor-pointer transition-colors">@d.Name</p>
+                                <p class="text-xs text-muted-foreground truncate">@@@d.Username</p>
+                            </div>
+                        </div>
+                        <button onclick="followDesigner(@d.Id)" class="follow-btn-@d.Id shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground">
+                            Takip Et
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- Weekly XP Leaderboard -->
+        <div class="mt-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-card to-card p-5 border border-primary/20">
+            <div class="flex items-start justify-between">
+                <div>
+                    <h3 class="font-bold flex items-center gap-2">
+                        <i data-lucide="zap" class="h-4 w-4 text-primary"></i> Liderlik Tablosu
+                    </h3>
+                    <p class="text-xs text-muted-foreground mt-1">Haftalik XP siralamasi</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 space-y-4">
+                @if (ViewBag.XPLeaderboard != null)
+                {
+                    foreach (var e in ViewBag.XPLeaderboard)
+                    {
+                        var isFirst = e.Rank == 1;
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-6 w-6 items-center justify-center rounded bg-secondary text-xs font-bold @(isFirst ? "bg-primary text-primary-foreground" : "text-muted-foreground")">@e.Rank</span>
+                            <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(e.Name ?? "U"))&background=random" class="h-8 w-8 rounded-full" />
+                            <div class="flex-1 min-w-0">
+                                <p class="truncate text-sm font-semibold">@e.Name</p>
+                            </div>
+                            <span class="text-sm font-bold @(isFirst ? "text-primary" : "text-muted-foreground")">@e.XP XP</span>
+                        </div>
+                    }
+                }
             </div>
         </div>
 
-        <!-- Code Input Area -->
-        <div class="code-input-area" id="snippetContainer">
-            <textarea id="postKodSnippetInput" placeholder="// Kod yapıştır (C#, JS, CSS vb.)"></textarea>
-        </div>
-
-        <div class="omnibox-actions">
-            <div class="omnibox-tools">
-                <label for="postImageInput" class="omnibox-tool" title="Fotoğraf Yükle">
-                    <i class="fa-solid fa-image"></i>
-                </label>
-                <input type="file" id="postImageInput" accept="image/*" style="display:none" onchange="previewImage(this)">
-                
-                <label for="postOnceSonraInput" class="omnibox-tool" title="X-Ray (Sonrası Görüntü)" style="color:var(--purple)">
-                    <i class="fa-solid fa-arrows-left-right"></i>
-                </label>
-                <input type="file" id="postOnceSonraInput" accept="image/*" style="display:none" onchange="previewXray(this)">
-
-                <button class="omnibox-tool" title="Kod Parçacığı" onclick="toggleSnippet()" style="color:var(--blue)">
-                    <i class="fa-solid fa-terminal"></i>
-                </button>
+        <!-- Links -->
+        <div class="mt-auto pt-8">
+            <div class="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                <a href="#" class="hover:text-primary transition-colors">Yardim</a>
+                <a href="#" class="hover:text-primary transition-colors">Gizlilik</a>
+                <a href="#" class="hover:text-primary transition-colors">Sartlar</a>
+                <a href="#" class="hover:text-primary transition-colors">Reklam</a>
+                <a href="#" class="hover:text-primary transition-colors">Isletme</a>
             </div>
-            <button class="btn-post" id="shareBtn" onclick="sharePost()" disabled>Paylaş</button>
+            <p class="mt-4 text-xs text-muted-foreground/60">© 2026 Kartist. All rights reserved.</p>
         </div>
-    </div>
+    </aside>
 </div>
-
-<!-- STORIES BAR -->
-<div style="display:flex; gap:14px; padding:16px 20px; overflow-x:auto; scrollbar-width:none; border-bottom:1px solid var(--border);" id="storyContainer">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;" onclick="openStoryUpload()">
-        <div style="width:62px;height:62px;border-radius:50%;padding:2px;background:linear-gradient(135deg,#333,#555);">
-            <div style="width:100%;height:100%;border-radius:50%;background:var(--bg-surface-solid);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--accent);">
-                <i class="fa-solid fa-plus"></i>
-            </div>
-        </div>
-        <span style="font-size:0.65rem;color:var(--text-muted);">Sen</span>
-    </div>
-</div>
-
-<!-- FEED POSTS -->
-<div id="feedContainer"></div>
-
-<!-- loading indicators -->
-<div id="loadingMore" style="display:none;text-align:center;padding:20px;">
-    <div style="display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;"></div>
-</div>
-<style>@@keyframes spin { to { transform: rotate(360deg); } }</style>
-<div id="noMorePosts" style="display:none;text-align:center;padding:30px;color:var(--text-muted);font-size:0.82rem;">
-    <i class="fa-solid fa-check-circle" style="color:var(--accent);margin-right:6px;"></i> Tüm akış yüklendi
-</div>
-
-<!-- STORY VIEWER -->
-<div style="position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:10000;display:none;align-items:center;justify-content:center;" id="storyViewer">
-    <div style="position:relative;max-width:420px;width:100%;max-height:90vh;">
-        <div id="storyProgressBar" style="display:flex;gap:4px;padding:8px 12px;position:absolute;top:0;left:0;right:0;z-index:2;"></div>
-        <div id="storyUserInfo" style="position:absolute;top:18px;left:16px;display:flex;align-items:center;gap:10px;z-index:2;"></div>
-        <button onclick="closeStoryViewer()" style="position:absolute;top:20px;right:16px;background:rgba(0,0,0,0.5);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;z-index:2;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-xmark"></i></button>
-        <button onclick="prevStory()" style="position:absolute;top:50%;left:-50px;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;"><i class="fa-solid fa-chevron-left"></i></button>
-        <button onclick="nextStory()" style="position:absolute;top:50%;right:-50px;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;"><i class="fa-solid fa-chevron-right"></i></button>
-        <img id="storyViewerImg" style="width:100%;max-height:85vh;object-fit:contain;border-radius:16px;">
-    </div>
-</div>
-
-<!-- Story file input -->
-<input type="file" id="storyFileInput" accept="image/*" style="display:none" onchange="uploadStory(this)">
 
 @section Scripts {
-<script>
-    const MY_USER_ID = parseInt('@myIdStr') || 0;
-    let feedPage = 0, feedFiltre = '@(ViewBag.Filtre ?? "yeni")', hasMore = true, isLoading = false;
-    
-    document.querySelectorAll('.feed-tab').forEach(t => {
-        t.classList.toggle('active', (feedFiltre === 'takip' ? t.id === 'tabFollowing' : t.id === 'tabAll'));
-    });
-    
-    // --- Omnibox ---
-    const textInput = document.getElementById('postTextInput');
-    const shareBtn = document.getElementById('shareBtn');
-    const imgInput = document.getElementById('postImageInput');
-
-    textInput.addEventListener('input', () => {
-        textInput.style.height = 'auto';
-        textInput.style.height = (textInput.scrollHeight) + 'px';
-        updateShareBtn();
-    });
-
-    function updateShareBtn() {
-        const hasText = textInput.value.trim().length > 0;
-        const hasImage = imgInput.files && imgInput.files[0];
-        const hasXray = document.getElementById('postOnceSonraInput').files && document.getElementById('postOnceSonraInput').files[0];
-        const hasSnippet = document.getElementById('postKodSnippetInput').value.trim().length > 0;
-        shareBtn.disabled = !hasText && !hasImage && !hasSnippet && !hasXray;
-    }
-
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('imagePreview').src = e.target.result;
-                document.getElementById('previewContainer').style.display = 'block';
-                updateShareBtn();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function removePreview() {
-        imgInput.value = '';
-        document.getElementById('previewContainer').style.display = 'none';
-        updateShareBtn();
-    }
-
-    function previewXray(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('xrayImagePreview').src = e.target.result;
-                document.getElementById('xrayPreviewContainer').style.display = 'block';
-                updateShareBtn();
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function removeXrayPreview() {
-        document.getElementById('postOnceSonraInput').value = '';
-        document.getElementById('xrayPreviewContainer').style.display = 'none';
-        updateShareBtn();
-    }
-
-    function toggleSnippet() {
-        const el = document.getElementById('snippetContainer');
-        el.style.display = el.style.display === 'none' || el.style.display === '' ? 'block' : 'none';
-        if (el.style.display === 'block') document.getElementById('postKodSnippetInput').focus();
-    }
-
-    function switchFeedTab(filtre, btn) {
-        feedFiltre = filtre;
-        document.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        feedPage = 0;
-        hasMore = true;
-        document.getElementById('feedContainer').innerHTML = '';
-        document.getElementById('noMorePosts').style.display = 'none';
-        loadFeed(true);
-    }
-
-    async function sharePost() {
-        if (shareBtn.disabled) return;
-        shareBtn.disabled = true;
-        shareBtn.textContent = '...';
-
-        const snippetData = document.getElementById('postKodSnippetInput').value || '';
-        const onceSonraFile = document.getElementById('postOnceSonraInput').files[0];
-
-        const fd = new FormData();
-        fd.append('icerik', textInput.value);
-        if (imgInput.files[0]) fd.append('gorsel', imgInput.files[0]);
-        if (onceSonraFile) fd.append('onceSonraGorsel', onceSonraFile);
-        if (snippetData) fd.append('kodSinipet', snippetData);
-        fd.append('__RequestVerificationToken', CSRF());
-
-        const data = await secureFetch('/Social/GonderiOlustur', 'POST', fd);
-        
-        if (data.success) {
-            textInput.value = '';
-            textInput.style.height = '48px';
-            document.getElementById('postKodSnippetInput').value = '';
-            document.getElementById('snippetContainer').style.display = 'none';
-            removeXrayPreview();
-            removePreview();
-            shareBtn.disabled = true;
-            shareBtn.textContent = 'Paylaş';
-            showNeonToast('Gönderi paylaşıldı!', 'fa-paper-plane');
-            loadFeed(true);
-        } else {
-            Swal.fire({ title: 'Hata', text: data.message || 'Gönderilemedi.', icon: 'error', background:'#111', color:'#fff' });
-            shareBtn.disabled = false;
-            shareBtn.textContent = 'Paylaş';
-        }
-    }
-
-    // --- Skeleton HTML ---
-    function skeletonHTML() {
-        return `<div class="skeleton-post">
-            <div class="skel skel-circle skel-avatar"></div>
-            <div class="skel-body">
-                <div class="skel skel-line w40"></div>
-                <div class="skel skel-line w60" style="margin-top:8px"></div>
-                <div class="skel skel-line w80"></div>
-                <div class="skel skel-image"></div>
-            </div>
-        </div>`;
-    }
-
-    // --- FEED RENDERING ---
-    async function loadFeed(refresh = false) {
-        const container = document.getElementById('feedContainer');
-        if (refresh) { 
-            feedPage = 0; 
-            hasMore = true;
-            container.innerHTML = skeletonHTML() + skeletonHTML() + skeletonHTML();
-        }
-        
-        if (isLoading || !hasMore) return;
-        isLoading = true;
-        if (!refresh) document.getElementById('loadingMore').style.display = 'block';
-
-        try {
-            const data = await secureFetch(`/Social/GetFeed?filtre=${feedFiltre}&sayfa=${feedPage}`);
-            
-            document.getElementById('loadingMore').style.display = 'none';
-            if(refresh) container.innerHTML = '';
-
-            if (!data.success) {
-                hasMore = false;
-                const msg = data.message || 'Akış yüklenemedi. Lütfen sayfayı yenileyin.';
-                container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
-                    <i class="fa-regular fa-face-frown" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
-                    ${escapeHtml(msg)}
-                </div>`;
-                return;
+    <script>
+        function filterCategory(cat) { 
+            var buttons = document.querySelectorAll('.cat-filter-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('bg-primary', 'text-primary-foreground', 'neon-glow'); 
+                buttons[i].classList.add('bg-secondary', 'text-secondary-foreground'); 
             }
-
-            const items = data.posts || data.gonderiler || [];
-            if (items.length === 0) {
-                hasMore = false;
-                if(feedPage > 0) document.getElementById('noMorePosts').style.display = 'block';
-                else container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
-                    <i class="fa-regular fa-face-smile" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
-                    Henüz gönderi yok. İlk paylaşan sen ol!
-                </div>`;
-            } else {
-                items.forEach(g => renderPost(g, container));
-                feedPage++;
-                hasMore = data.hasMore !== false;
-            }
-        } catch(e) {
-            console.error('Feed error:', e);
-            hasMore = false;
-            container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
-                <i class="fa-regular fa-face-frown" style="font-size:3rem;display:block;margin-bottom:16px;opacity:0.3"></i>
-                Bir şeyler ters gitti, lütfen sayfayı yenileyin.
-            </div>`;
-        }
-        finally { isLoading = false; }
-    }
-
-    function getField(obj, pascal, camel) {
-        if (!obj) return undefined;
-        return obj[pascal] ?? obj[camel];
-    }
-
-    function safeNormalizeMediaUrl(url) {
-        if (typeof normalizeMediaUrl === 'function') {
-            return normalizeMediaUrl(url);
-        }
-        if (!url) return url;
-        return url;
-    }
-
-    function renderPost(g, container) {
-        const div = document.createElement('article');
-        div.className = 'post-card slide-up';
-        div.id = `post-${getField(g, 'Id', 'id')}`;
-        
-        const userName = getField(g, 'AdSoyad', 'adSoyad') || getField(g, 'KullaniciAd', 'kullaniciAd') || '?';
-        const userPhoto = getField(g, 'ProfilResmi', 'profilResmi') || getField(g, 'KullaniciFoto', 'kullaniciFoto');
-        const isMyPost = getField(g, 'IsMyPost', 'isMyPost') === 1 || getField(g, 'IsMyPost', 'isMyPost') === true;
-        
-        // Vibe badge
-        const vibeHtml = getField(g, 'AiVibe', 'aiVibe') ? `<div class="vibe-badge">${getField(g, 'AiVibe', 'aiVibe')} Vibe</div>` : '';
-        
-        // Media
-        let mediaHtml = '';
-        const gorselUrl = getField(g, 'GorselUrl', 'gorselUrl');
-        const onceSonraResim = getField(g, 'OnceSonraResim', 'onceSonraResim');
-        const kodSinipet = getField(g, 'KodSinipet', 'kodSinipet');
-        const bodyText = getField(g, 'Icerik', 'icerik') || '';
-        const isLiked = getField(g, 'Begenildi', 'begeniildi') === 1 || getField(g, 'Begenildi', 'begeniildi') === true;
-        const likeCount = getField(g, 'BegeniSayisi', 'begeniSayisi') || 0;
-        const commentCount = getField(g, 'YorumSayisi', 'yorumSayisi') || 0;
-        const isSaved = getField(g, 'Kaydedildi', 'kaydedildi') === 1 || getField(g, 'Kaydedildi', 'kaydedildi') === true;
-        
-        if (onceSonraResim && gorselUrl) {
-            mediaHtml = `<div class="xray-container" onmousemove="xrayMove(event,this)" ontouchmove="xrayTouch(event,this)">
-                <img src="${safeNormalizeMediaUrl(gorselUrl)}" class="xray-img">
-                <img src="${safeNormalizeMediaUrl(onceSonraResim)}" class="xray-img xray-after">
-                <div class="xray-handle"></div>
-                <span class="xray-label before">Önce</span>
-                <span class="xray-label after">Sonra</span>
-            </div>`;
-        } else if (gorselUrl) {
-            mediaHtml = `<div class="post-image-wrap" ondblclick="doubleTapLike(${getField(g, 'Id', 'id')}, this)">
-                <img src="${safeNormalizeMediaUrl(gorselUrl)}" class="post-image" loading="lazy">
-                <i class="fa-solid fa-heart double-tap-heart"></i>
-            </div>`;
-        }
-
-        // Code snippet
-        const codeHtml = kodSinipet ? `<div class="code-snippet"><pre><code>${escapeHtml(kodSinipet)}</code></pre></div>` : '';
-
-        // Post body (truncate long text)
-        const truncated = bodyText.length > 280;
-        const bodyClass = truncated ? 'post-body truncated' : 'post-body';
-        const showMoreBtn = truncated ? `<button class="show-more-btn" onclick="this.previousElementSibling.classList.remove('truncated');this.remove();">devamını gör</button>` : '';
-        const postId = getField(g, 'Id', 'id');
-        const authorId = getField(g, 'KullaniciId', 'kullaniciId');
-        const createdAt = getField(g, 'OlusturmaTarihi', 'olusturmaTarihi');
-
-        div.innerHTML = `
-            <div class="avatar-wrapper"><a href="/Social/Profil/${authorId}">${avatarHTML(userPhoto, userName, 44)}</a></div>
-            <div class="post-content">
-                <div class="post-meta">
-                    <a href="/Social/Profil/${authorId}" class="post-author">${userName}</a>
-                    <span class="post-dot">·</span>
-                    <span class="post-time">${timeAgo(createdAt)}</span>
-                    <div style="flex:1"></div>
-                    <button class="post-menu-btn" onclick="togglePostMenu(${postId})"><i class="fa-solid fa-ellipsis"></i></button>
-                </div>
-                <div id="postMenu-${postId}" class="post-dropdown">
-                    ${isMyPost ? `<div class="post-dropdown-item" onclick="editPost(${postId})"><i class="fa-solid fa-pen"></i> Düzenle</div>` : ''}
-                    ${isMyPost ? `<div class="post-dropdown-item danger" onclick="deletePost(${postId})"><i class="fa-solid fa-trash"></i> Sil</div>` : ''}
-                    <div class="post-dropdown-item" onclick="copyPostLink(${postId})"><i class="fa-solid fa-link"></i> Bağlantıyı Kopyala</div>
-                    ${!isMyPost ? `<div class="post-dropdown-item danger" onclick="reportPost(${postId})"><i class="fa-solid fa-flag"></i> Bildir</div>` : ''}
-                </div>
-                ${vibeHtml}
-                <div class="${bodyClass}">${parseText(bodyText)}</div>
-                ${showMoreBtn}
-                ${codeHtml}
-                ${mediaHtml}
-                
-                <div class="post-actions">
-                    <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="begen(${postId})" id="btn-like-${postId}">
-                        <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
-                        <span id="like-count-${postId}">${likeCount > 0 ? likeCount : ''}</span>
-                        <div class="like-particles"></div>
-                    </button>
-                    <button class="action-btn comment-btn" onclick="toggleComments(${postId})">
-                        <i class="fa-regular fa-comment"></i>
-                        <span>${commentCount > 0 ? commentCount : ''}</span>
-                    </button>
-                    <button class="action-btn repost-btn" onclick="repost(${postId})" id="btn-repost-${postId}">
-                        <i class="fa-solid fa-retweet"></i>
-                    </button>
-                    <button class="action-btn save-btn ${isSaved ? 'saved' : ''}" onclick="kaydet(${postId})" id="btn-save-${postId}">
-                        <i class="${isSaved ? 'fa-solid' : 'fa-regular'} fa-bookmark"></i>
-                    </button>
-                    ${!isMyPost ? `<button class="action-btn collab-btn" onclick="sendCollabRequest(${authorId}, ${postId})" title="İş Birliği">
-                        <i class="fa-solid fa-bolt"></i>
-                    </button>` : ''}
-                    <button class="action-btn share-btn" onclick="copyPostLink(${postId})">
-                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                    </button>
-                </div>
-                
-                <div class="comments-section" id="comments-${postId}" style="display:none;">
-                    <div id="comment-list-${postId}"></div>
-                    <div class="comment-input-row">
-                        <input type="text" id="comment-input-${postId}" class="comment-input" placeholder="Yanıtla..." onkeydown="if(event.key==='Enter')makeComment(${postId})">
-                        <button class="comment-send" onclick="makeComment(${postId})">Gönder</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(div);
-    }
-
-    function escapeHtml(text) {
-        const d = document.createElement('div');
-        d.textContent = text;
-        return d.innerHTML;
-    }
-
-    function parseText(txt) {
-        if (!txt) return '';
-        return txt
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-            .replace(/#(\w+)/g, '<span class="hashtag" onclick="window.location.href=\'/Social/Kesf?hashtag=$1\'">#$1</span>')
-            .replace(/@@(\w+)/g, '<span class="mention">@@$1</span>');
-    }
-
-    // --- X-RAY SLIDER ---
-    function xrayMove(e, container) {
-        const rect = container.getBoundingClientRect();
-        const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-        const pct = (x / rect.width) * 100;
-        const afterImg = container.querySelector('.xray-after');
-        const handle = container.querySelector('.xray-handle');
-        if (afterImg) afterImg.style.clipPath = `polygon(${pct}% 0, 100% 0, 100% 100%, ${pct}% 100%)`;
-        if (handle) handle.style.left = `${pct}%`;
-    }
-    function xrayTouch(e, container) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        xrayMove({clientX: touch.clientX}, container);
-    }
-
-    // --- Load initial ---
-    loadFeed(true);
-
-    // Infinite Scroll
-    window.addEventListener('scroll', () => {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {
-            loadFeed();
-        }
-    });
-
-    // --- ACTIONS ---
-    async function begen(id) {
-        const fd = new FormData();
-        fd.append('gonderiId', id);
-        fd.append('__RequestVerificationToken', CSRF());
-        
-        const res = await secureFetch('/Social/Begen', 'POST', fd);
-        if (res.success) {
-            const btn = document.getElementById(`btn-like-${id}`);
-            const span = document.getElementById(`like-count-${id}`);
-            span.textContent = res.count > 0 ? res.count : '';
-            
-            if (res.liked) {
-                btn.classList.add('liked');
-                btn.querySelector('i').className = 'fa-solid fa-heart';
-                spawnLikeParticles(btn);
-            } else {
-                btn.classList.remove('liked');
-                btn.querySelector('i').className = 'fa-regular fa-heart';
+            var activeBtn = document.getElementById('cat-' + cat);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-primary', 'text-primary-foreground', 'neon-glow'); 
+                activeBtn.classList.remove('bg-secondary', 'text-secondary-foreground'); 
             }
         }
-    }
-
-    function doubleTapLike(gonderiId, imageWrap) {
-        begen(gonderiId);
-        const heart = imageWrap.querySelector('.double-tap-heart');
-        if (heart) {
-            heart.classList.remove('pop');
-            void heart.offsetWidth;
-            heart.classList.add('pop');
-        }
-    }
-
-    function toggleComments(id) {
-        const div = document.getElementById(`comments-${id}`);
-        if (div.style.display === 'none') {
-            div.style.display = 'block';
-            loadComments(id);
-        } else {
-            div.style.display = 'none';
-        }
-    }
-
-    async function loadComments(id) {
-        const res = await secureFetch(`/Social/GetYorumlar?gonderiId=${id}`);
-        if (res.success) {
-            const list = document.getElementById(`comment-list-${id}`);
-            list.innerHTML = (res.yorumlar || []).map(y => {
-                const cName = y.AdSoyad || y.KullaniciAd || '?';
-                const cPhoto = y.ProfilResmi || y.KullaniciFoto;
-                return `<div class="comment-item">
-                    ${avatarHTML(cPhoto, cName, 28)}
-                    <div class="comment-bubble">
-                        <span class="comment-author">${cName}</span>
-                        <span class="comment-time">${timeAgo(y.Tarih)}</span>
-                        <div class="comment-text">${escapeHtml(y.Icerik || y.Metin || '')}</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-    }
-
-    async function makeComment(id) {
-        const inp = document.getElementById(`comment-input-${id}`);
-        if (!inp || !inp.value.trim()) return;
-        const fd = new FormData();
-        fd.append('gonderiId', id);
-        fd.append('icerik', inp.value);
-        fd.append('__RequestVerificationToken', CSRF());
-        
-        const res = await secureFetch('/Social/YorumYap', 'POST', fd);
-        if (res.success) {
-            inp.value = '';
-            loadComments(id);
-            showNeonToast('Yorum yapıldı!', 'fa-comment');
-        } else {
-            Swal.fire({title:'Hata', text: res.message || 'Bir hata oluştu.', icon:'error', background:'#111', color:'#fff'});
-        }
-    }
-    
-    async function kaydet(id) {
-        const fd = new FormData();
-        fd.append('gonderiId', id);
-        fd.append('__RequestVerificationToken', CSRF());
-        
-        const res = await secureFetch('/Social/Kaydet', 'POST', fd);
-        if (res.success) {
-            const btn = document.getElementById(`btn-save-${id}`);
-            const icon = btn.querySelector('i');
-            if (res.saved) {
-                btn.classList.add('saved');
-                icon.className = 'fa-solid fa-bookmark';
-                showNeonToast('Kaydedildi', 'fa-bookmark');
-            } else {
-                btn.classList.remove('saved');
-                icon.className = 'fa-regular fa-bookmark';
-            }
-        }
-    }
-
-    async function repost(id) {
-        const fd = new FormData();
-        fd.append('gonderiId', id);
-        fd.append('__RequestVerificationToken', CSRF());
-
-        const res = await secureFetch('/Social/Repost', 'POST', fd);
-        if (res.success) {
-            const btn = document.getElementById(`btn-repost-${id}`);
-            btn.classList.add('reposted');
-            showNeonToast('Yeniden paylaşıldı!', 'fa-retweet');
-        } else {
-            Swal.fire({title: 'Bilgi', text: res.message || '', icon: 'info', background:'#111', color:'#fff'});
-        }
-    }
-
-    async function sendCollabRequest(kullaniciId, gonderiId) {
-        const result = await Swal.fire({
-            title: '⚡ İş Birliği Teklifi',
-            text: "Bu kullanıcıya tasarım/proje üzerinde birlikte çalışma teklifi göndermek istiyor musun?",
-            icon: 'question',
-            background: '#111',
-            color: '#fff',
-            showCancelButton: true,
-            confirmButtonText: 'Evet, Gönder!',
-            cancelButtonText: 'İptal',
-            confirmButtonColor: '#c6ff00'
-        });
-        if (result.isConfirmed) {
-            const fd = new FormData();
-            fd.append('hedefId', kullaniciId);
-            fd.append('gonderiId', gonderiId);
-            fd.append('__RequestVerificationToken', CSRF());
-            const res = await secureFetch('/Social/CollabGonder', 'POST', fd);
-            if (res.success) {
-                showNeonToast('İş Birliği teklifi gönderildi!', 'fa-bolt');
-            } else {
-                Swal.fire('Bilgi', res.message || 'Gönderilemedi.', 'info');
-            }
-        }
-    }
-
-    // --- Post Menu ---
-    function togglePostMenu(id) {
-        const menu = document.getElementById(`postMenu-${id}`);
-        document.querySelectorAll('.post-dropdown.open').forEach(m => { if(m !== menu) m.classList.remove('open'); });
-        menu.classList.toggle('open');
-    }
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.post-menu-btn') && !e.target.closest('.post-dropdown')) {
-            document.querySelectorAll('.post-dropdown.open').forEach(m => m.classList.remove('open'));
-        }
-    });
-
-    async function deletePost(id) {
-        const r = await Swal.fire({title:'Emin misin?',text:'Bu gönderi kalıcı olarak silinecek.',icon:'warning',background:'#111',color:'#fff',showCancelButton:true,confirmButtonText:'Sil',confirmButtonColor:'#ff4757',cancelButtonText:'İptal'});
-        if (r.isConfirmed) {
-            const fd = new FormData();
-            fd.append('gonderiId', id);
-            fd.append('__RequestVerificationToken', CSRF());
-            const res = await secureFetch('/Social/GonderiSil', 'POST', fd);
-            if (res.success) {
-                const el = document.getElementById(`post-${id}`);
-                if (el) {
-                    el.style.transition = 'opacity 0.4s, transform 0.4s';
-                    el.style.opacity = '0';
-                    el.style.transform = 'scale(0.9)';
-                    setTimeout(() => el.remove(), 400);
-                }
-                showNeonToast('Gönderi silindi', 'fa-trash');
-            } else {
-                Swal.fire({title:'Hata', text: res.message || 'Silinemedi.', icon:'error', background:'#111', color:'#fff'});
-            }
-        }
-    }
-
-    async function editPost(id) {
-        // Mevcut post içeriğini al
-        const postEl = document.getElementById(`post-${id}`);
-        if (!postEl) return;
-        const bodyEl = postEl.querySelector('.post-body');
-        const currentText = bodyEl ? bodyEl.textContent.trim() : '';
-
-        // Dropdown'u kapa
-        document.querySelectorAll('.post-dropdown.open').forEach(m => m.classList.remove('open'));
-
-        const { value: newText } = await Swal.fire({
-            title: '<i class="fa-solid fa-pen" style="color:var(--accent);margin-right:8px;"></i> Gönderiyi Düzenle',
-            html: `<textarea id="swal-edit-input" style="width:100%;min-height:120px;background:#1a1d23;color:#e6e6e6;border:1px solid #333;border-radius:10px;padding:14px;font-size:0.95rem;font-family:inherit;resize:vertical;outline:none;transition:border 0.3s;" onfocus="this.style.borderColor='#c6ff00'" onblur="this.style.borderColor='#333'">${escapeHtml(currentText)}</textarea>`,
-            background: '#111',
-            color: '#fff',
-            showCancelButton: true,
-            confirmButtonText: '<i class="fa-solid fa-check"></i> Kaydet',
-            cancelButtonText: 'İptal',
-            confirmButtonColor: '#c6ff00',
-            cancelButtonColor: '#333',
-            customClass: {
-                confirmButton: 'swal-edit-confirm',
-                popup: 'swal-edit-popup'
-            },
-            preConfirm: () => {
-                const val = document.getElementById('swal-edit-input').value.trim();
-                if (!val) {
-                    Swal.showValidationMessage('İçerik boş olamaz!');
-                    return false;
-                }
-                return val;
-            }
-        });
-
-        if (newText) {
-            const fd = new FormData();
-            fd.append('gonderiId', id);
-            fd.append('icerik', newText);
-            fd.append('__RequestVerificationToken', CSRF());
-
-            const res = await secureFetch('/Social/GonderiDuzenle', 'POST', fd);
-            if (res.success) {
-                // İçeriği yerinde güncelle
-                if (bodyEl) {
-                    bodyEl.innerHTML = parseText(newText);
-                    bodyEl.classList.remove('truncated');
-                    // Yanıtlarda "devamını gör" butonu kaldır
-                    const showMore = bodyEl.nextElementSibling;
-                    if (showMore && showMore.classList.contains('show-more-btn')) showMore.remove();
-                }
-                showNeonToast('Gönderi güncellendi!', 'fa-pen');
-            } else {
-                Swal.fire({title:'Hata', text: res.message || 'Düzenlenemedi.', icon:'error', background:'#111', color:'#fff'});
-            }
-        }
-    }
-
-    function copyPostLink(id) {
-        navigator.clipboard.writeText(window.location.origin + '/Social/Feed#post-' + id);
-        showNeonToast('Bağlantı kopyalandı!', 'fa-link');
-    }
-
-    function reportPost(id) {
-        Swal.fire({title:'Bildir',text:'Bu gönderi bildirildi. Teşekkürler!',icon:'success',background:'#111',color:'#fff', confirmButtonColor:'#c6ff00'});
-    }
-
-    // --- STORIES ---
-    function openStoryUpload() { document.getElementById('storyFileInput').click(); }
-
-    async function uploadStory(input) {
-        if (!input.files[0]) return;
-        const fd = new FormData();
-        fd.append('gorsel', input.files[0]);
-        fd.append('__RequestVerificationToken', CSRF());
-
-        try {
-            const res = await secureFetch('/Social/HikayeOlustur', 'POST', fd);
-            if (res.success) { showNeonToast('Hikaye paylaşıldı!', 'fa-circle-play'); input.value=''; loadStories(); }
-            else {
-                const res2 = await secureFetch('/Social/HikayeYukle', 'POST', fd);
-                if (res2.success) { showNeonToast('Hikaye paylaşıldı!', 'fa-circle-play'); input.value=''; loadStories(); }
-            }
-        } catch(e) {}
-    }
-
-    let storyUsers = [], allStoryItems = [], currentStoryIndex = 0;
-
-    async function loadStories() {
-        const data = await secureFetch('/Social/GetHikayeler');
-        if (data && data.success && data.hikayeler) {
-            storyUsers = data.hikayeler;
-            const container = document.getElementById('storyContainer');
-            // Keep add button, append stories
-            const addBtn = container.children[0].outerHTML;
-            let sHtml = '';
-            storyUsers.forEach(s => {
-                const sName = s.AdSoyad || s.KullaniciAd || '?';
-                const sPhoto = s.ProfilResmi || s.KullaniciFoto;
-                sHtml += `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;" onclick="openUserStories(${s.KullaniciId||s.Id},'${sName}','${sPhoto||''}')">
-                    <div style="width:62px;height:62px;border-radius:50%;padding:2px;background:linear-gradient(135deg,var(--accent),var(--red),var(--accent));background-size:200% 200%;animation:storyGrad 3s ease infinite;">
-                        ${sPhoto ? `<img src="${sPhoto}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid var(--bg-base);">` : 
-                        `<div style="width:100%;height:100%;border-radius:50%;background:var(--bg-surface-solid);border:3px solid var(--bg-base);display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--text-primary);">${sName[0]}</div>`}
-                    </div>
-                    <span style="font-size:0.65rem;color:var(--text-muted);max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${sName.split(' ')[0]}</span>
-                </div>`;
-            });
-            container.innerHTML = addBtn + sHtml;
-        }
-    }
-
-    async function openUserStories(userId, userName, userPhoto) {
-        const data = await secureFetch(`/Social/GetKullaniciHikayeleri?kullaniciId=${userId}`);
-        if (data && data.success && data.hikayeler && data.hikayeler.length > 0) {
-            allStoryItems = data.hikayeler.map(h => ({...h, KullaniciAd:userName, KullaniciFoto:userPhoto, MedyaUrl:h.GorselUrl||h.MedyaUrl}));
-            currentStoryIndex = 0;
-            viewStory(0);
-        }
-    }
-
-    function viewStory(index) {
-        if (index < 0 || index >= allStoryItems.length) { closeStoryViewer(); return; }
-        currentStoryIndex = index;
-        const s = allStoryItems[index];
-        
-        const viewer = document.getElementById('storyViewer');
-        viewer.style.display = 'flex';
-        document.getElementById('storyViewerImg').src = s.MedyaUrl;
-        
-        const info = document.getElementById('storyUserInfo');
-        const ph = s.KullaniciFoto ? `<img src="${s.KullaniciFoto}" style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;">` : '';
-        info.innerHTML = `${ph}<span style="color:#fff;font-weight:700;font-size:0.85rem;text-shadow:0 1px 3px rgba(0,0,0,0.5);">${s.KullaniciAd}</span>`;
-        
-        const bar = document.getElementById('storyProgressBar');
-        bar.innerHTML = '<div style="background:var(--accent);height:3px;width:0%;animation:storyProg 5s linear forwards;border-radius:2px;flex:1;"></div>';
-        
-        clearTimeout(window.storyTimeout);
-        window.storyTimeout = setTimeout(() => nextStory(), 5000);
-    }
-    function nextStory() { viewStory(currentStoryIndex + 1); }
-    function prevStory() { viewStory(currentStoryIndex - 1); }
-    function closeStoryViewer() { clearTimeout(window.storyTimeout); document.getElementById('storyViewer').style.display = 'none'; }
-
-    // --- Stats & Quests ---
-    async function loadStats() {
-        try {
-            const data = await secureFetch('/Social/GetMyStats');
-            if (data.success && data.stats) {
-                document.getElementById('streakVal').textContent = data.stats.Streak || 0;
-                document.getElementById('levelVal').textContent = data.stats.Seviye || 1;
-                document.getElementById('xpVal').textContent = data.stats.ToplamXP || 0;
-                document.getElementById('badgeVal').textContent = data.stats.RozetSayisi || 0;
-            }
-        } catch(e) {}
-    }
-
-    async function loadQuests() {
-        try {
-            const data = await secureFetch('/Social/GetGunlukGorevler');
-            const list = document.getElementById('questsList');
-            if (!data.success || !data.gorevler) return;
-            const labels = { begeni:'5 Beğeni', yorum:'3 Yorum', gonderi:'1 Gönderi', hikaye:'1 Hikaye', takip:'2 Takip' };
-            list.innerHTML = data.gorevler.map(g => {
-                const pct = Math.min(100, (g.MevcutSayi / g.HedefSayi) * 100);
-                const done = g.Tamamlandi == 1;
-                return `<div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; margin-bottom:4px; font-weight:700;">
-                        <span style="color:${done ? 'var(--accent)' : 'var(--text-secondary)'}">${done ? '✅' : '⬜'} ${labels[g.GorevTipi] || g.GorevTipi}</span>
-                        <span style="color:var(--accent)">+${g.XPOdulu} XP</span>
-                    </div>
-                    <div style="height:5px; background:var(--bg-hover); border-radius:3px; overflow:hidden;">
-                        <div style="width:${pct}%; background:var(--accent); height:100%; transition:width 0.5s; border-radius:3px;"></div>
-                    </div>
-                </div>`;
-            }).join('');
-        } catch(e) {}
-    }
-    
-    loadStats();
-    loadQuests();
-    loadStories();
-</script>
-<style>
-    @@keyframes storyGrad { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
-    @@keyframes storyProg { to { width: 100%; } }
-</style>
+    </script>
 }

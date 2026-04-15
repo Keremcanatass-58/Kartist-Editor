@@ -27,5 +27,17 @@ namespace Kartist.Hubs
             }
             await base.OnDisconnectedAsync(exception);
         }
+
+        // ===== LIVE CHAT KARTIST =====
+        public async Task JoinLiveRoom(string roomId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, "LiveRoom_" + roomId);
+        }
+
+        public async Task SendLiveMessage(string roomId, string userHandle, string userAvatar, string message)
+        {
+            // Send the message to everyone in this room
+            await Clients.Group("LiveRoom_" + roomId).SendAsync("ReceiveLiveMessage", userHandle, userAvatar, message);
+        }
     }
 }

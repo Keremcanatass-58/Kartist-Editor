@@ -1,6 +1,10 @@
 @{
-    Layout = "_SocialLayout";
+    Layout = "_SocialLayoutModern";
     ViewData["Title"] = "Liderlik Tablosu";
+}
+
+@section Styles {
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 }
 
 <style>
@@ -89,7 +93,8 @@
 <script>
     async function loadLB(donem, btn) {
         if (btn) { document.querySelectorAll('.leader-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); }
-        const data = await secureFetch(`/Social/GetLiderlik?donem=${donem}`);
+        const res = await fetch(`/Social/GetLiderlik?donem=${donem}`);
+        const data = await res.json().catch(() => null);
         if (!data || !data.success) return;
 
         const top3 = data.liderler.slice(0, 3);

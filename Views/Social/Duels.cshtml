@@ -1,0 +1,326 @@
+@{
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Duellolar";
+}
+
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold">Duellolar</h1>
+    </div>
+</header>
+
+<div class="p-6">
+    <!-- Hero Section -->
+    <div class="rounded-3xl bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-indigo-500/20 p-8 relative overflow-hidden border border-pink-500/10">
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-pink-500/20 blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl"></div>
+        
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-xl shadow-pink-500/20">
+                    <i data-lucide="swords" class="h-8 w-8 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">Tasarim Duellolari</h1>
+                    <p class="text-muted-foreground mt-1">Ayni brief, iki tasarimci, bir kazanan!</p>
+                </div>
+            </div>
+
+            <button onclick="startDuel()" class="flex h-fit items-center gap-2 rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground transition-all hover:opacity-90 pink-glow whitespace-nowrap">
+                <i data-lucide="plus" class="h-5 w-5"></i>
+                Duello Baslat
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="swords" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Aktif Duellolar</span>
+                </div>
+                <p class="text-3xl font-bold">@(ViewBag.ActiveDuels ?? 5)</p>
+            </div>
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="bar-chart-2" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Toplam Oy</span>
+                </div>
+                <p class="text-3xl font-bold text-accent">@(ViewBag.TotalVotes ?? 1284)</p>
+            </div>
+            <div class="glass-card rounded-xl p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2">
+                    <i data-lucide="trophy" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Bu Hafta Kazananlar</span>
+                </div>
+                <p class="text-3xl font-bold text-primary">@(ViewBag.WeeklyWinners ?? 12)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mt-8 flex flex-wrap gap-2" id="duelFilters">
+        <button onclick="filterDuels('all')" id="duel-all" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-accent text-accent-foreground pink-glow">
+            Tumu
+        </button>
+        <button onclick="filterDuels('voting')" id="duel-voting" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            Oylama
+        </button>
+        <button onclick="filterDuels('designing')" id="duel-designing" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            Tasarim Yapiliyor
+        </button>
+        <button onclick="filterDuels('waiting')" id="duel-waiting" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+            Rakip Bekleniyor
+        </button>
+    </div>
+
+    <!-- Duels List -->
+    <div class="mt-8 space-y-8" id="duelsList">
+        @if (ViewBag.Duels != null)
+        {
+            foreach (var duel in ViewBag.Duels)
+            {
+                var isVoting = duel.Status == "voting";
+                var totalVotes = (duel.Votes1 ?? 0) + (duel.Votes2 ?? 0);
+                var p1 = totalVotes > 0 ? (duel.Votes1 * 100 / totalVotes) : 50;
+                var p2 = totalVotes > 0 ? (duel.Votes2 * 100 / totalVotes) : 50;
+
+                <div class="rounded-3xl glass-card p-6 lg:p-8 hover:border-accent/30 transition-colors">
+                    <!-- Duel Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-border/50">
+                        <div class="flex items-center gap-3">
+                            <span class="flex h-10 items-center rounded-full bg-accent/20 px-4 text-xs font-bold text-accent">
+                                <span class="relative flex h-2 w-2 mr-2">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
+                                    <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
+                                </span>
+                                @(isVoting ? "OYLAMA" : duel.Status.ToUpper())
+                            </span>
+                            <span class="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+                                <i data-lucide="clock" class="h-4 w-4"></i> @(duel.TimeLeft) kaldi
+                            </span>
+                        </div>
+                        <span class="flex items-center gap-2 text-sm font-bold bg-secondary/50 px-4 py-2 rounded-full">
+                            <i data-lucide="users" class="h-4 w-4 text-accent"></i> <span id="total-votes-@duel.Id">@(totalVotes)</span> oy kullanildi
+                        </span>
+                    </div>
+                    
+                    <h3 class="text-2xl font-bold mb-2">@(duel.Title)</h3>
+                    <p class="text-muted-foreground mb-8 text-sm">@(duel.Description)</p>
+                    
+                    <!-- Versus Area -->
+                    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+                        <!-- VS Divider -->
+                        <div class="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 h-16 w-16 items-center justify-center rounded-full bg-background border-4 border-card font-black text-xl italic text-muted-foreground">
+                            VS
+                        </div>
+                        
+                        <!-- Challenger -->
+                        <div class="relative group">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(duel.ChallengerName ?? "C"))&background=random" class="h-12 w-12 rounded-full ring-2 ring-primary" />
+                                        <div class="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-2 border-background">@(duel.ChallengerLevel ?? 1)</div>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">@(duel.ChallengerName)</p>
+                                        <p class="text-xs text-muted-foreground">Meydan Okuyan</p>
+                                    </div>
+                                </div>
+                                <span id="p1-text-@duel.Id" class="text-2xl font-black text-primary">@p1%</span>
+                            </div>
+                            
+                            <div class="relative rounded-2xl overflow-hidden aspect-[4/3] bg-secondary mb-4 ring-2 ring-transparent transition-all group-hover:ring-primary/50 cursor-pointer">
+                                <img src="@(duel.ChallengerDesign ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600")" class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 transition-opacity flex items-center justify-center hover:opacity-100">
+                                    <i data-lucide="maximize-2" class="h-8 w-8 text-white"></i>
+                                </div>
+                            </div>
+                            
+                            <button onclick="voteDuel(@(duel.Id), 1)" class="w-full rounded-xl bg-primary/10 hover:bg-primary py-3 font-bold text-primary hover:text-primary-foreground transition-all">
+                                @(duel.ChallengerName) Icin Oy Ver
+                            </button>
+                        </div>
+                        
+                        <!-- Opponent -->
+                        <div class="relative group">
+                            <div class="flex items-start justify-between mb-4 flex-row-reverse text-right lg:flex-row lg:text-left">
+                                <div class="flex items-center gap-3 flex-row-reverse lg:flex-row">
+                                    <div class="relative">
+                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(duel.OpponentName ?? "O"))&background=random" class="h-12 w-12 rounded-full ring-2 ring-accent" />
+                                        <div class="absolute -bottom-1 -left-1 lg:-right-1 lg:left-auto flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground border-2 border-background">@(duel.OpponentLevel ?? 1)</div>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold">@(duel.OpponentName)</p>
+                                        <p class="text-xs text-muted-foreground">Savunan</p>
+                                    </div>
+                                </div>
+                                <span id="p2-text-@duel.Id" class="text-2xl font-black text-accent">@p2%</span>
+                            </div>
+                            
+                            <div class="relative rounded-2xl overflow-hidden aspect-[4/3] bg-secondary mb-4 ring-2 ring-transparent transition-all group-hover:ring-accent/50 cursor-pointer">
+                                <img src="@(duel.OpponentDesign ?? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=600")" class="w-full h-full object-cover" />
+                                <div class="absolute inset-0 bg-black/40 opacity-0 transition-opacity flex items-center justify-center hover:opacity-100">
+                                    <i data-lucide="maximize-2" class="h-8 w-8 text-white"></i>
+                                </div>
+                            </div>
+                            
+                            <button onclick="voteDuel(@(duel.Id), 2)" class="w-full rounded-xl bg-accent/10 hover:bg-accent py-3 font-bold text-accent hover:text-accent-foreground transition-all">
+                                @(duel.OpponentName) Icin Oy Ver
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mt-8 h-3 w-full rounded-full bg-secondary overflow-hidden flex">
+                        <div id="p1-bar-@duel.Id" class="h-full bg-primary transition-all duration-1000 ease-out" style="width: @(p1)%"></div>
+                        <div id="p2-bar-@duel.Id" class="h-full bg-accent transition-all duration-1000 ease-out" style="width: @(p2)%"></div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Challenge CTA -->
+    <div class="mt-12 rounded-3xl border-2 border-dashed border-border p-12 text-center bg-card/30 relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5 opacity-0 transition-opacity group-hover:opacity-100"></div>
+        <div class="relative z-10">
+            <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary mb-6">
+                <i data-lucide="swords" class="h-10 w-10 text-muted-foreground"></i>
+            </div>
+            <h3 class="text-2xl font-bold">Bir Tasarimciya Meydan Oku!</h3>
+            <p class="mt-3 text-muted-foreground max-w-md mx-auto">Kendine guveniyor musun? Favori tasarimcini sec ve ona karsi birebir yaris!</p>
+            
+            <div class="mt-8 flex justify-center">
+                <div class="flex -space-x-4">
+                    @for (int i = 0; i < 5; i++)
+                    {
+                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString("User" + i))&background=random" class="h-14 w-14 rounded-full border-4 border-card object-cover ring-2 ring-transparent transition-all hover:-translate-y-2 hover:ring-primary z-[@(5-i)] hover:z-10" />
+                    }
+                </div>
+            </div>
+
+            <button onclick="startDuel()" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                <i data-lucide="target" class="h-5 w-5"></i> Rakip Sec
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function filterDuels(filter) {
+            var buttons = ['all', 'voting', 'designing', 'waiting'];
+            for (var i = 0; i < buttons.length; i++) {
+                var btn = document.getElementById('duel-' + buttons[i]);
+                if (!btn) continue;
+                if (buttons[i] === filter) {
+                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-accent text-accent-foreground pink-glow';
+                } else {
+                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80';
+                }
+            }
+        }
+        
+        function voteDuel(duelId, option) {
+            fetch('/Social/VoteDuel/' + duelId + '?option=' + option, { 
+                method: 'POST',
+                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+            }).then(function(r) { return r.json(); }).then(function(data) { 
+                if (data.success) {
+                    document.getElementById('p1-bar-' + duelId).style.width = data.p1 + '%';
+                    document.getElementById('p2-bar-' + duelId).style.width = data.p2 + '%';
+                    document.getElementById('p1-text-' + duelId).innerText = data.p1 + '%';
+                    document.getElementById('p2-text-' + duelId).innerText = data.p2 + '%';
+                    document.getElementById('total-votes-' + duelId).innerText = data.totalVotes;
+                    
+                    const toast = document.createElement('div');
+                    toast.className = 'fixed bottom-4 right-4 z-50 bg-accent text-accent-foreground px-6 py-4 rounded-xl shadow-2xl font-bold animate-in slide-in-from-bottom flex items-center gap-2';
+                    toast.innerHTML = '<i data-lucide="swords" class="h-5 w-5"></i> Oy verildi! +10 XP';
+                    document.body.appendChild(toast);
+                    lucide.createIcons();
+                    setTimeout(() => { toast.classList.add('opacity-0', 'transition-opacity'); setTimeout(() => toast.remove(), 500); }, 3000);
+                } else {
+                    alert(data.message || 'Oy verilemedi');
+                }
+            }).catch(function(err) { console.error('Error:', err); });
+        }
+        
+        function startDuel() {
+            document.getElementById('createDuelModal').classList.remove('hidden');
+        }
+
+        function closeCreateDuelModal() {
+            document.getElementById('createDuelModal').classList.add('hidden');
+        }
+
+        function submitDuelRequest(event) {
+            event.preventDefault();
+            closeCreateDuelModal();
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-[50%] translate-x-[-50%] z-50 bg-primary text-primary-foreground px-6 py-4 rounded-xl shadow-2xl font-bold animate-in slide-in-from-top flex items-center gap-2';
+            toast.innerHTML = '<i data-lucide="zap" class="h-5 w-5"></i> Meydan okuma rakibe iletildi!';
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.classList.add('opacity-0', 'transition-opacity'); setTimeout(() => toast.remove(), 500); }, 3000);
+        }
+    </script>
+}
+
+    <!-- Create Duel Modal -->
+    <div id="createDuelModal" class="fixed inset-0 z-50 hidden bg-background/80 backdrop-blur-sm">
+        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
+            <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="swords" class="h-6 w-6 text-accent"></i> 
+                            Düello Başlat
+                        </h2>
+                        <button onclick="closeCreateDuelModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                            <i data-lucide="x" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+
+                    <form onsubmit="submitDuelRequest(event)" class="space-y-6">
+                        <div>
+                            <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
+                            <div class="flex gap-4 overflow-x-auto pb-2 snap-x">
+                                @for(int i = 1; i <= 6; i++) {
+                                    <label class="cursor-pointer snap-start flex-shrink-0">
+                                        <input type="radio" name="opponent" required class="peer sr-only" value="@i" />
+                                        <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
+                                            <img src="https://ui-avatars.com/api/?name=User@(i)&background=random" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Düello Kategorisi</label>
+                            <select required class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
+                                <option value="">Bir kategori seç...</option>
+                                <option value="ui">UI/UX Tasarımı</option>
+                                <option value="logo">Logo / Branding</option>
+                                <option value="illustration">İllüstrasyon</option>
+                                <option value="3d">3D Modelleme</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">İddianı Yaz (Meydan Okuma)</label>
+                            <textarea rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Senin tasarımın benimkinin yanından bile geçemez..."></textarea>
+                        </div>
+
+                        <button type="submit" class="mt-4 w-full rounded-xl bg-accent py-3.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 pink-glow flex items-center justify-center gap-2">
+                            <i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
