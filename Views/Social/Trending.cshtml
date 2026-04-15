@@ -1,0 +1,229 @@
+@{
+    Layout = "_SocialLayoutModern";
+    ViewData["Title"] = "Trendler";
+}
+
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
+    <div class="flex items-center gap-4">
+        <h1 class="text-xl font-bold">Trendler</h1>
+    </div>
+</header>
+
+<div class="p-6">
+    <!-- Hero Section -->
+    <div class="rounded-3xl bg-gradient-to-r from-orange-500/20 via-red-500/20 to-pink-500/20 p-8 relative overflow-hidden border border-orange-500/10">
+        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
+        <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-pink-500/20 blur-3xl"></div>
+        
+        <div class="relative z-10 flex items-center gap-4">
+            <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 shadow-xl shadow-orange-500/20">
+                <i data-lucide="flame" class="h-8 w-8 text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-3xl font-bold">Trend Olanlar</h1>
+                <p class="text-muted-foreground mt-1">Haftanin en parlayan tasarimcilari ve en sevilen isleri</p>
+            </div>
+        </div>
+
+        <!-- Time Filter -->
+        <div class="mt-8 flex flex-wrap gap-2 relative z-10" id="timeFilters">
+            <button onclick="setTimeFilter('today')" id="filter-today" class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-white text-black shadow-lg">
+                <i data-lucide="clock" class="h-4 w-4"></i> Bugun
+            </button>
+            <button onclick="setTimeFilter('week')" id="filter-week" class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-card/50 text-foreground hover:bg-card border border-border/50">
+                <i data-lucide="calendar" class="h-4 w-4"></i> Bu Hafta
+            </button>
+            <button onclick="setTimeFilter('month')" id="filter-month" class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-card/50 text-foreground hover:bg-card border border-border/50">
+                <i data-lucide="calendar-days" class="h-4 w-4"></i> Bu Ay
+            </button>
+            <button onclick="setTimeFilter('all')" id="filter-all" class="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-card/50 text-foreground hover:bg-card border border-border/50">
+                <i data-lucide="infinity" class="h-4 w-4"></i> Tum Zamanlar
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mt-8 flex gap-2 rounded-xl bg-secondary/50 p-1.5 w-fit">
+        <button onclick="setTab('designers')" id="tab-designers" class="rounded-lg px-8 py-2.5 text-sm font-semibold transition-all bg-card text-foreground shadow-sm">
+            Tasarimcilar
+        </button>
+        <button onclick="setTab('designs')" id="tab-designs" class="rounded-lg px-8 py-2.5 text-sm font-semibold transition-all text-muted-foreground hover:text-foreground">
+            Tasarimlar
+        </button>
+    </div>
+
+    <!-- Designers Content -->
+    <div class="mt-6" id="content-designers">
+        @if (ViewBag.TrendingDesigners != null)
+        {
+            <div class="space-y-4">
+                @foreach (var designer in ViewBag.TrendingDesigners)
+                {
+                    var rank = designer.Rank ?? 1;
+                    var isTop3 = rank <= 3;
+                    var rankBg = rank == 1 ? "bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-yellow-500/20" : 
+                                 rank == 2 ? "bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-slate-500/20" :
+                                 rank == 3 ? "bg-gradient-to-br from-amber-600 to-orange-800 text-white shadow-amber-700/20" : 
+                                 "bg-secondary text-secondary-foreground";
+                    
+                    <div class="group glass-card rounded-2xl p-5 transition-all hover:border-primary/50 hover:shadow-lg flex items-center flex-wrap gap-4">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl font-bold shadow-lg @rankBg text-lg">
+                            #@rank
+                        </div>
+                        
+                        <div class="relative shrink-0 flex items-center justify-center">
+                            <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(designer.Name ?? "U"))&background=random" class="h-16 w-16 rounded-full object-cover ring-2 ring-border transition-all group-hover:ring-primary" />
+                            <div class="absolute -bottom-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground border-[3px] border-card">
+                                @(designer.Level ?? 1)
+                            </div>
+                        </div>
+                        
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <a href="/Social/Profil/@(designer.Id)" class="truncate font-bold text-lg hover:text-primary transition-colors">@(designer.Name)</a>
+                                @if (isTop3)
+                                {
+                                    <i data-lucide="badge-check" class="h-5 w-5 text-primary fill-primary/20"></i>
+                                }
+                            </div>
+                            <p class="text-sm text-muted-foreground">@@@(designer.Username ?? "user")</p>
+                            
+                            <!-- Level Progress hidden on mobile, visible on lg -->
+                            <div class="mt-3 hidden md:block max-w-sm">
+                                <div class="mb-1 flex items-center justify-between text-xs">
+                                    <span class="text-muted-foreground">Level @(designer.Level ?? 1)</span>
+                                    <span class="text-primary font-medium">@(designer.XP ?? 0) / @(designer.MaxXP ?? 100) XP</span>
+                                </div>
+                                <div class="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                                    <div class="h-full bg-primary" style="width: @(designer.XPPercent ?? 0)%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-6 shrink-0 ml-auto">
+                            <div class="text-center hidden sm:block">
+                                <p class="text-sm text-muted-foreground mb-1">Takipci</p>
+                                <p class="font-bold text-lg">@(designer.Followers ?? "1.2k")</p>
+                            </div>
+                            
+                            <div class="text-center hidden sm:block">
+                                <p class="text-sm text-muted-foreground mb-1">Haftalik XP</p>
+                                <p class="font-bold text-lg text-primary flex items-center justify-center gap-1">
+                                    <i data-lucide="trending-up" class="h-4 w-4"></i> +@(designer.WeeklyXP ?? 0)
+                                </p>
+                            </div>
+                            
+                            <button onclick="followDesigner(@(designer.Id))" class="follow-btn-@(designer.Id) h-10 px-6 rounded-xl text-sm font-bold transition-all bg-primary text-primary-foreground hover:opacity-90 neon-glow whitespace-nowrap">
+                                Takip Et
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Designs Content -->
+    <div class="mt-6 hidden" id="content-designs">
+        @if (ViewBag.TrendingDesigns != null)
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var card in ViewBag.TrendingDesigns)
+                {
+                    <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-primary/50">
+                        <a href="/Social/Design/@card.Id" class="block relative overflow-hidden aspect-[4/3]">
+                            <img src="@(card.ImageUrl ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800")" 
+                                 class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                            
+                            <!-- Tags & Content Overlay -->
+                            <div class="absolute bottom-0 left-0 right-0 p-5 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                                <h3 class="text-lg font-bold text-white">@(card.Title ?? "Tasarim")</h3>
+                            </div>
+                        </a>
+                        
+                        <!-- Actions overlay -->
+                        <div class="absolute right-4 top-4 flex flex-col gap-3 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 z-10">
+                            <button onclick="likePost('@card.Id')" class="like-btn-@card.Id group/btn flex h-10 w-10 flex-col items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all hover:bg-accent hover:text-accent-foreground">
+                                <i data-lucide="heart" class="h-4 w-4"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-4 bg-card border-t border-border/50">
+                            <div class="flex items-center justify-between">
+                                <a href="/Social/ProfilModern" class="flex items-center gap-3 group/user min-w-0">
+                                    <div class="relative h-8 w-8 overflow-hidden rounded-full shrink-0">
+                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(card.UserName ?? "U"))&background=random" class="h-full w-full object-cover" />
+                                    </div>
+                                    <div class="truncate">
+                                        <p class="text-sm font-semibold group-hover/user:text-primary transition-colors truncate">@(card.UserName ?? "Kullanici")</p>
+                                    </div>
+                                </a>
+                                
+                                <div class="flex items-center gap-1.5 text-muted-foreground text-sm shrink-0">
+                                    <i data-lucide="heart" class="h-4 w-4"></i>
+                                    <span class="like-count-@card.Id font-medium">@(card.Likes ?? 0)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setTimeFilter(filter) {
+            var buttons = ['today', 'week', 'month', 'all'];
+            var icons = {
+                'today': 'clock',
+                'week': 'calendar',
+                'month': 'calendar-days',
+                'all': 'infinity'
+            };
+            var labels = {
+                'today': 'Bugun',
+                'week': 'Bu Hafta',
+                'month': 'Bu Ay',
+                'all': 'Tum Zamanlar'
+            };
+            
+            for (var i = 0; i < buttons.length; i++) {
+                var btn = document.getElementById('filter-' + buttons[i]);
+                if (!btn) continue;
+                if (buttons[i] === filter) {
+                    btn.className = 'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-white text-black shadow-lg';
+                    btn.innerHTML = `<i data-lucide="${icons[buttons[i]]}" class="h-4 w-4"></i> ${labels[buttons[i]]}`;
+                } else {
+                    btn.className = 'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all bg-card/50 text-foreground hover:bg-card border border-border/50';
+                    btn.innerHTML = `<i data-lucide="${icons[buttons[i]]}" class="h-4 w-4"></i> ${labels[buttons[i]]}`;
+                }
+            }
+            lucide.createIcons(); // refresh icons
+        }
+        
+        function setTab(tab) {
+            var designersTab = document.getElementById('tab-designers');
+            var designsTab = document.getElementById('tab-designs');
+            var designersContent = document.getElementById('content-designers');
+            var designsContent = document.getElementById('content-designs');
+            
+            if (!designersTab || !designsTab) return;
+            
+            if (tab === 'designers') {
+                designersTab.className = 'rounded-lg px-8 py-2.5 text-sm font-semibold transition-all bg-card text-foreground shadow-sm';
+                designsTab.className = 'rounded-lg px-8 py-2.5 text-sm font-semibold transition-all text-muted-foreground hover:text-foreground';
+                if (designersContent) designersContent.classList.remove('hidden');
+                if (designsContent) designsContent.classList.add('hidden');
+            } else {
+                designsTab.className = 'rounded-lg px-8 py-2.5 text-sm font-semibold transition-all bg-card text-foreground shadow-sm';
+                designersTab.className = 'rounded-lg px-8 py-2.5 text-sm font-semibold transition-all text-muted-foreground hover:text-foreground';
+                if (designsContent) designsContent.classList.remove('hidden');
+                if (designersContent) designersContent.classList.add('hidden');
+            }
+        }
+    </script>
+}

@@ -1,4 +1,4 @@
-﻿namespace Kartist.Middleware
+namespace Kartist.Middleware
 {
     public class SecurityHeadersMiddleware
     {
@@ -13,10 +13,11 @@
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Statik dosyalar iÃƒÂ§in CSP header eklemeye gerek yok (performans)
+            // Statik dosyalar ve OAuth endpoint'leri iÃƒÂ§in CSP header eklemeye gerek yok
             var path = context.Request.Path.Value ?? "";
             if (path.StartsWith("/lib/") || path.StartsWith("/css/") || path.StartsWith("/js/") ||
-                path.StartsWith("/uploads/") || path.StartsWith("/img/") || path.EndsWith(".ico"))
+                path.StartsWith("/uploads/") || path.StartsWith("/img/") || path.EndsWith(".ico") ||
+                path.Contains("/signin-") || path.Contains("/ExternalLogin"))
             {
                 await _next(context);
                 return;
@@ -27,7 +28,7 @@
             context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
             context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
-            string permissionsPolicy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()";
+            string permissionsPolicy = "geolocation=(), microphone=(self), camera=(self), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()";
             context.Response.Headers.Append("Permissions-Policy", permissionsPolicy);
 
             string connectSrc = "'self' https://api.groq.com https://open.spotify.com https://www.youtube.com https://cdn.jsdelivr.net https://accounts.google.com https://image.pollinations.ai https://pollinations.ai https://api.airforce https://*.unsplash.com https://cdnjs.cloudflare.com";
@@ -36,20 +37,20 @@
                 connectSrc += " ws://localhost:* wss://localhost:* http://localhost:*";
             }
 
-            string scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://unpkg.com https://api.groq.com https://accounts.google.com";
+            string scriptSrc = "'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://unpkg.com https://api.groq.com https://cdn.tailwindcss.com";
             if (_environment.IsDevelopment())
             {
                 scriptSrc += " http://localhost:*";
             }
 
             string csp = "default-src 'self'; " +
-                "frame-src 'self' https://open.spotify.com https://www.youtube.com https://www.google.com https://www.google.com.tr https://www.openstreetmap.org; " +
+                "frame-src 'self' https://open.spotify.com https://www.youtube.com https://www.google.com https://www.google.com.tr https://www.openstreetmap.org https://accounts.google.com; " +
                 "script-src " + scriptSrc + "; " +
                 "worker-src 'self' blob: https://cdn.jsdelivr.net https://unpkg.com; " +
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
                 "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; " +
                 "connect-src " + connectSrc + " https://kartistt.com.tr wss://kartistt.com.tr https://*.pollinations.ai https://*.bing.com https://unpkg.com https://*.imgly.com; " +
-                "img-src 'self' data: blob: https://* http://*; " +
+                "img-src 'self' data: blob: https://* http://* https://images.unsplash.com https://ui-avatars.com; " +
                 "media-src 'self' data: https:; " +
                 "object-src 'none'; " +
                 "base-uri 'self'; " +

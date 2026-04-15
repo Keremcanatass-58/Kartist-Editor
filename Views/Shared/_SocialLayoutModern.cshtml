@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <script>
+        // Suppress Tailwind CDN production warning
+        if (window.console && console.warn) {
+            const warn = console.warn;
+            console.warn = function() {
+                if (arguments[0] && typeof arguments[0] === 'string' && (arguments[0].includes('cdn.tailwindcss.com') || arguments[0].includes('Play CDN'))) return;
+                warn.apply(console, arguments);
+            };
+        }
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Kartist</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Tailwind Config with v0 theme -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        background: 'oklch(0.13 0.02 280)',
+                        foreground: 'oklch(0.95 0.01 280)',
+                        card: 'oklch(0.17 0.02 280)',
+                        'card-foreground': 'oklch(0.95 0.01 280)',
+                        popover: 'oklch(0.15 0.02 280)',
+                        'popover-foreground': 'oklch(0.95 0.01 280)',
+                        primary: 'oklch(0.75 0.18 160)',
+                        'primary-foreground': 'oklch(0.13 0.02 280)',
+                        secondary: 'oklch(0.22 0.03 280)',
+                        'secondary-foreground': 'oklch(0.90 0.01 280)',
+                        muted: 'oklch(0.20 0.02 280)',
+                        'muted-foreground': 'oklch(0.65 0.02 280)',
+                        accent: 'oklch(0.70 0.20 330)',
+                        'accent-foreground': 'oklch(0.98 0 0)',
+                        destructive: 'oklch(0.60 0.22 25)',
+                        'destructive-foreground': 'oklch(0.98 0 0)',
+                        border: 'oklch(0.28 0.03 280)',
+                        input: 'oklch(0.22 0.02 280)',
+                        ring: 'oklch(0.75 0.18 160)',
+                    },
+                    borderRadius: {
+                        'xl': '0.75rem',
+                        '2xl': '1rem',
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --kartist-neon: oklch(0.80 0.22 160);
+            --kartist-pink: oklch(0.72 0.22 330);
+            --kartist-gold: oklch(0.80 0.15 80);
+            --kartist-glass: oklch(0.20 0.02 280 / 0.6);
+        }
+        
+        .glass-card {
+            background: var(--kartist-glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid oklch(0.35 0.03 280 / 0.5);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px oklch(0.75 0.18 160 / 0.3),
+                        0 0 40px oklch(0.75 0.18 160 / 0.1);
+        }
+        
+        .pink-glow {
+            box-shadow: 0 0 20px oklch(0.72 0.22 330 / 0.3),
+                        0 0 40px oklch(0.72 0.22 330 / 0.1);
+        }
+        
+        .gold-glow {
+            box-shadow: 0 0 20px oklch(0.80 0.15 80 / 0.3),
+                        0 0 40px oklch(0.80 0.15 80 / 0.1);
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--kartist-neon), var(--kartist-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        body {
+            background-color: oklch(0.13 0.02 280);
+            color: oklch(0.95 0.01 280);
+        }
+        /* Broken Image UI Fixes */
+        img:not([src]), img[src=""] {
+            visibility: hidden;
+        }
+        
+        @* Global image fallback script *@
+    </style>
+    <script>
+    document.addEventListener('error', function (e) {
+        if (e.target.tagName.toLowerCase() === 'img') {
+            const isAvatar = e.target.classList.contains('rounded-full') || e.target.src.includes('avatar');
+            e.target.src = isAvatar ? '/img/default-user.png' : '/img/default-design.svg';
+        }
+    }, true);
+    </script>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="min-h-screen bg-background text-foreground antialiased font-sans">
+    
+    @if(ViewData["HideSidebar"] == null || (bool)ViewData["HideSidebar"] == false)
+    {
+        <div class="flex min-h-screen">
+            <!-- Sidebar -->
+            <aside class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
+                <!-- Logo -->
+                <div class="flex h-16 items-center gap-2 border-b border-border px-6">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
+                        <i data-lucide="sparkles" class="h-5 w-5 text-primary-foreground"></i>
+                    </div>
+                    <span class="text-xl font-bold tracking-tight">Kartist</span>
+                </div>
+
+                <!-- User Card -->
+                <div class="mx-4 mt-4 rounded-xl glass-card p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" alt="User" class="h-12 w-12 rounded-full object-cover ring-2 ring-primary" />
+                            <div class="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                                12
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold truncate">@(User.Identity.IsAuthenticated ? User.Identity.Name : "Kullanici")</p>
+                            <p class="text-xs text-muted-foreground">@("@" + (User.Identity.IsAuthenticated ? User.Identity.Name.ToLower().Replace(" ", "") : "kullanici"))</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="mb-1 flex items-center justify-between text-xs">
+                            <span class="text-muted-foreground">Level 12</span>
+                            <span class="text-primary">1100/1500 XP</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                            <div class="h-full bg-primary w-[73%]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Button -->
+                <div class="px-4 mt-4">
+                    <button onclick="openCreateModal()" class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                        <i data-lucide="plus" class="h-5 w-5"></i>
+                        Tasarim Paylas
+                    </button>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="mt-6 flex-1 px-3">
+                    <ul class="space-y-1">
+                        <li>
+                            @{ var isFeed = Context.Request.Path == "/Social/Feed" || Context.Request.Path == "/Social"; }
+                            <a href="/Social/Feed" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isFeed ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="compass" class="h-5 w-5"></i>
+                                Kesfet
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isTrending = Context.Request.Path == "/Social/Trending"; }
+                            <a href="/Social/Trending" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isTrending ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="flame" class="h-5 w-5"></i>
+                                Trendler
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isDuels = Context.Request.Path == "/Social/Duels"; }
+                            <a href="/Social/Duels" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isDuels ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="swords" class="h-5 w-5"></i>
+                                Duellolar
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isLive = Context.Request.Path == "/Social/Live"; }
+                            <a href="/Social/Live" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isLive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="radio" class="h-5 w-5"></i>
+                                Canli
+                                <span class="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-accent-foreground">2</span>
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isComp = Context.Request.Path == "/Social/Competitions"; }
+                            <a href="/Social/Competitions" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isComp ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="trophy" class="h-5 w-5"></i>
+                                Yarisma
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isLiderlik = Context.Request.Path == "/Social/Liderlik"; }
+                            <a href="/Social/Liderlik" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isLiderlik ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="crown" class="h-5 w-5"></i>
+                                Liderlik
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isIstatistikler = Context.Request.Path == "/Social/Istatistikler"; }
+                            <a href="/Social/Istatistikler" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isIstatistikler ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+                                Pano
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Bottom Navigation -->
+                <div class="border-t border-border px-3 py-4">
+                    <ul class="space-y-1">
+                        <li>
+                            @{ var isMesajlar = Context.Request.Path.Value.Contains("/Social/Messages") || Context.Request.Path.Value.Contains("/Social/Mesajlar"); }
+                            <a href="/Social/Messages" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isMesajlar ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="message-circle" class="h-5 w-5"></i>
+                                Mesajlar
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isProfile = Context.Request.Path.Value.Contains("/Social/Profil"); }
+                            <a href="/Social/Profil" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isProfile ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="user" class="h-5 w-5"></i>
+                                Profil
+                            </a>
+                        </li>
+                        <li>
+                            @{ var isSettings = Context.Request.Path == "/Social/Settings"; }
+                            <a href="/Social/Settings" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isSettings ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="settings" class="h-5 w-5"></i>
+                                Ayarlar
+                            </a>
+                        </li>
+                        <li class="pt-2 mt-2 border-t border-border/50">
+                            <a href="/" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-red-500/10 hover:text-red-500">
+                                <i data-lucide="log-out" class="h-5 w-5 rotate-180"></i>
+                                Ana Siteye Dön
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <div class="ml-64 flex-1 flex flex-col min-h-screen">
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="m-6 mb-0 rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-destructive flex items-center gap-3">
+                        <i data-lucide="alert-circle" class="h-5 w-5"></i>
+                        <p class="font-semibold">@TempData["ErrorMessage"]</p>
+                    </div>
+                }
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="m-6 mb-0 rounded-xl bg-primary/10 border border-primary/20 p-4 text-primary flex items-center gap-3">
+                        <i data-lucide="check-circle-2" class="h-5 w-5"></i>
+                        <p class="font-semibold">@TempData["SuccessMessage"]</p>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="m-6 mb-0 rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-destructive flex items-center gap-3">
+                <i data-lucide="alert-circle" class="h-5 w-5"></i>
+                <p class="font-semibold">@TempData["ErrorMessage"]</p>
+            </div>
+        }
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="m-6 mb-0 rounded-xl bg-primary/10 border border-primary/20 p-4 text-primary flex items-center gap-3">
+                <i data-lucide="check-circle-2" class="h-5 w-5"></i>
+                <p class="font-semibold">@TempData["SuccessMessage"]</p>
+            </div>
+        }
+        @RenderBody()
+    }
+    
+    <!-- Create Post Modal -->
+    <div id="createModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCreateModal()"></div>
+
+        <!-- Modal -->
+        <div class="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card shadow-2xl">
+            <!-- Header -->
+            <div class="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-6 py-4">
+                <h2 class="text-xl font-bold">Yeni Tasarim Paylas</h2>
+                <button type="button" onclick="closeCreateModal()" class="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <form id="createPostForm" action="/Social/CreatePost" method="post" enctype="multipart/form-data" class="p-6">
+                @Html.AntiForgeryToken()
+                <!-- Image Upload -->
+                <div class="relative rounded-2xl border-2 border-dashed border-border transition-all hover:border-primary/50 text-center py-16 cursor-pointer" onclick="document.getElementById('fileUpload').click()">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                        <i data-lucide="upload" class="h-8 w-8 text-primary"></i>
+                    </div>
+                    <p class="mt-4 font-semibold">Tasarimini yukle</p>
+                    <p class="mt-1 text-sm text-muted-foreground">PNG, JPG, GIF - Max 10MB</p>
+                    <input type="file" id="fileUpload" name="image" accept="image/*" class="hidden" onchange="previewImage(this)" required />
+                    <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover rounded-xl hidden" />
+                </div>
+
+                <!-- Title -->
+                <div class="mt-6">
+                    <label class="text-sm font-medium">Baslik</label>
+                    <input type="text" name="title" placeholder="Tasarimina bir isim ver" class="mt-2 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none" required />
+                </div>
+
+                <!-- Description -->
+                <div class="mt-4">
+                    <label class="text-sm font-medium">Aciklama</label>
+                    <textarea name="description" placeholder="Tasarimin hakkinda biraz bilgi ver..." rows="3" class="mt-2 w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none"></textarea>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="mt-8 flex items-center justify-end gap-4">
+                    <button type="button" onclick="closeCreateModal()" class="rounded-xl px-6 py-3 font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">Iptal</button>
+                    <button type="submit" class="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground transition-opacity hover:opacity-90 neon-glow">
+                        <i data-lucide="sparkles" class="h-4 w-4"></i>
+                        Paylas
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Scripts -->
+    <script>
+        // Initialize Icon set
+        lucide.createIcons();
+
+        function previewImage(input) {
+            const preview = document.getElementById('imagePreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '';
+                preview.classList.add('hidden');
+            }
+        }
+
+        // Global Modals
+        window.openCreateModal = function() {
+            var modal = document.getElementById('createModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        };
+
+        window.closeCreateModal = function() {
+            var modal = document.getElementById('createModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                // Reset form preview
+                document.getElementById('imagePreview').classList.add('hidden');
+                document.getElementById('imagePreview').src = '';
+                if(modal.querySelector('form')) modal.querySelector('form').reset();
+            }
+        };
+
+        // Likes & Follows Global Functions
+        window.likePost = function (id) {
+            fetch('/Social/LikePost/' + id, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const btns = document.querySelectorAll('.like-btn-' + id);
+                        btns.forEach(btn => {
+                            // Fix Tailwind override: Remove text-white, add text-accent
+                            if (data.liked) {
+                                btn.classList.remove('text-white');
+                                btn.classList.add('text-accent', 'fill-accent', 'bg-accent/20');
+                            } else {
+                                btn.classList.add('text-white');
+                                btn.classList.remove('text-accent', 'fill-accent', 'bg-accent/20');
+                            }
+                            const icon = btn.querySelector('svg'); // Lucide replaces <i> with <svg>
+                            if(icon) {
+                                if(data.liked) icon.setAttribute('fill', 'currentColor');
+                                else icon.setAttribute('fill', 'none');
+                            }
+                        });
+                        
+                        // Like count is in a different div, fetch it globally!
+                        const countEls = document.querySelectorAll('.like-count-' + id);
+                        countEls.forEach(countEl => {
+                            let count = parseInt(countEl.textContent.replace(/,/g, '')) || 0;
+                            countEl.textContent = data.liked ? (count + 1) : (Math.max(0, count - 1));
+                            // Optional scaling animation
+                            countEl.parentElement.classList.add('scale-125');
+                            setTimeout(() => countEl.parentElement.classList.remove('scale-125'), 200);
+                        });
+                    }
+                })
+                .catch(err => console.error('Like error:', err));
+        };
+
+        window.savePost = function (id) {
+            fetch('/Social/SavePost/' + id, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const btns = document.querySelectorAll('.save-btn-' + id);
+                        btns.forEach(btn => {
+                            if (data.saved) {
+                                btn.classList.remove('text-white');
+                                btn.classList.add('text-primary', 'fill-primary', 'bg-primary/20');
+                            } else {
+                                btn.classList.add('text-white');
+                                btn.classList.remove('text-primary', 'fill-primary', 'bg-primary/20');
+                            }
+                            const icon = btn.querySelector('svg');
+                            if(icon) {
+                                if(data.saved) icon.setAttribute('fill', 'currentColor');
+                                else icon.setAttribute('fill', 'none');
+                            }
+                        });
+                    }
+                })
+                .catch(err => console.error('Save error:', err));
+        };
+
+        window.followDesigner = function (id) {
+            if (!id || id === 0) { alert('Geçersiz kullanıcı'); return; }
+
+            fetch('/Social/FollowDesigner/' + id, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const btns = document.querySelectorAll('.follow-btn-' + id);
+                        btns.forEach(btn => {
+                            if (data.following) {
+                                btn.textContent = 'Takip Ediliyor';
+                                btn.classList.remove('bg-primary', 'text-primary-foreground');
+                                btn.classList.add('bg-secondary', 'text-secondary-foreground');
+                            } else {
+                                btn.textContent = 'Takip Et';
+                                btn.classList.add('bg-primary', 'text-primary-foreground');
+                                btn.classList.remove('bg-secondary', 'text-secondary-foreground');
+                            }
+                        });
+                    } else {
+                        alert(data.message || 'İşlem başarısız');
+                    }
+                })
+                .catch(err => console.error('Follow error:', err));
+        };
+        
+        // Header Dropdowns
+        window.toggleDropdown = function(id) {
+            const dropdown = document.getElementById(id);
+            if(dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        };
+
+        document.addEventListener('click', function(event) {
+            const notifDropdown = document.getElementById('notifDropdown');
+            const msgDropdown = document.getElementById('msgDropdown');
+            const notifBtn = document.getElementById('notifBtn');
+            const msgBtn = document.getElementById('msgBtn');
+
+            if (notifDropdown && notifBtn && !notifDropdown.contains(event.target) && !notifBtn.contains(event.target)) {
+                notifDropdown.classList.add('hidden');
+            }
+            if (msgDropdown && msgBtn && !msgDropdown.contains(event.target) && !msgBtn.contains(event.target)) {
+                msgDropdown.classList.add('hidden');
+            }
+        });
+
+    </script>
+    
+    <!-- Create Stream Modal -->
+    <div id="createStreamModal" class="fixed inset-0 z-[60] hidden bg-background/80 backdrop-blur-sm">
+        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
+            <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-destructive/20 blur-3xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i data-lucide="video" class="h-6 w-6 text-destructive"></i> 
+                            Yayın Başlat
+                        </h2>
+                        <button onclick="closeCreateStreamModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                            <i data-lucide="x" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+
+                    <form onsubmit="submitStreamRequest(event)" class="space-y-4">
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Yayın Başlığı</label>
+                            <input type="text" id="streamTitleInput" required placeholder="Örn: Figma ile Sıfırdan Dashboard..." class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-destructive focus:outline-none focus:ring-1 focus:ring-destructive" />
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Kategori / Etiketler</label>
+                            <input type="text" placeholder="#ui #figma" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-destructive focus:outline-none focus:ring-1 focus:ring-destructive" />
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium mb-1.5 block">Kamera ve Mikrofon Önizlemesi</label>
+                            <div class="rounded-2xl bg-black aspect-video flex items-center justify-center text-muted-foreground border border-border relative overflow-hidden" id="cameraPreviewContainer" onclick="forcePlayVideo()">
+                                <i id="cameraOffIcon" data-lucide="camera-off" class="h-8 w-8"></i>
+                                <video id="previewVideo" class="absolute inset-0 w-full h-full object-cover" autoplay muted playsinline style="z-index: 5; transform: scaleX(-1); display: none;"></video>
+                                
+                                <div id="forcePlayOverlay" class="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-3 cursor-pointer hidden">
+                                    <div class="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white animate-pulse">
+                                        <i data-lucide="play" class="h-6 w-6"></i>
+                                    </div>
+                                    <p class="text-xs font-bold text-white">Görüntüyü Başlatmak İçin Tıklayın</p>
+                                </div>
+
+                                <div id="cameraStatusText" class="absolute top-2 left-2 z-30 bg-black/60 text-[10px] text-white px-2 py-0.5 rounded-full hidden">
+                                    Bağlı: <span id="cameraName">...</span>
+                                </div>
+
+                                <div class="absolute bottom-4 flex gap-2 z-10">
+                                    <button type="button" onclick="startStream(); event.stopPropagation();" class="h-8 px-3 rounded-full bg-primary/80 hover:bg-primary flex items-center justify-center backdrop-blur text-white text-xs font-bold transition-all">
+                                        <i data-lucide="refresh-cw" class="h-3 w-3 mr-1"></i> Kamerayı Yenile
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="mt-4 w-full rounded-xl bg-destructive py-3.5 text-sm font-bold text-destructive-foreground transition-all hover:bg-destructive/90 flex items-center justify-center gap-2 shadow-lg shadow-destructive/20">
+                            <i data-lucide="radio" class="h-4 w-4"></i> Canlı Yayına Geç
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
