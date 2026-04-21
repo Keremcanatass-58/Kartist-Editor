@@ -489,8 +489,17 @@ namespace Kartist.Controllers
 
             try
             {
-                // Not: Alıcı (toEmail) yine senin mailin olacak.
-                MailGonder("kartistt.official@gmail.com", "? Yeni Mesaj: " + email, emailSablonu);
+                var contactInbox = _configuration["EmailSettings:ContactInbox"]
+                                   ?? _configuration["EmailSettings:Mail"]
+                                   ?? _configuration["Smtp:From"]
+                                   ?? _configuration["Smtp:User"];
+
+                if (string.IsNullOrWhiteSpace(contactInbox))
+                {
+                    return Json(new { success = false, message = "İletişim adresi yapılandırılmamış." });
+                }
+
+                MailGonder(contactInbox, "? Yeni Mesaj: " + email, emailSablonu);
                 return Json(new { success = true, message = "Mesajın başarıyla iletildi!" });
             }
             catch (Exception ex)
@@ -499,37 +508,62 @@ namespace Kartist.Controllers
             }
         }
 
-        // SMTP Fonksiyonu (Senin çalışan ayarlarınla güncellendi)
         private void MailGonder(string toEmail, string subject, string body)
         {
-            // SENİN ÇALIŞAN AYARLARIN
-            string gonderenMail = "kartistt.official@gmail.com";
-            string uygulamaSifresi = "dvab taay cpba xunv "; // Senin App Password
+            var emailSettings = _configuration.GetSection("EmailSettings");
+            var smtpSettings = _configuration.GetSection("Smtp");
 
-            try
+            bool emailSettingsHazir = !string.IsNullOrWhiteSpace(emailSettings["Mail"]) &&
+                                      !string.IsNullOrWhiteSpace(emailSettings["Password"]);
+            bool smtpSettingsHazir = !string.IsNullOrWhiteSpace(smtpSettings["User"]) &&
+                                     !string.IsNullOrWhiteSpace(smtpSettings["Pass"]);
+
+            string host, gonderenMail, kullanici, uygulamaSifresi, gonderenAd;
+            int port;
+            bool enableSsl;
+
+            if (emailSettingsHazir)
             {
-                using (var smtp = new SmtpClient("smtp.gmail.com", 587))
-                {
-                    smtp.EnableSsl = true;
-                    smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-                    smtp.UseDefaultCredentials = false;
-                    smtp.Credentials = new NetworkCredential(gonderenMail, uygulamaSifresi);
-
-                    var mail = new MailMessage
-                    {
-                        From = new MailAddress(gonderenMail, "Kartist İletişim"),
-                        Subject = subject,
-                        Body = body,
-                        IsBodyHtml = true // HTML Tasarımı için şart
-                    };
-
-                    mail.To.Add(toEmail);
-                    smtp.Send(mail);
-                }
+                host = emailSettings["Host"] ?? "smtp.gmail.com";
+                port = int.TryParse(emailSettings["Port"], out var p) ? p : 587;
+                gonderenMail = emailSettings["Mail"]!;
+                kullanici = emailSettings["Mail"]!;
+                uygulamaSifresi = emailSettings["Password"]!;
+                gonderenAd = smtpSettings["FromName"] ?? "Kartist İletişim";
+                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
             }
-            catch
+            else if (smtpSettingsHazir)
             {
-                throw; // Hatayı yukarı fırlat ki JSON olarak kullanıcıya dönebilelim
+                host = smtpSettings["Host"] ?? "smtp.gmail.com";
+                port = int.TryParse(smtpSettings["Port"], out var p) ? p : 587;
+                gonderenMail = smtpSettings["From"] ?? smtpSettings["User"]!;
+                kullanici = smtpSettings["User"]!;
+                uygulamaSifresi = smtpSettings["Pass"]!;
+                gonderenAd = smtpSettings["FromName"] ?? "Kartist İletişim";
+                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
+            }
+            else
+            {
+                throw new Exception("SMTP ayarlari eksik. appsettings.json icinde EmailSettings veya Smtp alanlarini doldurun.");
+            }
+
+            using (var smtp = new SmtpClient(host, port))
+            {
+                smtp.EnableSsl = enableSsl;
+                smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
+                smtp.UseDefaultCredentials = false;
+                smtp.Credentials = new NetworkCredential(kullanici, uygulamaSifresi);
+
+                var mail = new MailMessage
+                {
+                    From = new MailAddress(gonderenMail, gonderenAd),
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mail.To.Add(toEmail);
+                smtp.Send(mail);
             }
         }
 
