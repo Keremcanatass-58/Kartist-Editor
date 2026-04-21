@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Kartist.Helpers;
 using Kartist.Hubs;
 using Kartist.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -54,14 +55,35 @@ namespace Kartist.Controllers
         {
             using (var db = new SqlConnection(_baglanti))
             {
-                var adminId = db.ExecuteScalar<int?>(
-                    "SELECT TOP 1 Id FROM Yoneticiler WHERE KullaniciAdi = @k AND Sifre = @s",
-                    new { k = kadi, s = sifre }, commandTimeout: 3);
+                var yonetici = db.QueryFirstOrDefault(
+                    "SELECT TOP 1 Id, Sifre FROM Yoneticiler WHERE KullaniciAdi = @k",
+                    new { k = kadi }, commandTimeout: 3);
 
-                if (adminId.HasValue)
+                if (yonetici != null)
                 {
-                    HttpContext.Session.SetString("AdminOturumu", "Aktif");
-                    return RedirectToAction("Panel");
+                    string dbSifre = (string)yonetici.Sifre;
+                    bool sifreDogruMu;
+
+                    if (PasswordHasher.IsHashed(dbSifre))
+                    {
+                        sifreDogruMu = PasswordHasher.VerifyPassword(sifre, dbSifre);
+                    }
+                    else
+                    {
+                        sifreDogruMu = (dbSifre == sifre);
+                        if (sifreDogruMu)
+                        {
+                            string hashed = PasswordHasher.HashPassword(sifre);
+                            db.Execute("UPDATE Yoneticiler SET Sifre = @s WHERE Id = @id",
+                                new { s = hashed, id = (int)yonetici.Id }, commandTimeout: 3);
+                        }
+                    }
+
+                    if (sifreDogruMu)
+                    {
+                        HttpContext.Session.SetString("AdminOturumu", "Aktif");
+                        return RedirectToAction("Panel");
+                    }
                 }
             }
             ViewBag.Hata = "Hatalı Giriş!";
