@@ -134,7 +134,6 @@ jobs:
           curl -X POST -f -S -s \
             -H "X-Kartist-Timestamp: ${{ steps.package.outputs.timestamp }}" \
             -H "X-Kartist-Signature: ${{ steps.package.outputs.signature }}" \
-            -F "secret=kartist-deploy-secret-2026" \
             -F "file=@release.zip" \
             "$DEPLOY_URL"
 
