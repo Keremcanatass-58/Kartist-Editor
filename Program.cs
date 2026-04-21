@@ -140,7 +140,7 @@ app.MapGet("/api/health/ai", (IOptions<AiOptions> aiOptions, IAiPromptService pr
 
 app.MapPost("/api/deploy", async (HttpContext context, IOptions<DeploymentOptions> deploymentOptions) =>
 {
-    if (!await IsDeployRequestAuthorized(context, deploymentOptions.Value))
+    if (!IsDeployRequestAuthorized(context, deploymentOptions.Value))
     {
         return Results.Unauthorized();
     }
@@ -235,43 +235,25 @@ endlocal";
 
 app.Run();
 
-static async Task<bool> IsDeployRequestAuthorized(HttpContext context, DeploymentOptions options)
+static bool IsDeployRequestAuthorized(HttpContext context, DeploymentOptions options)
 {
-    // Try signature first (GitHub standard)
     var timestamp = context.Request.Headers["X-Kartist-Timestamp"].ToString();
     var signature = context.Request.Headers["X-Kartist-Signature"].ToString();
-    
-    if (!string.IsNullOrWhiteSpace(timestamp) && !string.IsNullOrWhiteSpace(signature))
-    {
-        if (long.TryParse(timestamp, out var unixSeconds) && !string.IsNullOrWhiteSpace(options.Secret))
-        {
-            var requestTime = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
-            var age = (DateTimeOffset.UtcNow - requestTime).Duration();
-            if (age <= TimeSpan.FromSeconds(Math.Max(60, options.SignatureToleranceSeconds)))
-            {
-                var expectedSignature = ComputeDeploySignature(options.Secret, timestamp);
-                var providedBytes = Encoding.UTF8.GetBytes(signature);
-                var expectedBytes = Encoding.UTF8.GetBytes(expectedSignature);
-                if (providedBytes.Length == expectedBytes.Length && CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes))
-                {
-                    return true;
-                }
-            }
-        }
-    }
 
-    // Fallback: Check hardcoded secret in form (for recovery/manual use)
-    try 
-    {
-        var form = await context.Request.ReadFormAsync();
-        if (form.ContainsKey("secret") && form["secret"] == "kartist-deploy-secret-2026")
-        {
-            return true;
-        }
-    }
-    catch { /* Not a form request or other error */ }
+    if (string.IsNullOrWhiteSpace(timestamp) || string.IsNullOrWhiteSpace(signature)) return false;
+    if (!long.TryParse(timestamp, out var unixSeconds)) return false;
+    if (string.IsNullOrWhiteSpace(options.Secret)) return false;
 
-    return false;
+    var requestTime = DateTimeOffset.FromUnixTimeSeconds(unixSeconds);
+    var age = (DateTimeOffset.UtcNow - requestTime).Duration();
+    if (age > TimeSpan.FromSeconds(Math.Max(60, options.SignatureToleranceSeconds))) return false;
+
+    var expectedSignature = ComputeDeploySignature(options.Secret, timestamp);
+    var providedBytes = Encoding.UTF8.GetBytes(signature);
+    var expectedBytes = Encoding.UTF8.GetBytes(expectedSignature);
+    if (providedBytes.Length != expectedBytes.Length) return false;
+
+    return CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes);
 }
 
 static string ComputeDeploySignature(string secret, string timestamp)
