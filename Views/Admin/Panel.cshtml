@@ -659,8 +659,14 @@
                                     <td>
                                         <div class="d-flex gap-1 flex-wrap">
                                             <a href="/Home/Tasarim/@item.Id" target="_blank" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-eye"></i></a>
-                                            <a href="/Admin/Onayla/@item.Id" class="btn btn-sm btn-success fw-bold">ONAYLA</a>
-                                            <a href="/Admin/Reddet/@item.Id" class="btn btn-sm btn-danger">RED</a>
+                                            <form action="/Admin/Onayla/@item.Id" method="post" class="d-inline m-0">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success fw-bold">ONAYLA</button>
+                                            </form>
+                                            <form action="/Admin/Reddet/@item.Id" method="post" class="d-inline m-0" onsubmit="return confirm('Bu tasarımı reddet?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger">RED</button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -686,7 +692,12 @@
                                         <td>@item.Baslik</td>
                                         <td><span class="badge bg-secondary">@item.Kategori</span></td>
                                         <td style="color:#c6ff00">@item.Fiyat ₺</td>
-                                        <td><a href="/Admin/Sil/@item.Id" onclick="return confirm('Sil?')" class="text-danger"><i class="fa-solid fa-trash"></i></a></td>
+                                        <td>
+                                            <form action="/Admin/Sil/@item.Id" method="post" class="d-inline m-0" onsubmit="return confirm('Sil?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-link p-0 text-danger"><i class="fa-solid fa-trash"></i></button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -851,6 +862,10 @@
         new Chart(document.getElementById('satisGrafigi'), { type: 'line', data: { labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'], datasets: [{ label: 'Satışlar (₺)', data: [150, 230, 180, 320, 290, 450, 600], borderColor: '#c6ff00', backgroundColor: 'rgba(198, 255, 0, 0.1)', tension: 0.4, fill: true }] }, options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#333' } } } } });
         new Chart(document.getElementById('kategoriGrafigi'), { type: 'doughnut', data: { labels: ['Doğum Günü', 'Düğün', 'Parti', 'Kurumsal'], datasets: [{ data: [30, 20, 40, 10], backgroundColor: ['#ff6384', '#36a2eb', '#c6ff00', '#ffce56'], borderWidth: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#aaa' } } } } });
 
+        function getAntiForgeryToken() {
+            return $('input[name="__RequestVerificationToken"]').first().val();
+        }
+
         function krediGuncelle(id) {
             var miktar = $('#kredi-' + id).val();
 
@@ -859,7 +874,7 @@
                 return;
             }
 
-            $.post('/Admin/KrediYukle', { id: id, miktar: miktar }, function () {
+            $.post('/Admin/KrediYukle', { id: id, miktar: miktar, __RequestVerificationToken: getAntiForgeryToken() }, function () {
                 Swal.fire({ icon: 'success', title: 'Kredi Güncellendi!', timer: 1500, showConfirmButton: false })
                 .then(() => location.reload());
             }).fail(function() {
@@ -870,7 +885,7 @@
         function uyelikDegistir(id) {
             var tip = $('#tip-' + id).val();
 
-            $.post('/Admin/UyelikDegistir', { id: id, tip: tip }, function () {
+            $.post('/Admin/UyelikDegistir', { id: id, tip: tip, __RequestVerificationToken: getAntiForgeryToken() }, function () {
                 Swal.fire({ icon: 'success', title: 'Üyelik Değiştirildi!', timer: 1500, showConfirmButton: false })
                 .then(() => location.reload());
             }).fail(function() {

@@ -35,10 +35,13 @@ namespace Kartist.Controllers
                 }
                 catch
                 {
-                    return true;
+                    return false;
                 }
             }
         }
+
+        private bool AdminYetkili() =>
+            HttpContext.Session.GetString("AdminOturumu") != null || AdminKontrol();
 
         public IActionResult Login()
         {
@@ -67,8 +70,7 @@ namespace Kartist.Controllers
 
         public IActionResult Panel()
         {
-            if (HttpContext.Session.GetString("AdminOturumu") == null && !AdminKontrol())
-                return RedirectToAction("Login");
+            if (!AdminYetkili()) return RedirectToAction("Login");
 
             using (var db = new SqlConnection(_baglanti))
             {
@@ -101,8 +103,11 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> KrediYukle(int id, int miktar)
         {
+            if (!AdminYetkili()) return Unauthorized();
+
             using (var db = new SqlConnection(_baglanti))
             {
                 string email = db.QueryFirstOrDefault<string>(
@@ -118,8 +123,11 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UyelikDegistir(int id, string tip)
         {
+            if (!AdminYetkili()) return Unauthorized();
+
             using (var db = new SqlConnection(_baglanti))
             {
                 string email = db.QueryFirstOrDefault<string>(
@@ -135,8 +143,11 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Ekle(Sablon model)
         {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
             using (var db = new SqlConnection(_baglanti))
             {
                 model.OnayDurumu = "Onaylandi";
@@ -147,8 +158,12 @@ namespace Kartist.Controllers
             return RedirectToAction("Panel");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Sil(int id)
         {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
             using (var db = new SqlConnection(_baglanti))
             {
                 db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }, commandTimeout: 3);
@@ -156,8 +171,12 @@ namespace Kartist.Controllers
             return RedirectToAction("Panel");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Onayla(int id)
         {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
             using (var db = new SqlConnection(_baglanti))
             {
                 db.Execute("UPDATE Sablonlar SET OnayDurumu = 'Onaylandi' WHERE Id = @id", new { id }, commandTimeout: 3);
@@ -165,8 +184,12 @@ namespace Kartist.Controllers
             return RedirectToAction("Panel");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Reddet(int id)
         {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
             using (var db = new SqlConnection(_baglanti))
             {
                 db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }, commandTimeout: 3);
