@@ -62,22 +62,8 @@ namespace Kartist.Controllers
                 if (yonetici != null)
                 {
                     string dbSifre = (string)yonetici.Sifre;
-                    bool sifreDogruMu;
-
-                    if (PasswordHasher.IsHashed(dbSifre))
-                    {
-                        sifreDogruMu = PasswordHasher.VerifyPassword(sifre, dbSifre);
-                    }
-                    else
-                    {
-                        sifreDogruMu = (dbSifre == sifre);
-                        if (sifreDogruMu)
-                        {
-                            string hashed = PasswordHasher.HashPassword(sifre);
-                            db.Execute("UPDATE Yoneticiler SET Sifre = @s WHERE Id = @id",
-                                new { s = hashed, id = (int)yonetici.Id }, commandTimeout: 3);
-                        }
-                    }
+                    bool sifreDogruMu = PasswordHasher.IsHashed(dbSifre)
+                        && PasswordHasher.VerifyPassword(sifre, dbSifre);
 
                     if (sifreDogruMu)
                     {

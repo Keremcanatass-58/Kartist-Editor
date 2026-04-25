@@ -211,22 +211,9 @@ namespace Kartist.Controllers
                     db.Execute("UPDATE Kullanicilar SET HesapKilitliMi = 0, BasarisizGirisSayisi = 0, KilitBitisTarihi = NULL WHERE Email = @e", new { e = email });
                 }
 
-                bool sifreDogruMu = false;
                 string dbSifre = (string)user.Sifre;
-
-                if (PasswordHasher.IsHashed(dbSifre))
-                {
-                    sifreDogruMu = PasswordHasher.VerifyPassword(sifre, dbSifre);
-                }
-                else
-                {
-                    sifreDogruMu = (dbSifre == sifre);
-                    if (sifreDogruMu)
-                    {
-                        string hashed = PasswordHasher.HashPassword(sifre);
-                        db.Execute("UPDATE Kullanicilar SET Sifre = @s WHERE Email = @e", new { s = hashed, e = email });
-                    }
-                }
+                bool sifreDogruMu = PasswordHasher.IsHashed(dbSifre)
+                    && PasswordHasher.VerifyPassword(sifre, dbSifre);
 
                 if (!sifreDogruMu)
                 {
@@ -842,8 +829,7 @@ namespace Kartist.Controllers
 
                 string dbSifre = (string)user.Sifre;
                 bool dogruMu = PasswordHasher.IsHashed(dbSifre)
-                    ? PasswordHasher.VerifyPassword(mevcutSifre, dbSifre)
-                    : (dbSifre == mevcutSifre);
+                    && PasswordHasher.VerifyPassword(mevcutSifre, dbSifre);
 
                 if (!dogruMu) return Json(new { success = false, message = "Mevcut sifre hatali!" });
 
