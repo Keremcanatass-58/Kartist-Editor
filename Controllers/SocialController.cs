@@ -679,12 +679,13 @@ namespace Kartist.Controllers
             if (email == null) return Json(new { success = false });
 
             if (gorsel == null || gorsel.Length == 0) return Json(new { success = false, message = "Gorsel gerekli." });
-            if (!gorsel.ContentType.StartsWith("image/")) return Json(new { success = false, message = "Sadece resim." });
+            if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(gorsel, 10 * 1024 * 1024, out var ext, out var err))
+                return Json(new { success = false, message = err });
 
             using var db = new SqlConnection(_conn);
             int userId = GetUserId(db, email);
 
-            var dosyaAdi = $"story_{Guid.NewGuid():N}.{gorsel.ContentType.Split('/').Last()}";
+            var dosyaAdi = $"story_{Guid.NewGuid():N}{ext}";
             var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/stories");
             if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
             var yol = Path.Combine(klasor, dosyaAdi);
@@ -1002,9 +1003,10 @@ namespace Kartist.Controllers
                 db.Execute("UPDATE Kullanicilar SET Biyografi = @bio WHERE Id = @uid", new { bio = biyografi, uid = userId });
             }
 
-            if (profilResmi != null && profilResmi.Length > 0 && profilResmi.ContentType.StartsWith("image/"))
+            if (profilResmi != null && profilResmi.Length > 0 &&
+                Kartist.Helpers.FileUploadValidator.TryValidateImage(profilResmi, 5 * 1024 * 1024, out var avatarExt, out _))
             {
-                var dosyaAdi = $"avatar_{userId}_{Guid.NewGuid():N}.{profilResmi.ContentType.Split('/').Last()}";
+                var dosyaAdi = $"avatar_{userId}_{Guid.NewGuid():N}{avatarExt}";
                 var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars");
                 if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
                 var yol = Path.Combine(klasor, dosyaAdi);
@@ -1439,10 +1441,10 @@ namespace Kartist.Controllers
         {
             string email = GetEmail() ?? "test@test.com";
             if (foto == null) return Json(new { success = false });
-            if (!foto.ContentType.StartsWith("image/") || foto.Length > 5 * 1024 * 1024)
-                return Json(new { success = false, message = "Geçersiz dosya." });
+            if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(foto, 5 * 1024 * 1024, out var ext, out var err))
+                return Json(new { success = false, message = err });
 
-            var dosyaAdi = $"avatar_{Guid.NewGuid():N}.{foto.ContentType.Split('/').Last()}";
+            var dosyaAdi = $"avatar_{Guid.NewGuid():N}{ext}";
             var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/avatars");
             if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
             var yol = Path.Combine(klasor, dosyaAdi);
@@ -1461,10 +1463,10 @@ namespace Kartist.Controllers
         {
             string email = GetEmail() ?? "test@test.com";
             if (kapak == null) return Json(new { success = false });
-            if (!kapak.ContentType.StartsWith("image/") || kapak.Length > 10 * 1024 * 1024)
-                return Json(new { success = false, message = "Geçersiz dosya." });
+            if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(kapak, 10 * 1024 * 1024, out var ext, out var err))
+                return Json(new { success = false, message = err });
 
-            var dosyaAdi = $"cover_{Guid.NewGuid():N}.{kapak.ContentType.Split('/').Last()}";
+            var dosyaAdi = $"cover_{Guid.NewGuid():N}{ext}";
             var klasor = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/covers");
             if (!Directory.Exists(klasor)) Directory.CreateDirectory(klasor);
             var yol = Path.Combine(klasor, dosyaAdi);

@@ -94,10 +94,10 @@ namespace Kartist.Services.Business
             string gorselUrl = null;
             if (gorsel != null && gorsel.Length > 0)
             {
-                if (!gorsel.ContentType.StartsWith("image/"))
-                    return new { success = false, message = "Sadece resim yükleyebilirsiniz." };
+                if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(gorsel, 10 * 1024 * 1024, out var ext, out var err))
+                    return new { success = false, message = err };
 
-                var dosyaAdi = $"post_{System.Guid.NewGuid():N}.{gorsel.ContentType.Split('/').Last()}";
+                var dosyaAdi = $"post_{System.Guid.NewGuid():N}{ext}";
                 var klasor = System.IO.Path.Combine(webRootPath, "uploads/social");
                 if (!System.IO.Directory.Exists(klasor)) System.IO.Directory.CreateDirectory(klasor);
                 var yol = System.IO.Path.Combine(klasor, dosyaAdi);
@@ -109,7 +109,10 @@ namespace Kartist.Services.Business
             string onceSonraUrl = null;
             if (onceSonraGorsel != null && onceSonraGorsel.Length > 0)
             {
-                var dosyaAdi = $"xray_{System.Guid.NewGuid():N}.{onceSonraGorsel.ContentType.Split('/').Last()}";
+                if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(onceSonraGorsel, 10 * 1024 * 1024, out var ext, out var err))
+                    return new { success = false, message = err };
+
+                var dosyaAdi = $"xray_{System.Guid.NewGuid():N}{ext}";
                 var klasor = System.IO.Path.Combine(webRootPath, "uploads/social");
                 if (!System.IO.Directory.Exists(klasor)) System.IO.Directory.CreateDirectory(klasor);
                 var yol = System.IO.Path.Combine(klasor, dosyaAdi);
