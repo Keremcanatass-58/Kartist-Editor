@@ -395,6 +395,11 @@ namespace Kartist.Controllers
                 return Json(new { success = false, message = "Lütfen tüm alanları doldur." });
             }
 
+            string emailGuvenli = WebUtility.HtmlEncode(email);
+            string mesajGuvenli = WebUtility.HtmlEncode(mesaj);
+            string subjectGuvenli = email.Replace("\r", "").Replace("\n", "").Trim();
+            if (subjectGuvenli.Length > 80) subjectGuvenli = subjectGuvenli[..80];
+
             // --- YENİ EFSANE TASARIM ---
             string emailSablonu = $@"
                             <!DOCTYPE html>
@@ -437,7 +442,7 @@ namespace Kartist.Controllers
                                                             <tr>
                                                                 <td width='48%' valign='top' style='background-color:#16161a; padding:15px; border-radius:8px; border:1px solid #333;'>
                                                                     <p style='margin:0; font-size:10px; color:#666; text-transform:uppercase; font-weight:bold; letter-spacing:1px; margin-bottom:5px;'>GÖNDEREN</p>
-                                                                    <p style='margin:0; font-size:14px; color:#fff; font-weight:600; overflow-wrap: break-word;'>{email}</p>
+                                                                    <p style='margin:0; font-size:14px; color:#fff; font-weight:600; overflow-wrap: break-word;'>{emailGuvenli}</p>
                                                                 </td>
                                         
                                                                 <td width='4%'></td> <td width='48%' valign='top' style='background-color:#16161a; padding:15px; border-radius:8px; border:1px solid #333;'>
@@ -450,13 +455,13 @@ namespace Kartist.Controllers
                                                         <p style='margin:0 0 10px 0; font-size:11px; color:#888; text-transform:uppercase; font-weight:bold; letter-spacing:1px;'>MESAJ İÇERİĞİ:</p>
                                 
                                                         <div style='background-color:#000; border:1px solid #333; border-left:4px solid #c6ff00; border-radius:6px; padding:20px; color:#ccc; font-size:14px; line-height:1.6; font-family:""Courier New"", Courier, monospace;'>
-                                                            {mesaj}
+                                                            {mesajGuvenli}
                                                         </div>
 
                                                         <table width='100%' border='0' cellspacing='0' cellpadding='0' style='margin-top:30px;'>
                                                             <tr>
                                                                 <td align='center'>
-                                                                    <a href='mailto:{email}' style='background-color:#c6ff00; color:#000; text-decoration:none; padding:14px 30px; font-weight:800; font-size:14px; border-radius:6px; display:inline-block; transition:0.3s;'>
+                                                                    <a href='mailto:{emailGuvenli}' style='background-color:#c6ff00; color:#000; text-decoration:none; padding:14px 30px; font-weight:800; font-size:14px; border-radius:6px; display:inline-block; transition:0.3s;'>
                                                                         YANITLA <span style='font-size:16px;'>&rarr;</span>
                                                                     </a>
                                                                 </td>
@@ -499,7 +504,7 @@ namespace Kartist.Controllers
                     return Json(new { success = false, message = "İletişim adresi yapılandırılmamış." });
                 }
 
-                MailGonder(contactInbox, "? Yeni Mesaj: " + email, emailSablonu);
+                MailGonder(contactInbox, "Yeni İletişim Mesajı: " + subjectGuvenli, emailSablonu);
                 return Json(new { success = true, message = "Mesajın başarıyla iletildi!" });
             }
             catch (Exception ex)
@@ -792,24 +797,6 @@ namespace Kartist.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, prompt = string.Empty, data = ex.Message });
-            }
-        }
-
-        [HttpGet]
-        public IActionResult GetAiDebugLog()
-        {
-            try
-            {
-                string path = Path.Combine(Path.GetTempPath(), "kartist_ai_error.html");
-                if (!System.IO.File.Exists(path))
-                    return Content("No log found.");
-                
-                string content = System.IO.File.ReadAllText(path);
-                return Content("Captured Content Start:\n" + content + "\nCaptured Content End", "text/plain");
-            }
-            catch (Exception ex)
-            {
-                return Content("Error reading log: " + ex.Message);
             }
         }
 
