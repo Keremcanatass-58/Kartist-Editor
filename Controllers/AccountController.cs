@@ -262,7 +262,7 @@ namespace Kartist.Controllers
                 bool ikiFaktorAktif = user.IkiFactorAktif != null && (bool)user.IkiFactorAktif;
                 if (ikiFaktorAktif)
                 {
-                    var kod = new Random().Next(100000, 999999).ToString();
+                    var kod = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
                     db.Execute(@"INSERT INTO IkiFactorKodlari (KullaniciEmail, Kod, BitisTarihi) VALUES (@mail, @kod, @bitis)",
                         new { mail = email, kod = kod, bitis = DateTime.UtcNow.AddMinutes(5) });
 
