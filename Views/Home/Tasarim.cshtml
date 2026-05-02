@@ -5214,14 +5214,12 @@
             });
         }
 
-        // --- 3. KLAVYE KISAYOLLARI (CTRL+A ve DELETE) ---
+        // --- 3. KLAVYE KISAYOLLARI (CTRL+A) ---
+        // Delete/Backspace silme kısayolu yukarıdaki window keydown handler'ında;
+        // burada tekrar bağlamak edit mode'daki textbox'ların ilk Backspace ile
+        // tamamen silinmesine yol açıyordu (textarea, INPUT olmadığı için filtreyi
+        // geçiyordu ve isEditing kontrolü yoktu).
         document.addEventListener('keydown', function (e) {
-
-            // SİLME (Delete veya Backspace Tuşu)
-            // Eğer bir input alanında yazı yazıyorsak çalışmasın
-            if ((e.key === 'Delete' || e.key === 'Backspace') && e.target.tagName !== 'INPUT') {
-                deleteObject();
-            }
 
             // HEPSİNİ SEÇ (Ctrl + A)
             if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT') {
