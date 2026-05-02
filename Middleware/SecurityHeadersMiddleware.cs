@@ -13,11 +13,35 @@ namespace Kartist.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Statik dosyalar ve OAuth endpoint'leri iÃƒÂ§in CSP header eklemeye gerek yok
             var path = context.Request.Path.Value ?? "";
+
+            // Apply nosniff everywhere so an attacker can't trick a browser into
+            // re-interpreting an uploaded image as HTML/JS.
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+            // OAuth callbacks need to redirect to the provider unconstrained.
+            if (path.Contains("/signin-") || path.Contains("/ExternalLogin"))
+            {
+                await _next(context);
+                return;
+            }
+
+            // User-uploaded files: even if InputValidator/magic-byte checks miss
+            // an HTML or SVG payload, this CSP+sandbox prevents it from running
+            // scripts, submitting forms, or pulling resources from same origin.
+            if (path.StartsWith("/uploads/"))
+            {
+                context.Response.Headers["Content-Security-Policy"] =
+                    "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox";
+                context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+                context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
+                await _next(context);
+                return;
+            }
+
+            // First-party static assets (we control the bytes) skip the full CSP for perf.
             if (path.StartsWith("/lib/") || path.StartsWith("/css/") || path.StartsWith("/js/") ||
-                path.StartsWith("/uploads/") || path.StartsWith("/img/") || path.EndsWith(".ico") ||
-                path.Contains("/signin-") || path.Contains("/ExternalLogin"))
+                path.StartsWith("/img/") || path.EndsWith(".ico"))
             {
                 await _next(context);
                 return;
@@ -25,7 +49,6 @@ namespace Kartist.Middleware
 
             context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
             context.Response.Headers.Append("X-Frame-Options", "SAMEORIGIN");
-            context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
             context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
             string permissionsPolicy = "geolocation=(), microphone=(self), camera=(self), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=()";
