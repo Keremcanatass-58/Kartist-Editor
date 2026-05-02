@@ -694,17 +694,48 @@ ORDER BY k.Tarih DESC";
     // 2FA toggle
     function toggle2FA(el) {
         var aktif = el.checked;
-        var url = aktif ? '/Account/IkiFactorAktifEt' : '/Account/IkiFactorKapat';
-        var fd = new FormData();
-        fd.append('__RequestVerificationToken', getCSRFToken());
+        var send = function (extraField) {
+            var url = aktif ? '/Account/IkiFactorAktifEt' : '/Account/IkiFactorKapat';
+            var fd = new FormData();
+            fd.append('__RequestVerificationToken', getCSRFToken());
+            if (extraField) fd.append('mevcutSifre', extraField);
 
-        fetch(url, { method: 'POST', body: fd })
-            .then(r => r.json()).then(d => {
-                document.getElementById('tfaSonuc').innerHTML = d.success
-                    ? '<span style="color:#c6ff00;">' + d.message + '</span>'
-                    : '<span style="color:#ff4444;">' + d.message + '</span>';
-                if (!d.success) el.checked = !aktif;
-            });
+            fetch(url, { method: 'POST', body: fd })
+                .then(r => r.json()).then(d => {
+                    document.getElementById('tfaSonuc').innerHTML = d.success
+                        ? '<span style="color:#c6ff00;">' + d.message + '</span>'
+                        : '<span style="color:#ff4444;">' + d.message + '</span>';
+                    if (!d.success) el.checked = !aktif;
+                });
+        };
+
+        if (aktif) { send(null); return; }
+
+        // Disabling 2FA requires re-authentication with the current password.
+        Swal.fire({
+            title: 'Iki Faktorlu Dogrulamayi Kapat',
+            text: 'Devam etmek icin mevcut sifrenizi girin.',
+            input: 'password',
+            inputAttributes: { autocapitalize: 'off', autocorrect: 'off', autocomplete: 'current-password' },
+            inputPlaceholder: 'Mevcut sifre',
+            showCancelButton: true,
+            confirmButtonColor: '#c6ff00',
+            cancelButtonColor: '#333',
+            confirmButtonText: '<span style="color:black; font-weight:bold;">Onayla</span>',
+            cancelButtonText: 'Vazgec',
+            background: '#1e1e1e',
+            color: '#fff',
+            preConfirm: function (val) {
+                if (!val) {
+                    Swal.showValidationMessage('Sifre bos olamaz');
+                    return false;
+                }
+                return val;
+            }
+        }).then(function (res) {
+            if (!res.isConfirmed) { el.checked = true; return; }
+            send(res.value);
+        });
     }
 
     // Remove favorite
