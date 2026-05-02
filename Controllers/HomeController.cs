@@ -300,7 +300,7 @@ namespace Kartist.Controllers
                         });
                     }
 
-                    return Json(new { success = true, message = "Kaydedildi! ??", id = yeniId });
+                    return Json(new { success = true, message = "Kaydedildi!", id = yeniId });
                 }
             }
             catch (Exception ex)
@@ -383,7 +383,7 @@ namespace Kartist.Controllers
                                VALUES (@b, 'Kullanıcı Tasarımı', @f, @r, @uid, 'Bekliyor', @json)";
                 db.Execute(sql, new { b = baslik, f = fiyat, r = resimUrl, uid = userId, json = jsonVerisi });
             }
-            return Json(new { success = true, message = "Tasarımın onaya gönderildi! ??" });
+            return Json(new { success = true, message = "Tasarımın onaya gönderildi!" });
         }
 
         [HttpPost]
