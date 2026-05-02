@@ -408,39 +408,30 @@ namespace Kartist.Controllers
                 return View();
             }
 
-            using var db = new SqlConnection(_baglanti);
-
-            // 1. Kullanıcı var mı kontrol et
-            var user = db.QueryFirstOrDefault<dynamic>(
-                "SELECT Email FROM Kullanicilar WHERE Email = @e",
-                new { e = email.Trim() });
-
-            if (user == null)
-            {
-            // Güvenlik gereği kullanıcı yoksa bile "Gönderdik" deriz ama 
-            // sen şu an test ediyorsun, o yüzden net konuşalım:
-                ViewBag.Hata = "Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.";
-                return View();
-            }
-
-            // 2. Token üret ve Kaydet
-            var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-            var expire = DateTime.UtcNow.AddMinutes(30);
-
-            db.Execute(@"
-        INSERT INTO SifreSifirlamaTokenlari (KullaniciEmail, Token, BitisTarihi)
-        VALUES (@mail, @tkn, @exp)",
-                new { mail = email.Trim(), tkn = token, exp = expire });
-
-            // 3. Linki Oluştur
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var link = $"{baseUrl}/Account/SifreSifirla?token={token}";
-
-            // 4. Mail Gönder (Hata yakalamalı)
+            // Respond identically whether or not the address exists, so the
+            // form can't be used to enumerate registered accounts.
             try
             {
-            // HTML TASARIM (Bunu kopyala ve MailGonder çağırdığın yere yapıştır)
-                string emailSablonu = $@"
+                using var db = new SqlConnection(_baglanti);
+
+                var user = db.QueryFirstOrDefault<dynamic>(
+                    "SELECT Email FROM Kullanicilar WHERE Email = @e",
+                    new { e = email.Trim() });
+
+                if (user != null)
+                {
+                    var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                    var expire = DateTime.UtcNow.AddMinutes(30);
+
+                    db.Execute(@"
+        INSERT INTO SifreSifirlamaTokenlari (KullaniciEmail, Token, BitisTarihi)
+        VALUES (@mail, @tkn, @exp)",
+                        new { mail = email.Trim(), tkn = token, exp = expire });
+
+                    var baseUrl = $"{Request.Scheme}://{Request.Host}";
+                    var link = $"{baseUrl}/Account/SifreSifirla?token={token}";
+
+                    string emailSablonu = $@"
                         <div style='background-color:#050505; padding:40px 0; font-family: ""Segoe UI"", Tahoma, Geneva, Verdana, sans-serif;'>
                             <div style='max-width:500px; margin:0 auto; background-color:#111; border:1px solid #333; border-radius:16px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);'>
         
@@ -471,18 +462,17 @@ namespace Kartist.Controllers
                             </div>
                         </div>";
 
-                // Maili Gönder
-                MailGonder(email.Trim(), "🔐 Kartist - Şifre Sıfırlama Talebi", emailSablonu);
-
-                // BAŞARILI OLDUĞUNDA BURASI ÇALIŞACAK:
-                ViewBag.Mesaj = "Sıfırlama bağlantısı e-posta adresine başarıyla gönderildi! Spam kutunu kontrol etmeyi unutma.";
+                    MailGonder(email.Trim(), "🔐 Kartist - Şifre Sıfırlama Talebi", emailSablonu);
+                }
             }
             catch (Exception ex)
             {
-                // HATA OLURSA BURASI ÇALIŞACAK:
-                ViewBag.Hata = "Mail gönderilirken bir sorun oluştu: " + ex.Message;
+                // Don't surface the error to the caller — that would reveal
+                // whether the account exists. Server-side log only.
+                Console.Error.WriteLine($"SifremiUnuttum failed: {ex.Message}");
             }
 
+            ViewBag.Mesaj = "Eger bu e-posta adresi sistemde kayitliysa, sifre sifirlama baglantisi kisa surede iletilecek. Lutfen gelen kutunu (ve spam klasorunu) kontrol et.";
             return View();
         }
         [HttpGet]
