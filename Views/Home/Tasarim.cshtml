@@ -3152,7 +3152,8 @@
 		var _clipboard = null;
 		var historyStack = [];
 		var isHistoryProcessing = false;
-		const googleFonts = ["Inter", "Space Grotesk", "Roboto", "Pacifico", "Dancing Script", "Permanent Marker"];
+		// Inter / Roboto / Pacifico / Dancing Script optgroup'larda zaten var; sadece eksik olanları ekle.
+		const googleFonts = ["Space Grotesk", "Permanent Marker"];
 
 		function toggleMusic() {
 			var box = document.getElementById('spotifyBox');
@@ -4480,6 +4481,30 @@
             loadGoogleFont('Inter');
             loadGoogleFont('Montserrat');
             loadGoogleFont('Playfair Display');
+
+            // AI tasarımı tuvali komple sıfırlıyor — kullanıcı zaten bir şey çalışıyorsa
+            // onayını al, sessizce silme.
+            if (canvas.getObjects().length > 0) {
+                removeTypingIndicator();
+                const confirmReplace = await Swal.fire({
+                    title: 'Mevcut tasarımın silinecek',
+                    text: 'Yapay zeka yeni bir tasarım kurarken tuvalindeki katmanların hepsi sıfırlanacak. Devam etmek istiyor musun?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Evet, yenile',
+                    cancelButtonText: 'Vazgeç',
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#c6ff00',
+                    cancelButtonColor: '#333'
+                });
+                if (!confirmReplace.isConfirmed) {
+                    appendChatMessage("bot", "Tamam, tuvaline dokunmadım. Yeni bir prompt yazarsan tasarım üretirim.");
+                    if (btnEl) btnEl.disabled = false;
+                    return;
+                }
+            }
+
             canvas.clear();
 
             const cw = canvas.getWidth();
