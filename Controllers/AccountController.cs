@@ -797,13 +797,26 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public IActionResult IkiFactorKapat()
+        public IActionResult IkiFactorKapat(string mevcutSifre)
         {
             if (!User.Identity.IsAuthenticated) return Json(new { success = false, message = "Giris yapmalsin." });
+            if (string.IsNullOrWhiteSpace(mevcutSifre))
+                return Json(new { success = false, message = "Iki faktorlu dogrulamayi kapatmak icin mevcut sifrenizi girin." });
+
             string email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            if (string.IsNullOrWhiteSpace(email))
+                return Json(new { success = false, message = "Oturum bilgisi okunamadi, tekrar giris yapin." });
 
             using (var db = new SqlConnection(_baglanti))
             {
+                var user = db.QueryFirstOrDefault("SELECT Sifre FROM Kullanicilar WHERE Email = @e", new { e = email });
+                if (user == null) return Json(new { success = false, message = "Kullanici bulunamadi." });
+
+                string dbSifre = (string)user.Sifre;
+                bool dogruMu = PasswordHasher.IsHashed(dbSifre)
+                    && PasswordHasher.VerifyPassword(mevcutSifre, dbSifre);
+                if (!dogruMu) return Json(new { success = false, message = "Sifre hatali." });
+
                 db.Execute("UPDATE Kullanicilar SET IkiFactorAktif = 0 WHERE Email = @e", new { e = email });
             }
             return Json(new { success = true, message = "Iki faktorlu dogrulama kapatildi." });
