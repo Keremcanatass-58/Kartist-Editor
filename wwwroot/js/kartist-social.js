@@ -8,6 +8,17 @@ function CSRF() {
     return el ? el.value : '';
 }
 
+// --- HTML Escape (XSS guard for template-literal interpolation) ---
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // --- Media URL Normalizer ---
 window.normalizeMediaUrl = function(url) {
     if (!url) return url;
@@ -50,7 +61,7 @@ function showNeonToast(message, icon = 'fa-check-circle') {
     
     const toast = document.createElement('div');
     toast.className = 'neon-toast';
-    toast.innerHTML = `<i class="fa-solid ${icon}"></i> ${message}`;
+    toast.innerHTML = `<i class="fa-solid ${escapeHtml(icon)}"></i> ${escapeHtml(message)}`;
     document.body.appendChild(toast);
     
     requestAnimationFrame(() => {
@@ -79,9 +90,10 @@ function timeAgo(dateStr) {
 
 // --- Avatar HTML Generator ---
 function avatarHTML(url, name, size = 44) {
-    if (url) return `<img src="${normalizeMediaUrl(url)}" class="avatar-img" style="width:${size}px;height:${size}px;" loading="lazy">`;
-    const letter = (name || '?')[0].toUpperCase();
-    return `<div class="avatar-initial" style="width:${size}px;height:${size}px;font-size:${Math.round(size/2.5)}px;">${letter}</div>`;
+    const px = Number(size) || 44;
+    if (url) return `<img src="${escapeHtml(normalizeMediaUrl(url))}" class="avatar-img" style="width:${px}px;height:${px}px;" loading="lazy">`;
+    const letter = escapeHtml(((name || '?')[0] || '?').toUpperCase());
+    return `<div class="avatar-initial" style="width:${px}px;height:${px}px;font-size:${Math.round(px/2.5)}px;">${letter}</div>`;
 }
 
 // --- Notification System ---
@@ -112,14 +124,15 @@ async function loadNotifications() {
     }
     
     list.innerHTML = data.bildirimler.map(b => {
-        const avatar = b.GonderenResim 
-            ? `<img src="${b.GonderenResim}" class="notif-avatar">`
-            : `<div class="avatar-initial notif-avatar" style="width:40px;height:40px;font-size:16px;">${(b.GonderenAd||'?')[0]}</div>`;
-        return `<div class="notif-item ${b.OkunduMu == 0 ? 'unread' : ''}" onclick="window.location.href='/Social/Feed'">
+        const avatar = b.GonderenResim
+            ? `<img src="${escapeHtml(normalizeMediaUrl(b.GonderenResim))}" class="notif-avatar">`
+            : `<div class="avatar-initial notif-avatar" style="width:40px;height:40px;font-size:16px;">${escapeHtml(((b.GonderenAd || '?')[0] || '?'))}</div>`;
+        const unread = (b.OkunduMu == 0) ? 'unread' : '';
+        return `<div class="notif-item ${unread}" onclick="window.location.href='/Social/Feed'">
             ${avatar}
             <div>
-                <div class="notif-text">${b.Mesaj}</div>
-                <div class="notif-time">${timeAgo(b.Tarih)}</div>
+                <div class="notif-text">${escapeHtml(b.Mesaj)}</div>
+                <div class="notif-time">${escapeHtml(timeAgo(b.Tarih))}</div>
             </div>
         </div>`;
     }).join('');
@@ -167,11 +180,12 @@ function globalSearchHandler(q) {
         }
         
         container.innerHTML = data.sonuclar.map(u => {
-            return `<a href="/Social/Profil/${u.Id}" style="display:flex; align-items:center; gap:12px; padding:12px 16px; text-decoration:none; color:var(--text-primary); transition:0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
+            const id = Number(u.Id) || 0;
+            return `<a href="/Social/Profil/${id}" style="display:flex; align-items:center; gap:12px; padding:12px 16px; text-decoration:none; color:var(--text-primary); transition:0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">
                 ${avatarHTML(u.ProfilResmi, u.AdSoyad, 38)}
                 <div>
-                    <div style="font-weight:700; font-size:0.9rem;">${u.AdSoyad}</div>
-                    <div style="font-size:0.78rem; color:var(--text-muted);">${u.Biyografi || ''}</div>
+                    <div style="font-weight:700; font-size:0.9rem;">${escapeHtml(u.AdSoyad)}</div>
+                    <div style="font-size:0.78rem; color:var(--text-muted);">${escapeHtml(u.Biyografi || '')}</div>
                 </div>
             </a>`;
         }).join('');
@@ -197,16 +211,20 @@ async function loadSuggestions() {
         const list = document.getElementById('suggestList');
         if (!list) return;
         
-        list.innerHTML = data.oneriler.slice(0, 3).map(u => `
+        list.innerHTML = data.oneriler.slice(0, 3).map(u => {
+            const id = Number(u.Id) || 0;
+            const takipci = Number(u.TakipciSayisi) || 0;
+            return `
             <div class="suggest-item">
                 ${avatarHTML(u.ProfilResmi, u.AdSoyad, 40)}
                 <div class="suggest-info">
-                    <div class="suggest-name">${u.AdSoyad}</div>
-                    <div class="suggest-detail">${u.TakipciSayisi || 0} takipçi</div>
+                    <div class="suggest-name">${escapeHtml(u.AdSoyad)}</div>
+                    <div class="suggest-detail">${takipci} takipçi</div>
                 </div>
-                <button class="suggest-follow" onclick="quickFollow(this, ${u.Id})">Takip Et</button>
+                <button class="suggest-follow" onclick="quickFollow(this, ${id})">Takip Et</button>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch(e) {}
 }
 
