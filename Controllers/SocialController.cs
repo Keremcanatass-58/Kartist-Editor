@@ -99,13 +99,7 @@ namespace Kartist.Controllers
                 new { Id = 2, Title = "AI x Design", CoverImage = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800", Theme = "AI", Prize = "15,000 TL + Davetiye", Participants = 89, Deadline = "3 gun", Status = "voting" }
             };
 
-            Console.WriteLine($"[FEED-DEBUG] reached end, posts.Count={posts.Count}, LiveRooms set");
             return View(posts);
-            } catch (Exception ex) {
-                Console.WriteLine($"[FEED-DEBUG] EXCEPTION: {ex.GetType().Name}: {ex.Message}");
-                Console.WriteLine($"[FEED-DEBUG] StackTrace: {ex.StackTrace}");
-                return View(new List<dynamic>());
-            }
         }
 
         // ===== TRENDING =====
