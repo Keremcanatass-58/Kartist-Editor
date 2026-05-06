@@ -311,9 +311,143 @@
             opacity: 0.4;
             transition: opacity 0.12s ease;
         }
+
+        /* === KARTIST SPLASH INTRO === */
+        .kartist-splash {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at center, #15151f 0%, #050505 75%);
+            overflow: hidden;
+        }
+        .kartist-splash.active {
+            display: flex;
+            animation: splashLifecycle 2.4s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+            pointer-events: auto;
+        }
+        @@keyframes splashLifecycle {
+            0%   { opacity: 0; }
+            8%   { opacity: 1; }
+            82%  { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(1.04); visibility: hidden; pointer-events: none; }
+        }
+        .splash-content {
+            text-align: center;
+            animation: splashContentRise 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+        }
+        @@keyframes splashContentRise {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .splash-bolt-wrap {
+            display: inline-block;
+            margin-bottom: 18px;
+            animation: splashBoltPulse 1.5s ease-in-out infinite alternate;
+        }
+        @@keyframes splashBoltPulse {
+            from { transform: scale(1); filter: drop-shadow(0 0 12px rgba(198, 255, 0, 0.4)); }
+            to   { transform: scale(1.08); filter: drop-shadow(0 0 28px rgba(198, 255, 0, 0.85)); }
+        }
+        .splash-wordmark {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 3rem;
+            letter-spacing: -2px;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        .splash-wordmark span { color: #c6ff00; }
+        .splash-tagline {
+            font-family: 'Space Grotesk', sans-serif;
+            color: #888;
+            font-size: 1rem;
+            letter-spacing: 0.4px;
+            margin-bottom: 32px;
+        }
+        .splash-loader {
+            width: 220px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0 auto;
+            position: relative;
+        }
+        .splash-loader-bar {
+            position: absolute;
+            top: 0;
+            left: -35%;
+            width: 35%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #c6ff00, transparent);
+            box-shadow: 0 0 14px #c6ff00;
+            border-radius: 3px;
+            animation: splashLoaderSlide 1.4s ease-in-out infinite;
+        }
+        @@keyframes splashLoaderSlide {
+            0%   { left: -35%; }
+            100% { left: 100%; }
+        }
+
+        /* === PAGE CONTENT FADE-UP (her sayfada) === */
+        .main-content {
+            animation: kartistPageRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        @@keyframes kartistPageRise {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .navbar {
+            animation: kartistNavFade 0.55s ease-out 0.1s both;
+        }
+        @@keyframes kartistNavFade {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        /* prefers-reduced-motion: tüm intro'yu kapat */
+        @@media (prefers-reduced-motion: reduce) {
+            .kartist-splash.active,
+            .splash-content,
+            .splash-bolt-wrap,
+            .splash-loader-bar,
+            .main-content,
+            .navbar {
+                animation: none !important;
+            }
+            .kartist-splash.active { display: none !important; }
+        }
     </style>
 </head>
 <body>
+    <div id="kartist-splash" class="kartist-splash" aria-hidden="true">
+        <div class="splash-content">
+            <div class="splash-bolt-wrap">
+                <svg class="splash-bolt" viewBox="0 0 100 100" width="92" height="92">
+                    <defs>
+                        <linearGradient id="splashBoltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#e8ff5c"/>
+                            <stop offset="55%" stop-color="#c6ff00"/>
+                            <stop offset="100%" stop-color="#a8dc00"/>
+                        </linearGradient>
+                        <filter id="splashBoltGlow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="g"/>
+                            <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M58 18 L26 54 L46 54 L38 82 L74 46 L54 46 Z"
+                          fill="url(#splashBoltGrad)" filter="url(#splashBoltGlow)"/>
+                </svg>
+            </div>
+            <div class="splash-wordmark">KART<span>IST</span></div>
+            <div class="splash-tagline">Tasarımın Geleceği, Senin Hayalin.</div>
+            <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+        </div>
+    </div>
+
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid px-4">
             <a class="brand-logo" href="/">
@@ -455,6 +589,26 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // === KARTIST SPLASH INTRO (sadece ilk ziyarette) ===
+        (function () {
+            const splash = document.getElementById('kartist-splash');
+            if (!splash) return;
+            const KEY = 'kartist-splash-v1';
+            const seen = sessionStorage.getItem(KEY);
+            if (seen) {
+                splash.parentNode && splash.parentNode.removeChild(splash);
+                return;
+            }
+            sessionStorage.setItem(KEY, '1');
+            splash.classList.add('active');
+            // animasyon bitince DOM'dan tamamen çıkar
+            splash.addEventListener('animationend', function (e) {
+                if (e.animationName === 'splashLifecycle' && splash.parentNode) {
+                    splash.parentNode.removeChild(splash);
+                }
+            });
+        })();
+
         function getCSRFToken() { return document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''; }
 
         function toggleContact() {
