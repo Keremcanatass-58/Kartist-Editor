@@ -138,6 +138,36 @@ app.MapGet("/api/health/ai", (IOptions<AiOptions> aiOptions, IAiPromptService pr
     });
 });
 
+// TEMPORARY DEBUG ENDPOINT - REMOVE AFTER FIXING DEPLOY
+app.MapGet("/api/debug/deploy-info", (IOptions<DeploymentOptions> deploymentOptions) =>
+{
+    var opts = deploymentOptions.Value;
+    var secretPresent = !string.IsNullOrWhiteSpace(opts.Secret);
+    var secretLen = opts.Secret?.Length ?? 0;
+    var secretHash = secretPresent
+        ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(opts.Secret))).ToLowerInvariant()
+        : "N/A";
+    // Also compute a test HMAC so we can compare
+    var testTimestamp = "1234567890";
+    var testSignature = "N/A";
+    if (secretPresent)
+    {
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(opts.Secret));
+        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(testTimestamp));
+        testSignature = Convert.ToHexString(hash).ToLowerInvariant();
+    }
+    return Results.Ok(new
+    {
+        secretPresent,
+        secretLength = secretLen,
+        secretSha256 = secretHash,
+        toleranceSeconds = opts.SignatureToleranceSeconds,
+        testTimestamp,
+        testHmac = testSignature,
+        serverUtcNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+    });
+});
+
 app.MapPost("/api/deploy", async (HttpContext context, IOptions<DeploymentOptions> deploymentOptions) =>
 {
     if (!IsDeployRequestAuthorized(context, deploymentOptions.Value))

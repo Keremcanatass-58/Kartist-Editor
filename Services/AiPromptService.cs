@@ -51,26 +51,51 @@ RULES:
                 return null;
             }
 
-            var systemPrompt = $@"
-Kullanıcı için estetik bir kart tasarımı kurgula. 
-NOT: Eğer kullanıcı çiçek, obje veya özel bir renk belirtirse mutlaka onu kullan. Alakasız manzara resimleri önerme.
+            var systemPrompt = $@"Sen üst düzey bir Yapay Zeka Tasarım Motorusun. Amacın, kullanıcının girdiği promptu KELİME KELİME, HECE HECE okumak, tam olarak ne istediğini eksiksiz bir şekilde anlamak ve hiçbir detayı atlamadan %100 hedefe yönelik bir tasarım JSON'ı çıkarmaktır.
 
-JSON formatında cevap ver:
+## ADIM 1: KELİME KELİME ANALİZ
+- Kullanıcının yazdığı HER BİR kelimeyi analiz et. Özel bir yer (örn: İstanbul), özel bir kişi (örn: Anne), özel bir nesne (örn: Papatya) geçiyorsa bunu ASLA görmezden gelme!
+- İstenen asıl konsept ne? (Doğum günü, özür, aşk mektubu, kutlama vb.)
+- Kullanıcı spesifik bir şey istemişse (örn: 'istanbullu', 'güllü', 'deniz manzaralı') bunu Pexels görsel aramasında (revisedImagePrompt) EN BAŞA koy.
+
+## ADIM 2: ÜRETİM VE MUTLAK KURALLAR
+1. ÇIKTI FORMATI: SADECE geçerli bir JSON döndüreceksin. Başka hiçbir şey yazma.
+2. tema: Kullanıcının yazdıklarını kelimesi kelimesine özetleyen çok güçlü bir başlık (max 4 kelime).
+3. anaMetin: Kullanıcının girdiği tüm detayları (mekan, kişi, olay vb.) zekice harmanlayan, etkileyici, duygu yüklü özel bir metin (2-4 cümle). Asla sıradan, jenerik metinler yazma. Prompttaki her detayı metne yedir.
+4. yaziFontu: İçeriğe en uygun font: ""Poppins"", ""Montserrat"", ""Inter"", ""Playfair Display"", ""Roboto"", ""Raleway"", ""Lora"", ""Oswald""
+5. renkPaleti: Atmosfere tam uygun 3 HEX renk: [""#Koyu_Arkaplan"", ""#Parlak_Vurgu"", ""#Yumusak_Ton""]
+6. layoutStyle: ""modern"", ""minimal"", ""bold"", ""elegant""
+7. emojiler: Metinle %100 uyumlu max 3 emoji.
+8. revisedImagePrompt: Pexels API için İNGİLİZCE fotoğraf arama kelimeleri. DİKKAT: Kullanıcı 'mektup', 'kart', 'mesaj' dese bile, KESİNLİKLE 'letter', 'card', 'reading', 'paper', 'person' gibi şeyler ARAMA! SADECE MİMARİ, DOĞA, MANZARA veya OBJE ara. (Örn: Kullanıcı İstanbul dediyse sadece ""istanbul bosphorus romantic"" yaz. Sadece arka plan olabilecek estetik konseptler yaz.)
+
+## JSON FORMATI:
 {{
-  ""renkPaleti"": [""#renk1"", ""#renk2"", ""#renk3""],
-  ""tema"": ""Kısa Başlık"",
-  ""yaziFontu"": ""Poppins veya Montserrat"",
-  ""layoutStyle"": ""modern"",
-  ""anaMetin"": ""Duygusal mesaj"",
-  ""emojiler"": [""😊"", ""🎉"", ""✨""],
-  ""revisedImagePrompt"": ""Arka plan için İngilizce detaylı prompt (Örn: 'aesthetic white daisy pattern background')""
-}}
+  ""renkPaleti"": [""#koyu_arka_plan"", ""#parlak_vurgu"", ""#yumusak_ton""],
+  ""tema"": ""Kısa ve Güçlü Başlık"",
+  ""yaziFontu"": ""Playfair Display"",
+  ""layoutStyle"": ""elegant"",
+  ""anaMetin"": ""Kullanıcının verdiği her detayı içeren mükemmel mesaj."",
+  ""emojiler"": [""🌹"", ""✨""],
+  ""revisedImagePrompt"": ""english keywords for real photography search""
+}}";
 
-Kurallar:
-- Sadece JSON.
-- Dil: Kullanıcı dili.";
+            return await SendChatRequestAsync(systemPrompt, $"Kullanıcı isteği: {prompt}", 500, 0.8, history, cancellationToken);
+        }
 
-            return await SendChatRequestAsync(systemPrompt, $"Istek: {prompt}", 500, 0.7, history, cancellationToken);
+        public async Task<string> GenerateTextAsync(string category, string prompt, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(prompt) || !HasConfiguredProvider())
+            {
+                return null;
+            }
+
+            var systemPrompt = $@"Sen yaratıcı ve duygusal metinler yazan bir AI yazarısın. Kullanıcı bir tasarım içine eklemek için bir metin istiyor.
+Kategori: {category}
+Kullanıcı İsteği: {prompt}
+GÖREVİN: Kullanıcının isteğine uygun, etkileyici, duygu yüklü ve tasarımda güzel duracak 2-3 cümlelik harika bir metin oluştur. 
+SADECE ÜRETTİĞİN METNİ DÖNDÜR. Başka hiçbir açıklama, yorum veya tırnak işareti ekleme.";
+
+            return await SendChatRequestAsync(systemPrompt, $"Metin üret: {prompt}", 300, 0.8, null, cancellationToken);
         }
 
         private async Task<string> SendChatRequestAsync(string systemPrompt, string userPrompt, int maxTokens, double temperature, string historyJson = null, CancellationToken cancellationToken = default)
@@ -78,6 +103,7 @@ Kurallar:
             var endpoint = GetProviderEndpoint();
             var apiKey = GetProviderApiKey();
             var model = GetProviderModel();
+            var provider = ResolveProviderName();
 
             if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(model))
             {
@@ -89,7 +115,20 @@ Kurallar:
                 Timeout = TimeSpan.FromSeconds(Math.Max(5, _options.TimeoutSeconds))
             };
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            // Gemini OpenAI-compat endpoint: API key goes as query parameter
+            // Groq & OpenAI: API key goes as Bearer token
+            string requestUrl;
+            if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+            {
+                // Gemini uses API key as query parameter on its OpenAI-compatible endpoint
+                var separator = endpoint.Contains("?") ? "&" : "?";
+                requestUrl = $"{endpoint}{separator}key={apiKey}";
+            }
+            else
+            {
+                requestUrl = endpoint;
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            }
 
             var messages = new List<object>
             {
@@ -124,12 +163,14 @@ Kurallar:
             };
 
             using var response = await client.PostAsync(
-                endpoint,
+                requestUrl,
                 new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
                 cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                System.Diagnostics.Debug.WriteLine($"[AiPromptService] {provider} error ({response.StatusCode}): {errorBody}");
                 return null;
             }
 
@@ -146,12 +187,21 @@ Kurallar:
         private string ResolveProviderName()
         {
             var configured = _options.PromptProvider?.Trim();
-            return string.IsNullOrWhiteSpace(configured) ? "Groq" : configured;
+            return string.IsNullOrWhiteSpace(configured) ? "Gemini" : configured;
         }
 
         private string GetProviderApiKey()
         {
             var provider = ResolveProviderName();
+
+            if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+            {
+                return _configuration["Gemini:ApiKey"]
+                    ?? _configuration["GEMINI_API_KEY"]
+                    ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
+                    ?? string.Empty;
+            }
+
             if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
             {
                 return _configuration["OpenAI:ApiKey"]
@@ -160,6 +210,7 @@ Kurallar:
                     ?? string.Empty;
             }
 
+            // Default: Groq
             return _configuration["Groq:ApiKey"]
                 ?? _configuration["GROQ_API_KEY"]
                 ?? Environment.GetEnvironmentVariable("GROQ_API_KEY")
@@ -169,18 +220,27 @@ Kurallar:
         private string GetProviderEndpoint()
         {
             var provider = ResolveProviderName();
-            return provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase)
-                ? _options.OpenAiChatEndpoint
-                : _options.GroqEndpoint;
+
+            if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+                return _options.GeminiEndpoint;
+
+            if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                return _options.OpenAiChatEndpoint;
+
+            return _options.GroqEndpoint;
         }
 
         private string GetProviderModel()
         {
             var provider = ResolveProviderName();
-            return provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase)
-                ? _options.OpenAiChatModel
-                : _options.GroqModel;
+
+            if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+                return _options.GeminiModel;
+
+            if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                return _options.OpenAiChatModel;
+
+            return _options.GroqModel;
         }
     }
 }
-

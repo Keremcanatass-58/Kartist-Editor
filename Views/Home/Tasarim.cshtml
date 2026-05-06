@@ -2516,6 +2516,9 @@
                             Gövde Metni
                         </button>
 
+                        <button class="text-btn" style="background: rgba(198, 255, 0, 0.1); border-color: #c6ff00; color: #c6ff00; font-weight: bold; margin-top: 10px;" onclick="openModal('aiModal')">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI ile Metin Yaz
+                        </button>
                     </div>
                 </div>
 
@@ -3374,14 +3377,21 @@
 			};
 
 			window.addEventListener('keydown', function (e) {
-				if ((e.key === "Delete" || e.key === "Backspace") && canvas.getActiveObject() && !canvas.getActiveObject().isEditing) {
+				// Herhangi bir IText editing modundaysa tüm klavye olaylarını Fabric'e bırak
+				var activeObj = canvas.getActiveObject();
+				var isTextEditing = activeObj && activeObj.isEditing;
+
+				if ((e.key === "Delete" || e.key === "Backspace") && activeObj && !isTextEditing) {
 					deleteObject();
 				}
 				if (e.ctrlKey || e.metaKey) {
+					// Ctrl+S her zaman kaydet
+					if (e.key.toLowerCase() === 's') { saveToCloud(); e.preventDefault(); return; }
+					// Metin düzenleniyorsa Ctrl+C/V/Z/A işlemlerini Fabric.js'e bırak
+					if (isTextEditing) return;
 					if (e.key.toLowerCase() === 'c') { copy(); e.preventDefault(); }
 					if (e.key.toLowerCase() === 'v') { paste(); e.preventDefault(); }
 					if (e.key.toLowerCase() === 'z') { undo(); e.preventDefault(); }
-					if (e.key.toLowerCase() === 's') { saveToCloud(); e.preventDefault(); }
                 }
 
             });
@@ -3874,6 +3884,44 @@
 			}
 		}
 
+		async function generateAIText() {
+			var categoryEl = document.getElementById("aiCategory");
+			var category = categoryEl ? categoryEl.options[categoryEl.selectedIndex].text : "Genel";
+			
+			// Hızlıca bir prompt uyduralım
+			var prompt = category + " konulu anlamlı, kısa ve etkileyici bir söz veya mesaj yaz.";
+
+			showToast("Yapay Zeka yazıyor... ✍️");
+			
+			try {
+				const formData = new FormData();
+				formData.append("prompt", prompt);
+				formData.append("kategori", category);
+
+				const token = getCSRFToken();
+				const headers = {};
+				if (token) headers["RequestVerificationToken"] = token;
+
+				const res = await fetch("/Home/AiMetinYaz", {
+					method: "POST",
+					headers: headers,
+					body: formData
+				});
+
+				const result = await res.json();
+				if (result.success && result.text) {
+					closeModals();
+					addText(result.text, 24, 400);
+					showToast("Metin eklendi!");
+				} else {
+					showToast(result.message || "Metin üretilemedi.");
+				}
+			} catch (e) {
+				console.error(e);
+				showToast("Sunucu hatası oluştu.");
+			}
+		}
+
 		function generateQR() {
 			var tEl = document.getElementById('qrText');
 			var tModalEl = document.getElementById('qrTextModal');
@@ -4181,19 +4229,61 @@
 						canvas.discardActiveObject();
 						canvas.renderAll();
 
-						var l = document.createElement('a');
-						l.download = 'kartist.' + f;
 						var fmt = f === 'jpg' ? 'jpeg' : f;
+						var filename = 'kartist_tasarim.' + f;
 
 						if (f === 'svg') {
 							var blob = new Blob([canvas.toSVG()], { type: "image/svg+xml;charset=utf-8" });
-							l.href = URL.createObjectURL(blob);
+							var url = URL.createObjectURL(blob);
+							var a = document.createElement('a');
+							a.style.display = 'none';
+							a.href = url;
+							a.download = filename;
+							document.body.appendChild(a);
+							a.click();
+							
+							setTimeout(function() {
+								document.body.removeChild(a);
+								URL.revokeObjectURL(url);
+							}, 1000);
+							
+							closeModals();
+							showToast('İndirildi');
 						} else {
-							l.href = canvas.toDataURL({ format: fmt, multiplier: 2 });
+							var dataUrl = canvas.toDataURL({ format: fmt, multiplier: 2 });
+							
+							// Manuel Base64 -> Blob çevirici (fetch dataURL sorunlarını önler)
+							try {
+								var arr = dataUrl.split(',');
+								var mime = arr[0].match(/:(.*?);/)[1];
+								var bstr = atob(arr[1]);
+								var n = bstr.length;
+								var u8arr = new Uint8Array(n);
+								while(n--){
+									u8arr[n] = bstr.charCodeAt(n);
+								}
+								var blob = new Blob([u8arr], {type: mime});
+								var url = URL.createObjectURL(blob);
+								
+								var a = document.createElement('a');
+								a.style.display = 'none';
+								a.href = url;
+								a.download = filename;
+								document.body.appendChild(a);
+								a.click();
+								
+								setTimeout(function() {
+									document.body.removeChild(a);
+									URL.revokeObjectURL(url);
+								}, 1000);
+								
+								closeModals();
+								showToast('İndirildi');
+							} catch(err) {
+								console.error(err);
+								showToast('İndirme hatası!');
+							}
 						}
-						l.click();
-						closeModals();
-						showToast('İndirildi');
 					}
 					else alert(d.message || "İndirme hakkı yok");
 				});
@@ -4481,6 +4571,17 @@
             loadGoogleFont('Inter');
             loadGoogleFont('Montserrat');
             loadGoogleFont('Playfair Display');
+            loadGoogleFont('Poppins');
+            loadGoogleFont('Roboto');
+            loadGoogleFont('Lora');
+
+            // Fontların yüklenmesini bekle — yoksa canvas'ta bozuk metin çıkar
+            try {
+                await Promise.race([
+                    document.fonts.ready,
+                    new Promise(resolve => setTimeout(resolve, 3000))
+                ]);
+            } catch(e) { /* font wait timeout - devam et */ }
 
             // AI tasarımı tuvali komple sıfırlıyor — kullanıcı zaten bir şey çalışıyorsa
             // onayını al, sessizce silme.
@@ -4544,18 +4645,9 @@
                     }
 
                     const fdProxy = new FormData();
-                    let boostedPrompt = finalEngPrompt.trim();
+                    let finalPromptToUse = finalEngPrompt.trim();
                     
-                    // KEYWORD BOOSTER: If user wants daisies, hearts, or specific themes, boost them manually
-                    if (prompt.toLowerCase().includes("papatya")) boostedPrompt += ", focus on white and yellow daisies, beautiful floral pattern, macro photography";
-                    if (prompt.toLowerCase().includes("anne")) boostedPrompt += ", heart warming, gentle colors, soft lighting";
-                    if (prompt.toLowerCase().includes("aşk") || prompt.toLowerCase().includes("sevgili")) boostedPrompt += ", romantic atmosphere, rose petals, hearts, warm lighting";
-                    
-                    // CACHE BUSTER: Add random seed
-                    const seed = Math.floor(Math.random() * 1000000);
-                    boostedPrompt += `, seed: ${seed}`;
-
-                    fdProxy.append("prompt", boostedPrompt);
+                    fdProxy.append("prompt", finalPromptToUse);
                     fdProxy.append("__RequestVerificationToken", getCSRFToken());
 
                     const imgResp = await fetch("/Home/FetchAiImageBase64", { method: "POST", body: fdProxy });
@@ -5247,7 +5339,11 @@
         document.addEventListener('keydown', function (e) {
 
             // HEPSİNİ SEÇ (Ctrl + A)
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT') {
+            // ÖNEMLİ: Metin düzenleniyorsa Fabric.js kendi Ctrl+A'sını kullanır (metindeki tüm harfleri seçer)
+            var activeObj = canvas ? canvas.getActiveObject() : null;
+            var isTextEditing = activeObj && activeObj.isEditing;
+
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !isTextEditing) {
                 e.preventDefault(); // Sayfanın hepsini seçmesini engelle
 
                 // Tuvaldeki tüm objeleri seçili hale getir
