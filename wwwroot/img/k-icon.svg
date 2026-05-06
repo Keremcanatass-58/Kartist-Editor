@@ -1,4 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100">
-    <circle cx="50" cy="50" r="48" fill="#0a0a0f" stroke="#c6ff00" stroke-width="4"/>
-    <path d="M52 15 L25 55 L50 55 L40 85 L75 45 L52 45 Z" fill="#c6ff00" />
+    <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a1a26"/>
+            <stop offset="100%" stop-color="#08080d"/>
+        </linearGradient>
+        <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e8ff5c"/>
+            <stop offset="55%" stop-color="#c6ff00"/>
+            <stop offset="100%" stop-color="#a8dc00"/>
+        </linearGradient>
+        <radialGradient id="topShine" cx="30%" cy="20%" r="60%">
+            <stop offset="0%" stop-color="rgba(198,255,0,0.18)"/>
+            <stop offset="100%" stop-color="rgba(198,255,0,0)"/>
+        </radialGradient>
+        <filter id="boltGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.2" result="glow"/>
+            <feMerge>
+                <feMergeNode in="glow"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    <rect width="100" height="100" rx="22" ry="22" fill="url(#bgGrad)"/>
+    <rect width="100" height="100" rx="22" ry="22" fill="url(#topShine)"/>
+    <rect x="1.5" y="1.5" width="97" height="97" rx="20.5" ry="20.5"
+          fill="none" stroke="rgba(198,255,0,0.22)" stroke-width="1"/>
+    <path d="M58 18 L26 54 L46 54 L38 82 L74 46 L54 46 Z"
+          fill="url(#boltGrad)"
+          filter="url(#boltGlow)"/>
 </svg>
