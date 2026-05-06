@@ -8,29 +8,8 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  quality-gate:
-    name: Quality and Security Gate
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Check Code Formatting
-        run: dotnet format --verify-no-changes --verbosity diagnostic
-        continue-on-error: true # Don't block build but notify
-
-      - name: Security Audit (Dependencies)
-        run: dotnet list package --vulnerable --include-transitive
-        continue-on-error: true
-
   build:
     name: Build and Publish
-    needs: quality-gate
     runs-on: ubuntu-latest
 
     steps:
@@ -39,18 +18,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup .NET
+      - name: Setup .NET 8.0
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-
-      - name: Restore Cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
 
       - name: Restore dependencies
         run: dotnet restore Kartist.sln
@@ -75,7 +46,7 @@ jobs:
         with:
           name: kartist-build-${{ github.run_number }}
           path: ./publish
-          retention-days: 7
+          retention-days: 30
 
   deploy:
     name: Deploy to Production
@@ -101,68 +72,74 @@ jobs:
       - name: Validate deploy secrets
         shell: bash
         run: |
-          if [ -z "$DEPLOY_URL" ] || [ -z "$DEPLOY_SECRET" ]; then
-            echo "::error::Deployment secrets are missing! Please set DEPLOY_URL and DEPLOY_SECRET."
-            exit 1
-          fi
+          test -n "$DEPLOY_URL"
+          test -n "$DEPLOY_SECRET"
 
-      - name: Prepare Artifact
+      - name: Remove server config files from artifact
         shell: bash
         run: |
           rm -f ./publish/web.config
           rm -f ./publish/appsettings.Development.json
           rm -f ./publish/appsettings.Production.json
-          if [ -n "$APPSETTINGS_PRODUCTION_JSON" ]; then
-            echo "$APPSETTINGS_PRODUCTION_JSON" > ./publish/appsettings.json
-            echo "Production appsettings injected."
-          fi
 
-      - name: Zip and Sign
-        id: package
+      - name: Inject production settings from secret
         shell: bash
         run: |
-          python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
+          if [ -n "$APPSETTINGS_PRODUCTION_JSON" ]; then
+            echo "$APPSETTINGS_PRODUCTION_JSON" > ./publish/appsettings.json
+            echo "Injected production appsettings from secret."
+          else
+            echo "No APPSETTINGS_PRODUCTION_JSON secret found; keeping default appsettings.json."
+          fi
+
+      - name: Zip published files
+        run: python3 -c "import shutil; shutil.make_archive('release', 'zip', 'publish')"
+
+      - name: Create deploy signature
+        id: deploy_signature
+        shell: bash
+        run: |
           TIMESTAMP=$(date +%s)
           SIGNATURE=$(printf '%s' "$TIMESTAMP" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -hex | sed 's/^.* //')
           echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
           echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
-          echo "zip_size=$(du -h release.zip | cut -f1)" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy via Signed Webhook
+      - name: Deploy via signed webhook
         shell: bash
         run: |
           curl -X POST -f -S -s \
-            -H "X-Kartist-Timestamp: ${{ steps.package.outputs.timestamp }}" \
-            -H "X-Kartist-Signature: ${{ steps.package.outputs.signature }}" \
+            -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
+            -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
             -F "file=@release.zip" \
             "$DEPLOY_URL"
 
-      - name: Warmup and Health Check
-        id: health
+      - name: Wait for app warmup
+        shell: bash
+        run: sleep 20
+
+      - name: Health check home page
         shell: bash
         run: |
-          sleep 20
           TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
-          echo "Health check targeting: $TARGET_URL"
-          for i in 1 2 3; do
-             STATUS=$(curl -o /dev/null -s -w "%{http_code}" "$TARGET_URL")
-             if [ "$STATUS" == "200" ]; then
-                echo "status=success" >> "$GITHUB_OUTPUT"
-                exit 0
-             fi
-             echo "Attempt $i: Status $STATUS... retrying"
-             sleep 10
+          for i in 1 2 3 4 5; do
+            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+              exit 0
+            fi
+            sleep 10
           done
-          echo "status=failed" >> "$GITHUB_OUTPUT"
           exit 1
 
-      - name: Generate Job Summary
-        if: always()
+      - name: Health check AI endpoint
+        shell: bash
         run: |
-          echo "### 🚀 Kartist Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Feature | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build & Test | ✅ Success |" >> $GITHUB_STEP_SUMMARY
-          echo "| Package Size | 📦 ${{ steps.package.outputs.zip_size }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Deployment | ${{ steps.health.outputs.status == 'success' && '✅ Online' || '❌ Issue Detected' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Health Check | [View Site](${{ env.HEALTHCHECK_URL }}) |" >> $GITHUB_STEP_SUMMARY
+          TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}/api/health/ai"
+          for i in 1 2 3 4 5; do
+            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+
+
+

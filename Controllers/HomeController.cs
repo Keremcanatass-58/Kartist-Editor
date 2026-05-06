@@ -856,6 +856,33 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> AiMetinYaz(string prompt, string kategori)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(prompt))
+                {
+                    return Json(new { success = false, message = "Prompt bos olamaz." });
+                }
+
+                prompt = Helpers.InputValidator.SanitizeHtml(prompt);
+                
+                var generatedText = await _aiPromptService.GenerateTextAsync(kategori ?? "Genel", prompt);
+                
+                if (string.IsNullOrEmpty(generatedText))
+                {
+                    return Json(new { success = false, message = "Metin uretilemedi." });
+                }
+
+                return Json(new { success = true, text = generatedText });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Sistem Hatasi: " + ex.Message });
+            }
+        }
+
+        [HttpPost]
         public async Task<IActionResult> KartTasarimOner(string prompt, string kategori = null, string style = null, string history = null)
         {
             try

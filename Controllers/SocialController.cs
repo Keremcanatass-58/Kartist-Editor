@@ -40,7 +40,7 @@ namespace Kartist.Controllers
         public IActionResult Feed(string filter = "Tumu")
         {
             if (!User.Identity.IsAuthenticated) return RedirectToAction("Giris", "Account");
-            
+
             using var db = new SqlConnection(_conn);
             string email = GetEmail();
             int userId = GetUserId(db, email);
@@ -98,8 +98,14 @@ namespace Kartist.Controllers
                 new { Id = 1, Title = "Gelecek Icin Tasarla", CoverImage = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800", Theme = "Sustainability", Prize = "10,000 TL + Premium", Participants = 234, Deadline = "5 gun", Status = "active" },
                 new { Id = 2, Title = "AI x Design", CoverImage = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800", Theme = "AI", Prize = "15,000 TL + Davetiye", Participants = 89, Deadline = "3 gun", Status = "voting" }
             };
-            
+
+            Console.WriteLine($"[FEED-DEBUG] reached end, posts.Count={posts.Count}, LiveRooms set");
             return View(posts);
+            } catch (Exception ex) {
+                Console.WriteLine($"[FEED-DEBUG] EXCEPTION: {ex.GetType().Name}: {ex.Message}");
+                Console.WriteLine($"[FEED-DEBUG] StackTrace: {ex.StackTrace}");
+                return View(new List<dynamic>());
+            }
         }
 
         // ===== TRENDING =====

@@ -146,7 +146,11 @@ namespace Kartist.Controllers
                         string kodHtml = BuildIkiFaktorMailHtml(kod, email);
                         MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        TempData["Mesaj"] = "Güvenlik kodu e-postanıza gönderilemedi: " + ex.Message;
+                        TempData["Tur"] = "error";
+                    }
 
                     await HttpContext.SignOutAsync("External");
                     TempData["2FA_Email"] = email;
@@ -271,7 +275,11 @@ namespace Kartist.Controllers
                         string kodHtml = BuildIkiFaktorMailHtml(kod, email);
                         MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        TempData["Mesaj"] = "Güvenlik kodu e-postanıza gönderilemedi: " + ex.Message;
+                        TempData["Tur"] = "error";
+                    }
 
                     TempData["2FA_Email"] = email;
                     return RedirectToAction("IkiFactorDogrula");
@@ -467,9 +475,9 @@ namespace Kartist.Controllers
             }
             catch (Exception ex)
             {
-                // Don't surface the error to the caller — that would reveal
-                // whether the account exists. Server-side log only.
-                Console.Error.WriteLine($"SifremiUnuttum failed: {ex.Message}");
+                // Hatayı kullanıcıya gösterelim ki şifrenin yanlış olduğunu anlasın.
+                ViewBag.Hata = "SMTP Hatası: E-posta gönderilemedi. " + ex.Message;
+                return View();
             }
 
             ViewBag.Mesaj = "Eger bu e-posta adresi sistemde kayitliysa, sifre sifirlama baglantisi kisa surede iletilecek. Lutfen gelen kutunu (ve spam klasorunu) kontrol et.";
@@ -765,9 +773,9 @@ namespace Kartist.Controllers
                     string kodHtml = BuildIkiFaktorMailHtml(kod, email);
                     MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    return Json(new { success = false, message = "Kod olusturuldu fakat e-posta gonderilemedi. Lutfen tekrar deneyin." });
+                    return Json(new { success = false, message = "E-posta gönderilemedi. Lütfen geliştiriciye bildirin: " + ex.Message });
                 }
 
                 return Json(new { success = true, message = "Yeni dogrulama kodu e-posta adresinize gonderildi.", waitSeconds = 60 });

@@ -10,9 +10,12 @@ namespace Kartist.Models
         public string PollinationsModel { get; set; } = "flux";
         public string GroqEndpoint { get; set; } = "https://api.groq.com/openai/v1/chat/completions";
         public string GroqModel { get; set; } = "llama-3.3-70b-versatile";
+        public string GeminiEndpoint { get; set; } = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+        public string GeminiModel { get; set; } = "gemini-2.0-flash";
         public string OpenAiChatEndpoint { get; set; } = "https://api.openai.com/v1/chat/completions";
         public string OpenAiChatModel { get; set; } = "gpt-4o-mini";
         public string OpenAiImageEndpoint { get; set; } = "https://api.openai.com/v1/images/generations";
         public string OpenAiImageModel { get; set; } = "gpt-image-1";
+        public string PexelsApiKey { get; set; } = "";
     }
 }
