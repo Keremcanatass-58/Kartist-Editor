@@ -454,7 +454,7 @@ options.Cookie.SameSite = SameSiteMode.Lax;               // CSRF altdokuma savu
 
 ## 📋 Sprint Geçmişi
 
-Proje toplam **dört sprint** ve **haftalık iterasyonlar** halinde geliştirilmiştir. Her sprint sonunda demo + raporlama yapılmıştır.
+Proje toplam **beş sprint** ve **haftalık iterasyonlar** halinde geliştirilmiştir. Her sprint sonunda demo + raporlama yapılmıştır.
 
 ### Sprint 1 — Güvenlik Altyapısı
 - ✅ `SecurityHeadersMiddleware` aktivasyonu (CSP, HSTS, X-Frame-Options)
