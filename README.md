@@ -511,6 +511,47 @@ gitGraph
 
 ---
 
+### 🚀 Sprint 5 — AI Çeşitliliği, Sosyal Akış Güvenliği ve UX Cilası
+
+> Sprint 5, **çoklu AI sağlayıcı stratejisini** Gemini ve Pexels ile genişletip provider chain'i 3 → 5'e çıkarır; aynı zamanda **sosyal akıştaki DOM-based XSS** ve hesap enumerasyonu gibi OWASP A03/A07 sınıfı kalıntı zayıflıkları kapatır. **10 commit** halinde uygulandı; tüm değişiklikler `dotnet build --configuration Release` ile **0 uyarı / 0 hata** ile doğrulandı.
+
+```mermaid
+gitGraph
+    commit id: "Sprint 4 sonu"
+    commit id: "2f8f1ff" tag: "social.js XSS escape"
+    commit id: "d23eb47" tag: "2FA reauth"
+    commit id: "15244ca" tag: "/uploads/ sandbox"
+    commit id: "ad80405" tag: "email enumeration"
+    commit id: "7c622f7" tag: "Backspace fix"
+    commit id: "11e07f4" tag: "?? fallback"
+    commit id: "be9313c" tag: "Font + AI confirm"
+    commit id: "f554b69" tag: "Gemini + Pexels"
+    commit id: "4e75c06" tag: "README galeri"
+    commit id: "9602ccb" tag: ".gitignore"
+```
+
+| Commit | Mesaj | Detay |
+|--------|-------|-------|
+| `2f8f1ff` | **Escape user-controlled data in social.js innerHTML rendering** | Sosyal akışta gönderi/yorum metinleri `innerHTML` ile render ediliyor, kullanıcı kontrollü içerik DOM-based XSS kanalı oluşturuyordu. Tüm string'ler `escapeHTML` üzerinden geçirilerek HTML entitesi olarak gömülmeye başlandı; sosyal akış artık enjeksiyonsuz. |
+| `d23eb47` | **Require password re-auth before disabling 2FA** | 2FA'yı kapatmak yalnızca oturum cookie'siyle yapılabiliyordu; oturum çalan saldırgan ikinci faktörü silebilirdi. Artık "2FA Kapat" akışı parola yeniden doğrulaması ister. |
+| `15244ca` | **Sandbox /uploads/ responses and apply nosniff globally** | `/uploads/` altındaki kullanıcı içerik dosyaları `Content-Security-Policy: sandbox` + `X-Content-Type-Options: nosniff` ile servis ediliyor; yüklenen HTML/SVG payload'larının tarayıcı bağlamında çalıştırılma riski tamamen kapatıldı. Sosyal medya gönderi görselleri ve hikâyeler bu sandbox altında. |
+| `ad80405` | **Stop revealing whether an email exists in SifremiUnuttum** | Önceki akış "bu e-posta kayıtlı değil" diyerek hesap enumerasyonuna izin veriyordu. Artık aynı jenerik mesaj ve eşit yanıt süresi gönderilir (timing-channel kapatıldı). |
+| `7c622f7` | **Stop deleting the whole textbox on first Backspace inside text edit** | Fabric.js editör'ünde text düzenleme modunda ilk Backspace tüm textbox'ı siliyordu. Klavye event handler'ındaki erken `preventDefault` çağrısı kaldırıldı. |
+| `11e07f4` | **Replace literal '??' fallback in design save toast messages** | Razor `??` null-coalescing operatörü literal string'e çevrilmiş, kullanıcıya "Tasarım kaydedildi: ??" gibi mesaj gösteriliyordu. Tüm fallback'ler doğru Türkçe metinlere bağlandı. |
+| `be9313c` | **Dedupe font dropdown and confirm before AI clears canvas** | Font seçim listesi aynı fontu birden fazla gösteriyordu (set-based dedup ile temizlendi). AI ile yeni tasarım üretildiğinde mevcut canvas önce kullanıcı onayıyla temizleniyor — kazara veri kaybı önlendi. |
+| `f554b69` | **Add Gemini and Pexels AI providers and refresh CI workflow** | Provider chain genişletildi: **Gemini** (`gemini-2.0-flash`, OpenAI-compatible endpoint) prompt için, **Pexels** search-API'si görsel için yeni varsayılan oldu. `Ai:GeminiEndpoint` / `Ai:GeminiModel` / `Pexels:ApiKey` opsiyonları eklendi. CI workflow'u yeni provider'larla uyumlu hale getirildi. |
+| `4e75c06` | **Add README screenshot gallery and Claude Code guidance docs** | README'ye 15 görselli kategorize galeri (`docs/screenshots/`), hero görseli ve nav'a `Galeri` linki eklendi. `CLAUDE.md` (Claude Code proje rehberi) ve `DEVAM_NOTLARI.md` (Sprint 4 audit notları) commit'lendi. |
+| `9602ccb` | **Ignore Claude Code workspace, Playwright cache, and manual deploys** | `.gitignore`'a `.claude/`, `.playwright-mcp/`, `node_modules/`, `manual-publish/` eklendi. Repo hijyeni: 35 gereksiz PNG / log / yedek görünüm temizlendi. |
+
+**Sprint 5 sonuç metrikleri:**
+- 🛡️ **4 yeni güvenlik düzeltmesi** — sosyal akış XSS'i, 2FA hijack, uploads RCE/XSS yüzeyi, account enumeration
+- 🤖 **2 yeni AI sağlayıcısı** (Gemini + Pexels) — provider chain 3 → 5
+- 🎨 **4 editör UX bug'ı** düzeltildi (Backspace, font dedup, AI confirm, `??` literal)
+- 📸 **15 ekran görüntülü README galerisi** + `CLAUDE.md` + `DEVAM_NOTLARI.md`
+- 🧹 **35 gereksiz dosya temizliği** ve `.gitignore` modernizasyonu
+
+---
+
 ## 🗄️ Veritabanı Şeması
 
 Tüm tablo adları Türkçe'dir. Şema değişiklikleri `Data/DatabaseInitializer.cs` üzerinde **idempotent** `IF NOT EXISTS` blokları ile yönetilir; `Database:AutoSchema=true` iken uygulama açılışında çalışır.
@@ -830,14 +871,14 @@ Fabric.js editörü ve bazı 3rd-party kütüphaneler (Tailwind CDN) inline styl
 
 ---
 
-## 🔮 Gelecek Planları (Sprint 5 ve sonrası)
+## 🔮 Gelecek Planları (Sprint 6 ve sonrası)
 
-### Yakın Vadeli (Sprint 5)
+### Yakın Vadeli (Sprint 6)
 - 🟡 **Rate Limiting'i devreye al** — `Program.cs:101`'deki yorum satırını aç; per-IP + per-user politikalar.
 - 🟡 **Nonce-based CSP** — `'unsafe-inline'` ve `'unsafe-eval'`'i kaldır; her response için nonce üret.
-- 🟡 **`/uploads/` için ayrı CSP politikası** — Yüklenen dosyaların sandbox iframe'de servis edilmesi.
 - 🟡 **`InputValidator.IsValidInput` blacklist'i kaldırma** — Parameterized query zaten koruyor; blacklist false-security.
 - 🟡 **Test projesi ekleme** — `Kartist.Tests.csproj` (xUnit + Moq); CI workflow'unda `dotnet test` çalışsın.
+- 🟡 **`/api/debug/deploy-info` endpoint'inin kaldırılması** — Sprint 5 deploy pipeline'ı stabilleştikten sonra `Program.cs`'teki geçici diagnostik endpoint silinmeli.
 
 ### Orta Vadeli
 - 🔵 **Tasarım Şablon Pazaryeri (Marketplace)** — Tasarımcılar şablon satabilir; Iyzipay ile ödeme akışı.
