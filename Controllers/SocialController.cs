@@ -85,18 +85,22 @@ namespace Kartist.Controllers
                 FROM Kullanicilar k
                 ORDER BY k.ToplamXP DESC").ToList();
             
-            // Live Rooms (from DB)
-            ViewBag.LiveRooms = db.Query(@"
-                SELECT TOP 3 cy.Id, cy.Baslik as Title, cy.IzleyiciSayisi as Viewers,
-                       k.AdSoyad as HostName, k.Seviye as HostLevel,
-                       ISNULL(NULLIF(k.ProfilResmi, ''),
-                              'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as HostAvatar,
-                       CAST(1 AS BIT) as IsLive
-                FROM CanliYayinlar cy
-                JOIN Kullanicilar k ON cy.YayinciId = k.Id
-                WHERE cy.Aktif = 1
-                ORDER BY cy.BaslangicTarihi DESC").ToList();
-            ViewBag.LiveCount = ((IEnumerable<dynamic>)ViewBag.LiveRooms).Count();
+            // Live Rooms (from DB — fallback to empty if table missing)
+            try
+            {
+                ViewBag.LiveRooms = db.Query(@"
+                    SELECT TOP 3 cy.Id, cy.Baslik as Title, cy.IzleyiciSayisi as Viewers,
+                           k.AdSoyad as HostName, k.Seviye as HostLevel,
+                           ISNULL(NULLIF(k.ProfilResmi, ''),
+                                  'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as Thumbnail,
+                           CAST(1 AS BIT) as IsLive
+                    FROM CanliYayinlar cy
+                    JOIN Kullanicilar k ON cy.YayinciId = k.Id
+                    WHERE cy.Aktif = 1
+                    ORDER BY cy.BaslangicTarihi DESC").ToList();
+                ViewBag.LiveCount = ((IEnumerable<dynamic>)ViewBag.LiveRooms).Count();
+            }
+            catch { ViewBag.LiveRooms = new List<dynamic>(); ViewBag.LiveCount = 0; }
             
             // Competitions (Mock)
             ViewBag.Competitions = new List<dynamic> {
@@ -277,17 +281,22 @@ namespace Kartist.Controllers
             ViewBag.UserMaxXP = ((user?.Level ?? 1) + 1) * 200;
             ViewBag.CurrentUserId = userId;
 
-            var liveRooms = db.Query(@"
-                SELECT cy.Id, cy.Baslik as Title, cy.Etiketler,
-                       cy.IzleyiciSayisi as Viewers, cy.BaslangicTarihi,
-                       k.AdSoyad as HostName, k.Seviye as HostLevel,
-                       ISNULL(NULLIF(k.ProfilResmi, ''),
-                              'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as HostAvatar,
-                       CAST(1 AS BIT) as IsLive
-                FROM CanliYayinlar cy
-                JOIN Kullanicilar k ON cy.YayinciId = k.Id
-                WHERE cy.Aktif = 1
-                ORDER BY cy.BaslangicTarihi DESC").ToList();
+            List<dynamic> liveRooms;
+            try
+            {
+                liveRooms = db.Query(@"
+                    SELECT cy.Id, cy.Baslik as Title, cy.Etiketler,
+                           cy.IzleyiciSayisi as Viewers, cy.BaslangicTarihi,
+                           k.AdSoyad as HostName, k.Seviye as HostLevel,
+                           ISNULL(NULLIF(k.ProfilResmi, ''),
+                                  'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as HostAvatar,
+                           CAST(1 AS BIT) as IsLive
+                    FROM CanliYayinlar cy
+                    JOIN Kullanicilar k ON cy.YayinciId = k.Id
+                    WHERE cy.Aktif = 1
+                    ORDER BY cy.BaslangicTarihi DESC").ToList();
+            }
+            catch { liveRooms = new List<dynamic>(); }
 
             ViewBag.LiveRooms = liveRooms;
             ViewBag.LiveCount = liveRooms.Count;
@@ -340,18 +349,21 @@ namespace Kartist.Controllers
         [IgnoreAntiforgeryToken]
         public IActionResult GetAktifYayinlar()
         {
-            using var db = new SqlConnection(_conn);
-            var rooms = db.Query(@"
-                SELECT cy.Id, cy.Baslik as Title, cy.Etiketler, cy.IzleyiciSayisi as Viewers,
-                       k.AdSoyad as HostName, k.Seviye as HostLevel,
-                       ISNULL(NULLIF(k.ProfilResmi, ''),
-                              'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as HostAvatar
-                FROM CanliYayinlar cy
-                JOIN Kullanicilar k ON cy.YayinciId = k.Id
-                WHERE cy.Aktif = 1
-                ORDER BY cy.BaslangicTarihi DESC").ToList();
-
-            return Json(new { success = true, rooms });
+            try
+            {
+                using var db = new SqlConnection(_conn);
+                var rooms = db.Query(@"
+                    SELECT cy.Id, cy.Baslik as Title, cy.Etiketler, cy.IzleyiciSayisi as Viewers,
+                           k.AdSoyad as HostName, k.Seviye as HostLevel,
+                           ISNULL(NULLIF(k.ProfilResmi, ''),
+                                  'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as HostAvatar
+                    FROM CanliYayinlar cy
+                    JOIN Kullanicilar k ON cy.YayinciId = k.Id
+                    WHERE cy.Aktif = 1
+                    ORDER BY cy.BaslangicTarihi DESC").ToList();
+                return Json(new { success = true, rooms });
+            }
+            catch { return Json(new { success = true, rooms = new List<dynamic>() }); }
         }
 
         // ===== COMPETITIONS =====
