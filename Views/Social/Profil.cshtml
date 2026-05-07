@@ -8,140 +8,100 @@
     var posts = ViewBag.Posts as List<dynamic>;
 }
 
-<div class="flex min-h-screen bg-background">
-    <!-- Sidebar -->
-    <aside class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
-        <!-- Logo -->
-        <div class="flex h-16 items-center gap-2 border-b border-border px-6">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-                <svg class="h-5 w-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-            </div>
-            <span class="text-xl font-bold tracking-tight">Kartist</span>
+<!-- Main Content (layout provides sidebar) -->
+<div class="p-4 md:p-6">
+    <!-- Profile Card -->
+    <div class="rounded-2xl bg-card overflow-hidden">
+        <!-- Banner -->
+        <div class="h-32 md:h-48 bg-gradient-to-r from-primary/20 to-accent/20 relative">
+            <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-card to-transparent"></div>
         </div>
-
-        <!-- Navigation -->
-        <nav class="mt-6 flex-1 px-3">
-            <ul class="space-y-1">
-                <li><a href="/Social/Feed" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                    Kesfet</a></li>
-                <li><a href="/Social/Trending" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /></svg>
-                    Trendler</a></li>
-                <li><a href="/Competition" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.21 13.89l7.21-4.11m0 0l-7.21-4.11m7.21 4.11v8.21m0-8.21H5.79m6.42 4.11L5.79 8.21m0 0l7.21 4.11M5.79 8.21v8.21" /></svg>
-                    Yarisma</a></li>
-                <li><a href="/Social/Profil/me" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all bg-primary/10 text-primary">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    Profil</a></li>
-            </ul>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="ml-64 flex-1">
-        <!-- Header -->
-        <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
-            <h1 class="text-xl font-bold">Profil</h1>
-        </header>
-
-        <div class="p-6">
-            <!-- Profile Card -->
-            <div class="rounded-2xl bg-card overflow-hidden">
-                <!-- Banner -->
-                <div class="h-48 bg-gradient-to-r from-primary/20 to-accent/20 relative">
-                    <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-card to-transparent"></div>
+        
+        <!-- Profile Info -->
+        <div class="px-4 md:px-6 pb-6 -mt-12 md:-mt-16 relative">
+            <div class="flex flex-col md:flex-row md:items-end gap-4 md:gap-6">
+                <div class="relative mx-auto md:mx-0">
+                    <div class="h-24 w-24 md:h-32 md:w-32 rounded-full bg-primary p-1">
+                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(user?.AdSoyad ?? User.Identity.Name ?? "U"))&background=c6ff00&color=000&size=128" 
+                             class="h-full w-full rounded-full object-cover" />
+                    </div>
+                    <div class="absolute -bottom-1 -right-1 h-7 w-7 md:h-8 md:w-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
+                        @(user?.Seviye ?? 1)
+                    </div>
                 </div>
                 
-                <!-- Profile Info -->
-                <div class="px-6 pb-6 -mt-16 relative">
-                    <div class="flex items-end gap-6">
-                        <div class="relative">
-                            <div class="h-32 w-32 rounded-full bg-primary p-1">
-                                <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(user?.AdSoyad ?? User.Identity.Name ?? "U"))&background=c6ff00&color=000&size=128" 
-                                     class="h-full w-full rounded-full object-cover" />
-                            </div>
-                            <div class="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
-                                @(user?.Seviye ?? 1)
-                            </div>
-                        </div>
-                        
-                        <div class="flex-1 mb-2">
-                            <h2 class="text-2xl font-bold">@(user?.AdSoyad ?? User.Identity.Name)</h2>
-                            <p class="text-muted-foreground">@@@(user?.Email?.Replace("@gmail.com", "") ?? User.Identity.Name?.ToLower().Replace(" ", ""))</p>
-                        </div>
-                        
-                        <div class="flex gap-3 mb-2">
-                            @if (ViewBag.BenimProfilim == true)
-                            {
-                                <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Duzenle</button>
-                            }
-                            else
-                            {
-                                <button onclick="followUser(@(user?.Id))" id="followBtn" class="rounded-xl bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Takip Et</button>
-                                <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Mesaj</button>
-                            }
-                        </div>
-                    </div>
-                    
-                    <!-- Stats -->
-                    <div class="flex gap-8 mt-6 pt-6 border-t border-border">
-                        <div class="text-center">
-                            <p class="text-2xl font-bold">@(ViewBag.GonderiSayisi ?? 0)</p>
-                            <p class="text-sm text-muted-foreground">Gonderi</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-bold">@(ViewBag.TakipciSayisi ?? 0)</p>
-                            <p class="text-sm text-muted-foreground">Takipci</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-bold">@(ViewBag.TakipSayisi ?? 0)</p>
-                            <p class="text-sm text-muted-foreground">Takip</p>
-                        </div>
-                        <div class="text-center ml-auto">
-                            <p class="text-2xl font-bold text-primary">@(user?.ToplamXP ?? 0) XP</p>
-                            <p class="text-sm text-muted-foreground">Level @(user?.Seviye ?? 1)</p>
-                        </div>
-                    </div>
+                <div class="flex-1 text-center md:text-left mb-2">
+                    <h2 class="text-xl md:text-2xl font-bold">@(user?.AdSoyad ?? User.Identity.Name)</h2>
+                    <p class="text-muted-foreground text-sm md:text-base">@@@(user?.Email?.Replace("@@gmail.com", "") ?? User.Identity.Name?.ToLower().Replace(" ", ""))</p>
                 </div>
-            </div>
-
-            <!-- Posts Grid -->
-            <div class="mt-8">
-                <h3 class="text-lg font-bold mb-4">Tasarimlar</h3>
-                <div class="grid grid-cols-3 gap-4">
-                    @if (posts != null && posts.Count > 0)
+                
+                <div class="flex gap-3 justify-center md:justify-end mb-2">
+                    @if (ViewBag.BenimProfilim == true)
                     {
-                        foreach (var post in posts)
-                        {
-                            <div class="group relative aspect-square rounded-xl overflow-hidden bg-card cursor-pointer">
-                                <img src="@(post.GorselUrl ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400")" 
-                                     class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                    <span class="flex items-center gap-1 text-white font-semibold">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                                        @(post.BegeniSayisi ?? 0)
-                                    </span>
-                                    <span class="flex items-center gap-1 text-white font-semibold">
-                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                                        @(post.YorumSayisi ?? 0)
-                                    </span>
-                                </div>
-                            </div>
-                        }
+                        <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Duzenle</button>
                     }
                     else
                     {
-                        <div class="col-span-3 text-center py-12 text-muted-foreground">
-                            <p>Henüz tasarim paylasilmamis.</p>
-                        </div>
+                        <button onclick="followUser(@(user?.Id))" id="followBtn" class="rounded-xl bg-primary px-5 md:px-6 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">Takip Et</button>
+                        <button class="rounded-xl bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80">Mesaj</button>
                     }
                 </div>
             </div>
+            
+            <!-- Stats -->
+            <div class="flex flex-wrap gap-4 md:gap-8 mt-6 pt-6 border-t border-border justify-center md:justify-start">
+                <div class="text-center">
+                    <p class="text-xl md:text-2xl font-bold">@(ViewBag.GonderiSayisi ?? 0)</p>
+                    <p class="text-xs md:text-sm text-muted-foreground">Gonderi</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xl md:text-2xl font-bold">@(ViewBag.TakipciSayisi ?? 0)</p>
+                    <p class="text-xs md:text-sm text-muted-foreground">Takipci</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-xl md:text-2xl font-bold">@(ViewBag.TakipSayisi ?? 0)</p>
+                    <p class="text-xs md:text-sm text-muted-foreground">Takip</p>
+                </div>
+                <div class="text-center md:ml-auto">
+                    <p class="text-xl md:text-2xl font-bold text-primary">@(user?.ToplamXP ?? 0) XP</p>
+                    <p class="text-xs md:text-sm text-muted-foreground">Level @(user?.Seviye ?? 1)</p>
+                </div>
+            </div>
         </div>
-    </main>
+    </div>
+
+    <!-- Posts Grid -->
+    <div class="mt-6 md:mt-8">
+        <h3 class="text-lg font-bold mb-4">Tasarimlar</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            @if (posts != null && posts.Count > 0)
+            {
+                foreach (var post in posts)
+                {
+                    <div class="group relative aspect-square rounded-xl overflow-hidden bg-card cursor-pointer">
+                        <img src="@(post.GorselUrl ?? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400")" 
+                             class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 md:gap-4">
+                            <span class="flex items-center gap-1 text-white font-semibold text-sm">
+                                <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                                @(post.BegeniSayisi ?? 0)
+                            </span>
+                            <span class="flex items-center gap-1 text-white font-semibold text-sm">
+                                <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                                @(post.YorumSayisi ?? 0)
+                            </span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-span-2 md:col-span-3 text-center py-12 text-muted-foreground">
+                    <p>Henüz tasarim paylasilmamis.</p>
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 <script>
