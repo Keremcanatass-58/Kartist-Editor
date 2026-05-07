@@ -193,9 +193,9 @@
                 <video id="localVideoPreview" class="absolute inset-0 w-full h-full object-contain bg-black hidden" autoplay muted playsinline></video>
                 <canvas id="broadcasterCanvas" class="absolute inset-0 w-full h-full object-contain bg-black hidden"></canvas>
 
-                <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center bg-black">
+                <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center bg-black z-40">
                     <div class="w-12 h-12 border-4 border-white/20 border-t-red-500 rounded-full animate-spin mb-4"></div>
-                    <p class="text-white/60 font-bold text-sm">Yayina Baglaniliyor...</p>
+                    <p class="text-white/60 font-bold text-sm" id="connectingStatusText">Yayına Bağlanılıyor...</p>
                 </div>
 
                 <!-- Mobile Unmute Overlay -->
@@ -362,7 +362,10 @@ var _micEnabled = true;
 var rtcConfig = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
     ]
 };
 
@@ -456,18 +459,38 @@ function createPeerForViewer(viewerConnId) {
 function handleOffer(broadcasterConnId, sdpOffer) {
     if (viewerPC) { viewerPC.close(); viewerPC = null; }
     viewerPC = new RTCPeerConnection(rtcConfig);
+    console.log("RTCPeerConnection created for viewer");
 
+    viewerPC.onconnectionstatechange = function() {
+        console.log("Connection State:", viewerPC.connectionState);
+        var statusEl = document.getElementById('connectingStatusText');
+        if (statusEl) {
+            if (viewerPC.connectionState === 'connecting') statusEl.innerText = "Sinyal Bekleniyor...";
+            if (viewerPC.connectionState === 'connected') statusEl.innerText = "Bağlantı Kuruldu!";
+            if (viewerPC.connectionState === 'failed') {
+                statusEl.innerText = "Bağlantı Başarısız.";
+                showToast("Bağlantı kurulamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
+            }
+        }
+    };
+
+    viewerPC.oniceconnectionstatechange = function() {
+        console.log("ICE Connection State:", viewerPC.iceConnectionState);
+    };
     viewerPC.ontrack = function(e) {
+        console.log("Remote track received:", e.track.kind);
         var vid = document.getElementById('remoteVideo');
         if (vid && e.streams && e.streams[0]) {
             vid.srcObject = e.streams[0];
-            // Attempt to play. On mobile, this might fail if not muted.
-            vid.play().catch(function(err) {
-                console.warn("Autoplay blocked, muting and retrying...", err);
+            showToast("Yayın sinyali alındı...");
+            
+            vid.play().then(function() {
+                console.log("Video playing successfully");
+                document.getElementById('unmuteOverlay').classList.add('hidden');
+            }).catch(function(err) {
+                console.warn("Autoplay blocked, showing unmute overlay:", err);
                 vid.muted = true;
-                vid.play().catch(function(e2){ console.error("Play failed even when muted:", e2); });
-                
-                // Show unmute overlay on mobile
+                vid.play().catch(console.error);
                 document.getElementById('unmuteOverlay').classList.remove('hidden');
             });
             document.getElementById('liveConnectingState').classList.add('hidden');
@@ -878,10 +901,15 @@ function submitStreamRequest(event) {
 
 // ===================== WATCH STREAM (Viewer) =====================
 function watchStream(streamId, title) {
+    console.log("watchStream triggered for ID:", streamId);
+    showToast("Yayına bağlanılıyor...");
+    
     isBroadcaster = false;
     currentStreamId = streamId.toString();
 
     var modal = document.getElementById('liveStreamModal');
+    if (!modal) { console.error("liveStreamModal not found!"); return; }
+    
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     document.getElementById('liveRoomTitle').innerText = title || 'Kartist Live';
@@ -895,24 +923,27 @@ function watchStream(streamId, title) {
     document.getElementById('viewerControls').classList.remove('hidden');
     document.getElementById('broadcasterControls').classList.add('hidden');
 
-    // Prime the video element for mobile autoplay
+    // Prime the video element for mobile autoplay - more robust version
     var vid = document.getElementById('remoteVideo');
-    vid.volume = 1;
-    vid.muted = false;
-    vid.play().catch(function(){ 
-        // If initial play fails, we'll try again in handleOffer with muted=true
-        console.log("Video primed (expected failure or success)");
-    });
+    if (vid) {
+        vid.muted = true; // Start muted to guarantee play permission
+        vid.play().then(function() {
+            console.log("Video primed successfully (muted)");
+        }).catch(function(err) {
+            console.warn("Video priming failed:", err);
+        });
+    }
 
     streamStartTime = Date.now();
     startDurationTimer();
 
     ensureConnection().then(function() {
-        liveConnection.invoke("JoinLiveRoom", currentStreamId);
-        liveConnection.invoke("JoinStream", currentStreamId);
+        console.log("SignalR Connected. Joining room:", currentStreamId);
+        liveConnection.invoke("JoinLiveRoom", currentStreamId).catch(console.error);
+        liveConnection.invoke("JoinStream", currentStreamId).catch(console.error);
     }).catch(function(err) {
-        console.error("Connection failed:", err);
-        showToast("Baglanti hatasi oluştu");
+        console.error("SignalR Connection failed:", err);
+        showToast("Bağlantı hatası: " + err.message);
     });
 }
 
