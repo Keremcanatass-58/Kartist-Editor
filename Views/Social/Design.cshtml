@@ -3,56 +3,31 @@
     ViewData["Title"] = Model.Title + " - Tasarim Detay";
 }
 
-<div class="flex min-h-screen bg-background">
-    <aside class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-border bg-card">
-        <div class="flex h-16 items-center gap-2 border-b border-border px-6">
-            <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary neon-glow">
-                <svg class="h-5 w-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-            </div>
-            <span class="text-xl font-bold tracking-tight">Kartist</span>
-        </div>
-        <nav class="mt-6 flex-1 px-3">
-            <ul class="space-y-1">
-                <li><a href="/Social/Feed" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>Kesfet</a></li>
-                <li><a href="/Social/Trending" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" /></svg>Trendler</a></li>
-                <li><a href="/Social/Duels" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>Duellolar</a></li>
-            </ul>
-        </nav>
-        <div class="border-t border-border px-3 py-4">
-            <ul class="space-y-1">
-                <li><a href="/Social/Profil/me" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>Profil</a></li>
-                <li><a href="/Social/Settings" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all text-muted-foreground hover:bg-secondary hover:text-foreground"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>Ayarlar</a></li>
-            </ul>
-        </div>
-    </aside>
+<!-- Header (layout provides sidebar) -->
+<header class="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-card/80 px-3 md:px-6 py-3 md:py-4 backdrop-blur-xl">
+    <a href="/Social/Trending" class="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground text-sm md:text-base">
+        <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Geri</span>
+    </a>
+    
+    <div class="flex items-center gap-2 md:gap-3">
+        <button onclick="shareDesign()" class="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-secondary/80">
+            <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+        </button>
+        <button onclick="moreOptions()" class="flex h-9 w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-secondary/80">
+            <svg class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+            </svg>
+        </button>
+    </div>
+</header>
 
-    <!-- Main Content -->
-    <main class="ml-64 flex-1">
-        <!-- Header -->
-        <header class="sticky top-0 z-50 flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl">
-            <a href="/Social/Trending" class="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground">
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Geri</span>
-            </a>
-            
-            <div class="flex items-center gap-3">
-                <button onclick="shareDesign()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-secondary/80">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                </button>
-                <button onclick="moreOptions()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-secondary/80">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                    </svg>
-                </button>
-            </div>
-        </header>
-
-        <div class="mx-auto max-w-7xl px-6 py-8">
-            <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div class="mx-auto max-w-7xl px-3 md:px-6 py-4 md:py-8">
+            <div class="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-3">
                 <!-- Main Content -->
                 <div class="lg:col-span-2">
                     <!-- Image -->

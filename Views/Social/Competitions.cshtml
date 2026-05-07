@@ -4,37 +4,37 @@
 }
 
 <!-- Header -->
-<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
-    <div class="flex items-center gap-4">
-        <h1 class="text-xl font-bold">Yarismalar</h1>
+<header class="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-background/95 px-3 md:px-6 backdrop-blur">
+    <div class="flex items-center gap-3 md:gap-4">
+        <h1 class="text-lg md:text-xl font-bold">Yarismalar</h1>
     </div>
 </header>
 
-<div class="p-6 text-foreground bg-background">
+<div class="p-3 md:p-6 text-foreground bg-background">
     <!-- Hero Section -->
-    <div class="rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 p-8 relative overflow-hidden border border-yellow-500/10">
+    <div class="rounded-2xl md:rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 p-4 md:p-8 relative overflow-hidden border border-yellow-500/10">
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
         <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
         
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div class="flex items-center gap-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-xl shadow-yellow-500/20">
-                    <i data-lucide="trophy" class="h-8 w-8 text-white"></i>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div class="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-xl shadow-yellow-500/20 shrink-0">
+                    <i data-lucide="trophy" class="h-6 w-6 md:h-8 md:w-8 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold">Tasarim Yarismalari</h1>
-                    <p class="text-muted-foreground mt-1">Yarismaya katil, yetenegini sergile, oduller kazan!</p>
+                    <h1 class="text-xl md:text-3xl font-bold">Tasarim Yarismalari</h1>
+                    <p class="text-muted-foreground text-sm md:text-base mt-0.5 md:mt-1">Yarismaya katil, yetenegini sergile, oduller kazan!</p>
                 </div>
             </div>
             
-            <button class="flex h-fit items-center gap-2 rounded-xl bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 gold-glow whitespace-nowrap">
-                <i data-lucide="sparkles" class="h-5 w-5"></i>
+            <button class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 md:px-6 py-2.5 md:py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 gold-glow whitespace-nowrap text-sm md:text-base">
+                <i data-lucide="sparkles" class="h-4 w-4 md:h-5 md:w-5"></i>
                 Nasil Calisir?
             </button>
         </div>
 
         <!-- Stats -->
-        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+        <div class="mt-4 md:mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 relative z-10">
             <div class="glass-card rounded-xl p-5 border-white/5">
                 <div class="flex items-center gap-2 text-muted-foreground mb-2">
                     <i data-lucide="target" class="h-4 w-4 text-yellow-500"></i>

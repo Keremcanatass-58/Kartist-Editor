@@ -8,8 +8,8 @@
 }
 
 <style>
-    .leader-wrapper { padding: 24px 20px; }
-    .leader-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .leader-wrapper { padding: 12px md:padding: 24px; }
+    .leader-title { font-size: 1.1rem; md:font-size: 1.3rem; font-weight: 900; margin-bottom: 16px; md:margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
     
     .leader-tabs {
         display: flex; gap: 6px; margin-bottom: 32px;
@@ -72,8 +72,14 @@
     }
 </style>
 
-<div class="leader-wrapper">
-    <div class="leader-title"><i class="fa-solid fa-trophy" style="color:var(--gold)"></i> Liderlik Tablosu</div>
+<!-- Header -->
+<header class="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-background/95 px-3 md:px-6 backdrop-blur">
+    <div class="flex items-center gap-3 md:gap-4">
+        <h1 class="text-lg md:text-xl font-bold">Liderlik Tablosu</h1>
+    </div>
+</header>
+
+<div class="p-3 md:p-6 leader-wrapper">
 
     <div class="leader-tabs">
         <button class="leader-tab active" onclick="loadLB('hafta', this)">📅 Bu Hafta</button>

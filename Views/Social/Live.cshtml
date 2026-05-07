@@ -16,58 +16,112 @@
     #volumeSlider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: white; cursor: pointer; }
     #volumeSlider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: white; cursor: pointer; border: none; }
     .mic-level { transition: height 0.05s; }
+
+    /* Kick/Twitch Style Stream Cards */
+    .stream-card { position: relative; overflow: hidden; border-radius: 12px; transition: all 0.3s; cursor: pointer; }
+    .stream-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(239,68,68,0.15); }
+    .stream-card:hover .stream-thumbnail { transform: scale(1.05); }
+    .stream-thumbnail { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .stream-card-body { position: relative; z-index: 2; }
+
+    /* Mobile chat toggle */
+    .chat-toggle-mobile {
+        display: none;
+        position: fixed;
+        bottom: 80px;
+        right: 12px;
+        z-index: 55;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: oklch(0.60 0.22 25);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 20px rgba(239,68,68,0.4);
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Live modal responsive */
+    @@media (max-width: 1024px) {
+        #liveStreamModal .lg\:w-80,
+        #liveStreamModal .xl\:w-96 {
+            width: 320px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        #liveStreamModal > div {
+            flex-direction: column !important;
+        }
+        #liveStreamModal .lg\:w-80,
+        #liveStreamModal .xl\:w-96 {
+            width: 100% !important;
+            height: 45vh !important;
+            border-left: none !important;
+            border-top: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        #liveStreamModal .flex-1.flex.flex-col {
+            min-height: 55vh;
+        }
+        .chat-toggle-mobile {
+            display: flex;
+        }
+    }
 </style>
 
 <!-- Header -->
-<header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
-    <div class="flex items-center gap-4">
-        <h1 class="text-xl font-bold">Canli Yayinlar</h1>
+<header class="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-background/95 px-4 md:px-6 backdrop-blur">
+    <div class="flex items-center gap-3 md:gap-4">
+        <h1 class="text-lg md:text-xl font-bold">Canli Yayinlar</h1>
     </div>
 </header>
 
-<div class="p-6">
+<div class="p-3 md:p-6">
     <!-- Hero -->
-    <div class="rounded-3xl bg-gradient-to-r from-red-500/20 via-rose-500/20 to-orange-500/20 p-8 relative overflow-hidden border border-red-500/10">
+    <!-- Kick/Twitch Style Hero -->
+    <div class="rounded-2xl md:rounded-3xl bg-gradient-to-r from-red-500/20 via-rose-500/10 to-orange-500/20 p-4 md:p-8 relative overflow-hidden border border-red-500/10">
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-500/20 blur-3xl"></div>
         <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div class="flex items-center gap-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-rose-500 shadow-xl shadow-red-500/20">
-                    <i data-lucide="radio" class="h-8 w-8 text-white"></i>
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div class="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-gradient-to-br from-red-500 to-rose-500 shadow-xl shadow-red-500/20 shrink-0">
+                    <i data-lucide="radio" class="h-6 w-6 md:h-8 md:w-8 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-bold">Canli Yayinlar</h1>
-                    <p class="text-muted-foreground mt-1">Tasarimcilari canli izle, soru sor ve ogren</p>
+                    <h1 class="text-xl md:text-3xl font-bold">Canli Yayinlar</h1>
+                    <p class="text-muted-foreground text-sm md:text-base mt-0.5 md:mt-1">Tasarimcilari canli izle, soru sor ve ogren</p>
                 </div>
             </div>
-            <button onclick="startStream()" class="flex h-fit items-center gap-2 rounded-xl bg-destructive px-6 py-3 font-semibold text-destructive-foreground transition-all hover:bg-destructive/90 shadow-lg shadow-destructive/20 whitespace-nowrap group">
-                <i data-lucide="video" class="h-5 w-5 transition-transform group-hover:scale-110"></i>
+            <button onclick="startStream()" class="flex items-center justify-center gap-2 rounded-xl bg-destructive px-5 md:px-6 py-2.5 md:py-3 font-semibold text-destructive-foreground transition-all hover:bg-destructive/90 shadow-lg shadow-destructive/20 whitespace-nowrap group text-sm md:text-base">
+                <i data-lucide="video" class="h-4 w-4 md:h-5 md:w-5 transition-transform group-hover:scale-110"></i>
                 Yayin Baslat
             </button>
         </div>
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="radio" class="h-4 w-4 text-destructive"></i><span class="text-sm font-medium">Canli Yayinlar</span></div>
-                <p class="text-3xl font-bold" id="statLiveCount">@(ViewBag.LiveCount ?? 0)</p>
+        <div class="mt-4 md:mt-8 grid grid-cols-3 gap-2 md:gap-6 relative z-10">
+            <div class="glass-card rounded-xl p-3 md:p-5 border-white/5">
+                <div class="flex items-center gap-1.5 md:gap-2 text-muted-foreground mb-1 md:mb-2"><i data-lucide="radio" class="h-3 w-3 md:h-4 md:w-4 text-destructive"></i><span class="text-xs md:text-sm font-medium hidden sm:inline">Canli</span></div>
+                <p class="text-xl md:text-3xl font-bold" id="statLiveCount">@(ViewBag.LiveCount ?? 0)</p>
             </div>
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="users" class="h-4 w-4"></i><span class="text-sm font-medium">Toplam Izleyici</span></div>
-                <p class="text-3xl font-bold text-accent" id="statTotalViewers">0</p>
+            <div class="glass-card rounded-xl p-3 md:p-5 border-white/5">
+                <div class="flex items-center gap-1.5 md:gap-2 text-muted-foreground mb-1 md:mb-2"><i data-lucide="users" class="h-3 w-3 md:h-4 md:w-4"></i><span class="text-xs md:text-sm font-medium hidden sm:inline">Izleyici</span></div>
+                <p class="text-xl md:text-3xl font-bold text-accent" id="statTotalViewers">0</p>
             </div>
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="clock" class="h-4 w-4"></i><span class="text-sm font-medium">Yayin Suresi</span></div>
-                <p class="text-3xl font-bold text-primary" id="statDuration">--:--</p>
+            <div class="glass-card rounded-xl p-3 md:p-5 border-white/5">
+                <div class="flex items-center gap-1.5 md:gap-2 text-muted-foreground mb-1 md:mb-2"><i data-lucide="clock" class="h-3 w-3 md:h-4 md:w-4"></i><span class="text-xs md:text-sm font-medium hidden sm:inline">Sure</span></div>
+                <p class="text-xl md:text-3xl font-bold text-primary" id="statDuration">--:--</p>
             </div>
         </div>
     </div>
 
     <!-- Active Streams Grid -->
-    <div class="mt-8" id="roomsSection">
-        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+    <div class="mt-4 md:mt-8" id="roomsSection">
+        <h2 class="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
             <span class="relative flex h-3 w-3"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span><span class="relative inline-flex h-3 w-3 rounded-full bg-destructive"></span></span>
             Simdi Yayinda
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roomsGrid">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6" id="roomsGrid">
             @if (ViewBag.LiveRooms != null && ((IEnumerable<dynamic>)ViewBag.LiveRooms).Any())
             {
                 foreach (var room in ViewBag.LiveRooms)
@@ -97,11 +151,11 @@
             }
             else
             {
-                <div class="col-span-full rounded-3xl border-2 border-dashed border-border p-16 text-center bg-card/30">
-                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary mb-6"><i data-lucide="radio" class="h-10 w-10 text-muted-foreground"></i></div>
-                    <h3 class="text-xl font-bold">Simdi Aktif Yayin Yok</h3>
-                    <p class="mt-2 text-muted-foreground max-w-md mx-auto">Ilk yayini sen baslat! Kamerani ac veya ekranini paylas.</p>
-                    <button onclick="startStream()" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-destructive px-8 py-3.5 font-bold text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"><i data-lucide="video" class="h-5 w-5"></i> Yayin Baslat</button>
+                <div class="col-span-full rounded-2xl md:rounded-3xl border-2 border-dashed border-border p-8 md:p-16 text-center bg-card/30">
+                    <div class="mx-auto flex h-14 w-14 md:h-20 md:w-20 items-center justify-center rounded-2xl bg-secondary mb-4 md:mb-6"><i data-lucide="radio" class="h-7 w-7 md:h-10 md:w-10 text-muted-foreground"></i></div>
+                    <h3 class="text-lg md:text-xl font-bold">Simdi Aktif Yayin Yok</h3>
+                    <p class="mt-2 text-muted-foreground max-w-md mx-auto text-sm md:text-base">Ilk yayini sen baslat! Kamerani ac veya ekranini paylas.</p>
+                    <button onclick="startStream()" class="mt-4 md:mt-6 inline-flex items-center gap-2 rounded-xl bg-destructive px-6 md:px-8 py-3 md:py-3.5 font-bold text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 text-sm md:text-base"><i data-lucide="video" class="h-4 w-4 md:h-5 md:w-5"></i> Yayin Baslat</button>
                 </div>
             }
         </div>
