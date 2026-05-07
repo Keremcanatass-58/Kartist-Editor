@@ -279,6 +279,7 @@
 
         function joinRoom(id, title, img) {
              document.getElementById('liveStreamModal').classList.remove('hidden');
+             document.body.style.overflow = 'hidden';
              document.getElementById('liveRoomTitle').innerText = title || "Kartist Live Session";
              
              var roomVideo = document.getElementById('liveRoomVideo');
@@ -314,6 +315,7 @@
 
         function leaveRoom() {
              document.getElementById('liveStreamModal').classList.add('hidden');
+             document.body.style.overflow = '';
              currentRoomId = null;
              if(chatSimInterval) clearInterval(chatSimInterval);
              
@@ -396,6 +398,19 @@
         // --- Hardware & Media Functions ---
 
         function setLiveFilter(filter) {
+            var filterIds = ['all', 'live', 'scheduled'];
+            for (var i = 0; i < filterIds.length; i++) {
+                var btn = document.getElementById('filter-' + filterIds[i]);
+                if (!btn) continue;
+                if (filterIds[i] === filter) {
+                    btn.className = btn.className
+                        .replace('bg-secondary text-secondary-foreground hover:bg-secondary/80', 'bg-primary text-primary-foreground neon-glow');
+                } else {
+                    btn.className = btn.className
+                        .replace('bg-primary text-primary-foreground neon-glow', 'bg-secondary text-secondary-foreground hover:bg-secondary/80');
+                }
+            }
+
             var rooms = document.querySelectorAll('[data-live]');
             rooms.forEach(function(room) {
                 var isLive = room.getAttribute('data-live') === 'true';
@@ -414,6 +429,7 @@
                 return;
             }
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
 
             const constraints = { 
@@ -482,7 +498,9 @@
         }
 
         function closeCreateStreamModal() {
-            document.getElementById('createStreamModal').classList.add('hidden');
+            var modal = document.getElementById('createStreamModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             document.body.style.overflow = '';
         }
 

@@ -184,7 +184,7 @@
 @section Scripts {
     <script>
         var currentConversationId = null;
-        var myUserId = 0; // Replace with actual session logic
+        var myUserId = @(ViewBag.CurrentUserId ?? 0);
         
         // Ensure textarea resizes dynamically
         function autoResizeTextarea(el) {
@@ -234,23 +234,26 @@
             
             if (selectedConv) {
                 selectedConv.classList.add('bg-secondary/40', 'ring-1', 'ring-primary/20');
-                
-                // Remove unread indicators when clicking
-                const unreadBadge = selectedConv.querySelector('.bg-primary.text-primary-foreground');
-                if (unreadBadge) {
-                   unreadBadge.remove(); // simple way to mark read visually
-                   selectedConv.classList.remove('bg-primary/5');
-                   selectedConv.querySelector('.font-bold').classList.remove('font-bold');
-                   selectedConv.querySelector('.font-semibold').classList.remove('font-semibold');
-                   selectedConv.querySelector('p').classList.add('text-muted-foreground/80');
-                }
-                
-                // Setup Header text
+
+                // Grab header info BEFORE we modify classes
                 var nameEl = selectedConv.querySelector('.font-bold') || selectedConv.querySelector('span');
                 var avatarEl = selectedConv.querySelector('img');
-                
-                document.getElementById('activeChatName').textContent = nameEl ? nameEl.textContent : "Kullanici " + id;
-                document.getElementById('activeChatAvatar').src = avatarEl ? avatarEl.src : "https://ui-avatars.com/api/?name=U&background=random";
+                var headerName = nameEl ? nameEl.textContent.trim() : "Kullanici " + id;
+                var headerAvatar = avatarEl ? avatarEl.src : "https://ui-avatars.com/api/?name=U&background=random";
+
+                // Remove unread indicators when clicking
+                var unreadBadge = selectedConv.querySelector('.rounded-lg.bg-primary');
+                if (unreadBadge) {
+                   unreadBadge.remove();
+                   selectedConv.classList.remove('bg-primary/5');
+                   var boldName = selectedConv.querySelector('.font-bold');
+                   if (boldName) boldName.classList.replace('font-bold', 'font-semibold');
+                   var semiboldMsg = selectedConv.querySelector('.font-semibold:not(.font-bold)');
+                   if (semiboldMsg) { semiboldMsg.classList.remove('font-semibold'); semiboldMsg.classList.add('text-muted-foreground/80'); }
+                }
+
+                document.getElementById('activeChatName').textContent = headerName;
+                document.getElementById('activeChatAvatar').src = headerAvatar;
             }
             
             // Swap empty state with active chat
@@ -270,21 +273,18 @@
                 }, 3000);
             }, 1000);
 
-            // Fetch actual messages (Mocking here if fails)
             fetch('/Social/GetMesajlar?hedefId=' + id)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    myUserId = data.myId || 0;
+                    myUserId = data.myId || myUserId;
+                    if (data.hedef) {
+                        document.getElementById('activeChatName').textContent = data.hedef.AdSoyad || headerName;
+                        if (data.hedef.ProfilResmi) document.getElementById('activeChatAvatar').src = data.hedef.ProfilResmi;
+                    }
                     renderMessages(data.success ? data.mesajlar : []);
                 })
                 .catch(function() {
-                    // Fallback Render Data
-                    var mockMessages = [
-                        { GonderenId: id, mesaj: "Merhaba, nasılsın? Yeni paylaştığın tasarımı çok beğendim!", createdAt: "10:30" },
-                        { GonderenId: myUserId, mesaj: "Teşekkür ederim! Üzerinde baya uğraştım.", createdAt: "10:32" },
-                        { GonderenId: id, mesaj: "Oklch renk kullanımı gerçekten harika durmuş. Hangi tool'ları kullandın?", createdAt: "10:35" }
-                    ];
-                    renderMessages(mockMessages);
+                    renderMessages([]);
                 });
         }
         
@@ -292,6 +292,13 @@
             document.getElementById('conversationsContainer').classList.remove('-translate-x-full');
         }
         
+        function formatMsgTime(dateStr) {
+            if (!dateStr) return '';
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
         function renderMessages(mesajlar) {
             var messagesList = document.getElementById('messagesList');
             var messagesHtml = '';
@@ -307,7 +314,7 @@
                 messagesHtml += mesajlar.map(function(m, index) {
                     var isMine = (m.GonderenId == myUserId);
                     var txt = (m.Mesaj || m.mesaj || '');
-                    var time = m.createdAt || "12:00";
+                    var time = formatMsgTime(m.Tarih || m.createdAt);
                     
                     if (isMine) {
                         return `

@@ -314,11 +314,11 @@
                 </div>
 
                 <form onsubmit="submitDuelRequest(event)" class="space-y-6">
-                    <div>
+                    <div class="min-w-0">
                         <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
                         @if (ViewBag.Rakipler != null && ((IEnumerable<dynamic>)ViewBag.Rakipler).Any())
                         {
-                            <div class="flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
+                            <div class="-mx-6 px-6 flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
                                 @foreach (var r in ViewBag.Rakipler)
                                 {
                                     <label class="cursor-pointer snap-start flex-shrink-0 text-center">

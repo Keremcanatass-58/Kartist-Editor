@@ -755,12 +755,37 @@ namespace Kartist.Controllers
             ViewBag.UserXP = user?.XP ?? 0;
             ViewBag.UserMaxXP = ((user?.Level ?? 1) + 1) * 200;
             
-            // Mock conversations
-            ViewBag.Conversations = new List<dynamic> {
-                new { Id = 1, Name = "Ayse Yilmaz", Avatar = "https://ui-avatars.com/api/?name=Ayse+Yilmaz&background=random&size=128", LastMessage = "Tesekkurler!", LastMessageAt = "10:30", UnreadCount = 2 },
-                new { Id = 2, Name = "Mehmet Can", Avatar = "https://ui-avatars.com/api/?name=Mehmet+Can&background=random&size=128", LastMessage = "Proje nasil gidiyor?", LastMessageAt = "09:15", UnreadCount = 0 },
-                new { Id = 3, Name = "Zeynep Demir", Avatar = "https://ui-avatars.com/api/?name=Zeynep+Demir&background=random&size=128", LastMessage = "Yarismaya katilacak misin?", LastMessageAt = "Dun", UnreadCount = 1 }
-            };
+            ViewBag.CurrentUserId = userId;
+
+            var conversations = db.Query(@"
+                SELECT k.Id, k.AdSoyad as Name,
+                       ISNULL(NULLIF(k.ProfilResmi, ''),
+                              'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as Avatar,
+                       (SELECT TOP 1 Mesaj FROM DirektMesajlar
+                        WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
+                        ORDER BY Tarih DESC) as LastMessage,
+                       (SELECT TOP 1
+                            CASE
+                                WHEN CAST(Tarih AS DATE) = CAST(GETDATE() AS DATE) THEN FORMAT(Tarih, 'HH:mm')
+                                WHEN CAST(Tarih AS DATE) = CAST(DATEADD(DAY,-1,GETDATE()) AS DATE) THEN 'Dün'
+                                ELSE FORMAT(Tarih, 'dd.MM')
+                            END
+                        FROM DirektMesajlar
+                        WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
+                        ORDER BY Tarih DESC) as LastMessageAt,
+                       (SELECT COUNT(*) FROM DirektMesajlar WHERE GonderenId = k.Id AND AliciId = @uid AND OkunduMu = 0) as UnreadCount
+                FROM Kullanicilar k
+                WHERE k.Id IN (
+                    SELECT DISTINCT CASE WHEN GonderenId = @uid THEN AliciId ELSE GonderenId END
+                    FROM DirektMesajlar WHERE GonderenId = @uid OR AliciId = @uid
+                )
+                ORDER BY (SELECT TOP 1 Tarih FROM DirektMesajlar
+                          WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
+                          ORDER BY Tarih DESC) DESC", new { uid = userId }).ToList();
+
+            if (conversations.Any())
+                ViewBag.Conversations = conversations;
+
             return View();
         }
 
