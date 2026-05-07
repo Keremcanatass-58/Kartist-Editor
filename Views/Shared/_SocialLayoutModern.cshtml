@@ -523,8 +523,9 @@
     </script>
     
     <!-- Create Stream Modal -->
-    <div id="createStreamModal" class="fixed inset-0 z-[60] hidden bg-background/80 backdrop-blur-sm">
-        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
+    <div id="createStreamModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCreateStreamModal()"></div>
+        <div class="relative z-10 w-full max-w-lg mx-4">
             <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
                 <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-destructive/20 blur-3xl"></div>
                 <div class="relative z-10">
