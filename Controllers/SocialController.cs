@@ -314,6 +314,8 @@ namespace Kartist.Controllers
                 if (email == null) return Json(new { success = false, message = "Giris yapmaniz gerekiyor." });
 
                 using var db = new SqlConnection(_conn);
+                EnsureCanliYayinlarTable(db);
+
                 int userId = GetUserId(db, email);
                 if (userId == 0) return Json(new { success = false, message = "Kullanici bulunamadi." });
 
@@ -334,6 +336,25 @@ namespace Kartist.Controllers
             {
                 return Json(new { success = false, message = "Yayin baslatilamadi: " + ex.Message });
             }
+        }
+
+        private void EnsureCanliYayinlarTable(SqlConnection db)
+        {
+            db.Execute(@"
+                IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('CanliYayinlar') AND type = 'U')
+                BEGIN
+                    CREATE TABLE CanliYayinlar (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        YayinciId INT NOT NULL,
+                        Baslik NVARCHAR(200) NOT NULL,
+                        Etiketler NVARCHAR(500) NULL,
+                        BaslangicTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
+                        BitisTarihi DATETIME NULL,
+                        Aktif BIT NOT NULL DEFAULT 1,
+                        IzleyiciSayisi INT NOT NULL DEFAULT 0,
+                        FOREIGN KEY (YayinciId) REFERENCES Kullanicilar(Id)
+                    );
+                END");
         }
 
         [HttpPost]
