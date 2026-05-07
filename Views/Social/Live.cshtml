@@ -261,6 +261,82 @@
     </div>
 </div>
 
+<!-- ==================== CREATE STREAM MODAL ==================== -->
+<div id="createStreamModal" class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-md items-center justify-center p-4">
+    <div class="w-full max-w-2xl bg-zinc-900 rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-6 border-b border-white/10 flex items-center justify-between">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <i data-lucide="video" class="h-5 w-5 text-red-500"></i> Yayın Ayarları
+            </h2>
+            <button onclick="closeCreateStreamModal()" class="text-white/40 hover:text-white"><i data-lucide="x" class="h-6 w-6"></i></button>
+        </div>
+        
+        <form onsubmit="submitStreamRequest(event)" class="flex-1 overflow-y-auto p-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Left: Preview & Source -->
+                <div class="space-y-4">
+                    <label class="text-xs font-bold text-white/40 uppercase tracking-wider">Yayın Kaynağı</label>
+                    <div class="aspect-video rounded-2xl bg-black border border-white/5 relative overflow-hidden group">
+                        <video id="previewVideo" class="w-full h-full object-cover hidden" autoplay muted playsinline></video>
+                        <canvas id="compositeCanvas" class="w-full h-full object-contain hidden"></canvas>
+                        <div id="cameraOffIcon" class="absolute inset-0 flex flex-col items-center justify-center text-white/20">
+                            <i data-lucide="camera-off" class="h-12 w-12 mb-2"></i>
+                            <p class="text-xs font-medium">Lütfen kaynak seçin</p>
+                        </div>
+                        <div id="cameraStatusText" class="absolute bottom-3 left-3 px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-[10px] text-white/80 font-bold hidden flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span id="cameraName">Kamera</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="startCameraPreview()" class="source-pick-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all group">
+                            <i data-lucide="camera" class="h-5 w-5 text-white/60 group-hover:text-red-400"></i>
+                            <span class="text-[10px] font-bold text-white/40 uppercase">Kamera</span>
+                        </button>
+                        <button type="button" id="btnScreenShare" onclick="switchToScreen()" class="source-pick-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all group hidden md:flex">
+                            <i data-lucide="monitor" class="h-5 w-5 text-white/60 group-hover:text-red-400"></i>
+                            <span class="text-[10px] font-bold text-white/40 uppercase">Ekran</span>
+                        </button>
+                        <button type="button" id="btnPipShare" onclick="startScreenAndCamera()" class="source-pick-btn flex flex-col items-center gap-2 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all group hidden md:flex">
+                            <i data-lucide="layout" class="h-5 w-5 text-white/60 group-hover:text-red-400"></i>
+                            <span class="text-[10px] font-bold text-white/40 uppercase">E+K</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Settings -->
+                <div class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-white/40 uppercase tracking-wider">Yayın Başlığı</label>
+                        <input id="streamTitleInput" type="text" placeholder="Bugün ne yapıyoruz?" class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-red-500 focus:outline-none" required />
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-white/40 uppercase tracking-wider">Etiketler</label>
+                        <input id="streamTagsInput" type="text" placeholder="tasarım, oyun, sohbet..." class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-red-500 focus:outline-none" />
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-white/80">Mikrofon</span>
+                            <div class="flex h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+                                <div id="micLevelBar" class="mic-level h-full w-0 bg-green-500"></div>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-white/40">Yayın sırasında mikrofonunuzu dilediğiniz zaman kapatabilirsiniz.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4">
+                <button type="submit" class="w-full rounded-2xl bg-red-600 py-4 text-sm font-bold text-white hover:bg-red-500 transition-all shadow-xl shadow-red-600/20 flex items-center justify-center gap-2">
+                    <i data-lucide="radio" class="h-5 w-5"></i> Canlı Yayına Geç
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @section Scripts {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
 <script>
@@ -472,6 +548,10 @@ function captureMic() {
 
 // ===================== SOURCE: Camera =====================
 function startCameraPreview() {
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        alert("Kamera ve mikrofon erişimi için güvenli bağlantı (HTTPS) gereklidir.");
+    }
+    
     cleanupPreview();
     _selectedSource = 'camera';
     setActiveSourceButton(0);
@@ -500,6 +580,11 @@ function switchToScreen() {
     cleanupPreview();
     _selectedSource = 'screen';
     setActiveSourceButton(1);
+
+    if (!navigator.mediaDevices.getDisplayMedia) {
+        alert("Tarayıcınız ekran paylaşımını desteklemiyor.");
+        return;
+    }
 
     navigator.mediaDevices.getDisplayMedia({
         video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } },
@@ -539,6 +624,11 @@ function startScreenAndCamera() {
     cleanupPreview();
     _selectedSource = 'pip';
     setActiveSourceButton(2);
+
+    if (!navigator.mediaDevices.getDisplayMedia) {
+        alert("Tarayıcınız ekran paylaşımını desteklemiyor.");
+        return;
+    }
 
     navigator.mediaDevices.getDisplayMedia({
         video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } },
@@ -688,6 +778,15 @@ function startStream() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
+
+    // Hide screen share on mobile devices
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+        if(document.getElementById('btnScreenShare')) document.getElementById('btnScreenShare').classList.add('hidden');
+        if(document.getElementById('btnPipShare')) document.getElementById('btnPipShare').classList.add('hidden');
+        // Auto-select camera on mobile
+        startCameraPreview();
+    }
 }
 
 function submitStreamRequest(event) {
