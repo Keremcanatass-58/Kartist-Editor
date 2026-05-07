@@ -121,13 +121,13 @@
                 <div class="flex gap-3 md:gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-1 px-1">
                     @foreach (var card in myPosts.Take(5))
                     {
-                        <a href="/Social/Design/@card.Id" class="group block relative w-52 md:w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-transparent transition-all hover:border-primary/50 hover:shadow-lg">
+                        <a href="/Social/Design/@card.Id" class="group block relative w-48 md:w-56 flex-shrink-0 overflow-hidden rounded-2xl border border-transparent transition-all hover:border-primary/50 hover:shadow-lg">
                             <div class="aspect-video w-full overflow-hidden">
                                 <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
                                      onerror="this.src='/img/default-design.svg'; this.onerror=null;"
                                      alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                             </div>
-                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 md:p-4 text-white">
                                 <h3 class="truncate text-sm font-bold">@(card.Title ?? "Tasarim")</h3>
                                 <div class="mt-1 flex items-center gap-3 text-xs text-white/80">
                                     <span class="flex items-center gap-1"><i data-lucide="heart" class="h-3 w-3"></i> @(card.Likes ?? 0)</span>
@@ -159,7 +159,7 @@
                     foreach (var card in otherPosts.Take(2))
                     {
                         <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-primary/50">
-                            <div class="relative overflow-hidden aspect-[4/3]">
+                            <div class="relative overflow-hidden aspect-video">
                                 <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
                                      onerror="this.src='/img/default-design.svg'; this.onerror=null;"
                                      alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -300,14 +300,14 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-bold">Kesfetmeye Devam Et</h2>
             </div>
-            <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-6">
                 @if (otherPosts != null && otherPosts.Count > 2)
                 {
                     foreach (var card in otherPosts.Skip(2))
                     {
                         <div class="group border border-transparent hover:border-border cursor-pointer relative overflow-hidden rounded-2xl bg-card transition-all hover:shadow-lg">
                             <a href="/Social/Design/@card.Id" class="block">
-                                <div class="relative overflow-hidden aspect-[4/3]">
+                                <div class="relative overflow-hidden aspect-video">
                                     <img src="@(card.ImageUrl ?? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800")" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
                                 </div>
                                 <div class="px-4 py-3 bg-card flex items-center justify-between group-hover:bg-secondary/20 transition-colors">
@@ -346,11 +346,11 @@
     </div>
 
     <!-- Right Sidebar -->
-    <aside class="hidden xl:flex w-80 flex-col border-l border-border bg-card/30 p-6 min-h-[calc(100vh-64px)] overflow-y-auto hide-scrollbar z-10">
+    <aside class="hidden xl:flex w-72 2xl:w-80 flex-col border-l border-border bg-card/30 p-4 2xl:p-6 min-h-[calc(100vh-64px)] overflow-y-auto hide-scrollbar z-10">
         <!-- Weekly Designers -->
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="trending-up" class="h-5 w-5 text-orange-500"></i>
-            <h2 class="text-lg font-bold">Trend Tasarimcilar</h2>
+            <h2 class="text-base 2xl:text-lg font-bold">Trend Tasarimcilar</h2>
         </div>
         
         <div class="space-y-3">
