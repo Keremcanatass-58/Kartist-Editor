@@ -15,7 +15,7 @@
         <h1 class="text-lg md:text-xl font-bold">Kesfet</h1>
         <div class="relative hidden max-w-md flex-1 md:block">
             <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
-            <input type="text" placeholder="Tasarim, tasarimci veya etiket ara..." class="h-10 w-full rounded-full border border-border bg-secondary/50 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input type="text" placeholder="Tasarim, tasarimci veya etiket ara..." class="h-10 w-full rounded-full border border-white/10 bg-black/20 pl-10 pr-4 text-sm text-white placeholder:text-white/50 backdrop-blur-md focus:border-primary focus:bg-black/40 focus:outline-none focus:ring-1 focus:ring-primary transition-all" />
         </div>
     </div>
 
@@ -122,10 +122,11 @@
                     @foreach (var card in myPosts.Take(5))
                     {
                         <a href="/Social/Design/@card.Id" class="group block relative w-48 md:w-56 flex-shrink-0 overflow-hidden rounded-2xl border border-transparent transition-all hover:border-primary/50 hover:shadow-lg">
-                            <div class="aspect-video w-full overflow-hidden">
-                                <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
-                                     onerror="this.src='/img/default-design.svg'; this.onerror=null;"
-                                     alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            <div class="aspect-video w-full overflow-hidden bg-gradient-to-br from-secondary to-background relative">
+                                <i data-lucide="image" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 text-white/20"></i>
+                                <img src="@(string.IsNullOrEmpty(card.ImageUrl) ? "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80" : card.ImageUrl)" 
+                                     onerror="this.src='https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80'; this.onerror=null;"
+                                     alt="@card.Title" class="relative z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                             </div>
                             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 md:p-4 text-white">
                                 <h3 class="truncate text-sm font-bold">@(card.Title ?? "Tasarim")</h3>
@@ -159,11 +160,12 @@
                     foreach (var card in otherPosts.Take(2))
                     {
                         <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-primary/50">
-                            <div class="relative overflow-hidden aspect-video">
-                                <img src="@(card.ImageUrl ?? "/img/default-design.svg")" 
-                                     onerror="this.src='/img/default-design.svg'; this.onerror=null;"
-                                     alt="@card.Title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                            <div class="relative overflow-hidden aspect-video bg-gradient-to-br from-secondary to-background">
+                                <i data-lucide="image" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/20"></i>
+                                <img src="@(string.IsNullOrEmpty(card.ImageUrl) ? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800&q=80" : card.ImageUrl)" 
+                                     onerror="this.src='https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800&q=80'; this.onerror=null;"
+                                     alt="@card.Title" class="relative z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100"></div>
                                 
                                 <!-- Category Badge -->
                                 <div class="absolute left-4 top-4">
@@ -171,11 +173,11 @@
                                 </div>
                                 
                                 <!-- Tags & Content Overlay -->
-                                <div class="absolute bottom-0 left-0 right-0 p-5 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                                    <h3 class="text-lg font-bold text-white">@(card.Title ?? "Tasarim")</h3>
-                                    <div class="mt-2 flex items-center gap-2">
-                                        <span class="rounded bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm">#design</span>
-                                        <span class="rounded bg-white/20 px-2 py-0.5 text-xs text-white backdrop-blur-sm">#creative</span>
+                                <div class="absolute bottom-0 left-0 right-0 p-4 md:p-5 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
+                                    <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 leading-tight">@(card.Title ?? "Tasarim")</h3>
+                                    <div class="mt-2.5 flex items-center gap-2">
+                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">#design</span>
+                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">#creative</span>
                                     </div>
                                 </div>
                             </div>
@@ -194,7 +196,7 @@
                             </div>
                             
                             <!-- Card Footer Info -->
-                            <div class="p-4 bg-card border-t border-border/50">
+                            <div class="p-3 md:p-4 bg-card border-t border-border/50">
                                 <div class="flex items-center justify-between">
                                     <!-- User Info -->
                                     <a href="/Social/ProfilModern" class="flex items-center gap-3 group/user">
