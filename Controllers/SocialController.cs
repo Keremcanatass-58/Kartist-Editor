@@ -892,13 +892,12 @@ namespace Kartist.Controllers
                         ORDER BY Tarih DESC) as LastMessageAt,
                        (SELECT COUNT(*) FROM DirektMesajlar WHERE GonderenId = k.Id AND AliciId = @uid AND OkunduMu = 0) as UnreadCount
                 FROM Kullanicilar k
-                WHERE k.Id IN (
-                    SELECT DISTINCT CASE WHEN GonderenId = @uid THEN AliciId ELSE GonderenId END
-                    FROM DirektMesajlar WHERE GonderenId = @uid OR AliciId = @uid
-                )
-                ORDER BY (SELECT TOP 1 Tarih FROM DirektMesajlar
-                          WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
-                          ORDER BY Tarih DESC) DESC", new { uid = userId }).ToList();
+                WHERE k.Id != @uid
+                ORDER BY 
+                    CASE WHEN EXISTS (SELECT 1 FROM DirektMesajlar WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)) THEN 0 ELSE 1 END ASC,
+                    (SELECT TOP 1 Tarih FROM DirektMesajlar
+                     WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
+                     ORDER BY Tarih DESC) DESC, k.AdSoyad ASC", new { uid = userId }).ToList();
 
             if (conversations.Any())
                 ViewBag.Conversations = conversations;
@@ -932,11 +931,10 @@ namespace Kartist.Controllers
                      ORDER BY Tarih DESC) as SonTarih,
                     (SELECT COUNT(*) FROM DirektMesajlar WHERE GonderenId = k.Id AND AliciId = @uid AND OkunduMu = 0) as OkunmamisSayi
                 FROM Kullanicilar k
-                WHERE k.Id IN (
-                    SELECT DISTINCT CASE WHEN GonderenId = @uid THEN AliciId ELSE GonderenId END
-                    FROM DirektMesajlar WHERE GonderenId = @uid OR AliciId = @uid
-                )
-                ORDER BY SonTarih DESC", new { uid = userId }).ToList();
+                WHERE k.Id != @uid
+                ORDER BY 
+                    CASE WHEN EXISTS (SELECT 1 FROM DirektMesajlar WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)) THEN 0 ELSE 1 END ASC,
+                    SonTarih DESC, k.AdSoyad ASC", new { uid = userId }).ToList();
 
             return Json(new { success = true, sohbetler });
         }
