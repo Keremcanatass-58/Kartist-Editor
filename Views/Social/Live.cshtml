@@ -155,60 +155,65 @@
 </div>
 
 <!-- Live Stream Viewer Modal (Full-screen) -->
-<div id="liveStreamModal" class="fixed inset-0 z-50 hidden bg-background/95 backdrop-blur-xl">
+<div id="liveStreamModal" class="fixed inset-0 z-50 hidden bg-black">
     <div class="flex h-full flex-col lg:flex-row">
         <!-- Left: Video Area -->
-        <div class="flex-1 p-4 lg:p-6 flex flex-col relative">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-4">
-                    <span class="flex h-8 items-center rounded-full bg-destructive/20 px-3 text-xs font-bold text-destructive">
-                        <span class="relative flex h-2 w-2 mr-2">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
-                            <span class="relative inline-flex h-2 w-2 rounded-full bg-destructive"></span>
+        <div class="flex-1 flex flex-col min-h-0 relative bg-black">
+            <!-- Top bar -->
+            <div class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-7 items-center rounded-full bg-red-600 px-3 text-xs font-bold text-white">
+                        <span class="relative flex h-2 w-2 mr-1.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
                         </span>
                         CANLI
                     </span>
-                    <h2 class="text-xl font-bold" id="liveRoomTitle">Yayin</h2>
+                    <h2 class="text-sm font-bold text-white truncate max-w-[200px] lg:max-w-[400px]" id="liveRoomTitle">Yayin</h2>
+                    <span class="text-xs text-white/60 font-mono" id="liveDuration">00:00</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-sm text-muted-foreground font-bold" id="liveDuration">00:00</span>
-                    <button onclick="leaveRoom()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-all">
-                        <i data-lucide="x" class="h-5 w-5"></i>
+                    <span class="flex items-center gap-1 text-xs text-white/80 bg-white/10 rounded-full px-2.5 py-1">
+                        <i data-lucide="eye" class="h-3 w-3"></i>
+                        <span id="viewerCount">0</span>
+                    </span>
+                    <button onclick="leaveRoom()" class="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white hover:bg-red-600 transition-all" title="Yayindan Cik">
+                        <i data-lucide="x" class="h-4 w-4"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Video Player -->
-            <div class="flex-1 rounded-2xl bg-black overflow-hidden relative border border-border" id="mainVideoContainer">
-                <video id="remoteVideo" class="absolute inset-0 w-full h-full object-contain" autoplay playsinline></video>
-                <video id="localVideoPreview" class="absolute inset-0 w-full h-full object-contain hidden" autoplay muted playsinline></video>
-                <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <i data-lucide="loader-2" class="h-16 w-16 text-white/40 animate-spin mb-4"></i>
-                    <p class="text-white/60 font-bold">Yayina Baglaniliyor...</p>
+            <!-- Video Player - fills all available space -->
+            <div class="flex-1 relative min-h-0" id="mainVideoContainer">
+                <video id="remoteVideo" class="absolute inset-0 w-full h-full object-contain bg-black" autoplay playsinline></video>
+                <video id="localVideoPreview" class="absolute inset-0 w-full h-full object-contain bg-black hidden" autoplay muted playsinline></video>
+                <canvas id="broadcasterCanvas" class="absolute inset-0 w-full h-full object-contain bg-black hidden"></canvas>
+                <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center bg-black">
+                    <div class="w-12 h-12 border-4 border-white/20 border-t-red-500 rounded-full animate-spin mb-4"></div>
+                    <p class="text-white/60 font-bold text-sm">Yayina Baglaniliyor...</p>
                 </div>
                 <div id="heartsContainer" class="absolute bottom-6 right-6 h-64 w-32 pointer-events-none overflow-hidden z-20"></div>
             </div>
         </div>
 
         <!-- Right: Chat Area -->
-        <div class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card/50 flex flex-col h-1/2 lg:h-full">
-            <div class="p-4 border-b border-border flex items-center justify-between">
-                <h3 class="font-bold flex items-center gap-2"><i data-lucide="message-square" class="h-4 w-4"></i> Canli Sohbet</h3>
-                <span class="text-xs text-muted-foreground"><i data-lucide="users" class="h-3 w-3 inline"></i> <span id="viewerCount">0</span> izleyici</span>
+        <div class="w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-white/10 bg-zinc-900 flex flex-col h-[40vh] lg:h-full">
+            <div class="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2"><i data-lucide="message-square" class="h-3.5 w-3.5"></i> Canli Sohbet</h3>
             </div>
 
-            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                <div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz!</div>
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+                <div class="text-center text-xs text-white/40 my-4">Sohbete katildiniz!</div>
             </div>
 
-            <div class="p-4 border-t border-border bg-background">
-                <div class="flex gap-2 relative">
-                    <button onclick="sendHeart()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shrink-0">
-                        <i data-lucide="heart" class="h-5 w-5"></i>
+            <div class="p-3 border-t border-white/10 shrink-0">
+                <div class="flex gap-2">
+                    <button onclick="sendHeart()" class="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500 hover:text-white transition-all shrink-0">
+                        <i data-lucide="heart" class="h-4 w-4"></i>
                     </button>
-                    <input type="text" id="chatInput" placeholder="Bir seyler yaz..." class="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none min-w-0" onkeypress="if(event.key==='Enter')sendChatMessage()" />
-                    <button onclick="sendChatMessage()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shrink-0">
-                        <i data-lucide="send" class="h-4 w-4"></i>
+                    <input type="text" id="chatInput" placeholder="Mesaj yaz..." class="flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 focus:border-red-500 focus:outline-none min-w-0" onkeypress="if(event.key==='Enter')sendChatMessage()" />
+                    <button onclick="sendChatMessage()" class="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600 text-white hover:bg-red-500 transition-all shrink-0">
+                        <i data-lucide="send" class="h-3.5 w-3.5"></i>
                     </button>
                 </div>
             </div>
@@ -224,16 +229,20 @@
         var currentStreamId = null;
         var isBroadcaster = false;
         var localStream = null;
-        var peerConnections = {};  // broadcaster keeps one per viewer
-        var viewerPC = null;       // viewer keeps one connection to broadcaster
+        var peerConnections = {};
+        var viewerPC = null;
         var durationTimer = null;
         var streamStartTime = null;
+        var _compositeRAF = null;
+        var _screenStream = null;
+        var _camStream = null;
+        var _previewStream = null;
+        var _selectedSource = null; // 'camera' | 'screen' | 'pip'
 
         var rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
 
@@ -247,7 +256,6 @@
                 .withAutomaticReconnect()
                 .build();
 
-            // --- BROADCASTER events ---
             liveConnection.on("ViewerJoined", function(viewerConnId) {
                 if (!isBroadcaster || !localStream) return;
                 createPeerForViewer(viewerConnId);
@@ -261,18 +269,17 @@
             });
 
             liveConnection.on("ReceiveAnswer", function(fromConnId, sdpAnswer) {
-                if (peerConnections[fromConnId]) {
-                    peerConnections[fromConnId].setRemoteDescription(new RTCSessionDescription(JSON.parse(sdpAnswer)));
+                var pc = peerConnections[fromConnId];
+                if (pc && pc.signalingState !== 'closed') {
+                    pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(sdpAnswer))).catch(function(){});
                 }
             });
 
-            // --- VIEWER events ---
             liveConnection.on("ReceiveOffer", function(fromConnId, sdpOffer) {
                 if (isBroadcaster) return;
                 handleOffer(fromConnId, sdpOffer);
             });
 
-            // --- SHARED events ---
             liveConnection.on("ReceiveICECandidate", function(fromConnId, candidate) {
                 var pc = isBroadcaster ? peerConnections[fromConnId] : viewerPC;
                 if (pc && candidate) {
@@ -282,7 +289,7 @@
 
             liveConnection.on("StreamEnded", function() {
                 if (!isBroadcaster) {
-                    showToast('Yayin sona erdi', 'destructive');
+                    showToast('Yayin sona erdi');
                     leaveRoom();
                 }
             });
@@ -301,7 +308,7 @@
             return liveConnection.start();
         }
 
-        // ===== BROADCASTER: Create offer for a new viewer =====
+        // ===== BROADCASTER: peer per viewer =====
         function createPeerForViewer(viewerConnId) {
             var pc = new RTCPeerConnection(rtcConfig);
             peerConnections[viewerConnId] = pc;
@@ -323,16 +330,16 @@
             });
         }
 
-        // ===== VIEWER: Handle incoming offer =====
+        // ===== VIEWER: handle offer =====
         function handleOffer(broadcasterConnId, sdpOffer) {
-            if (viewerPC) viewerPC.close();
+            if (viewerPC) { viewerPC.close(); viewerPC = null; }
 
             viewerPC = new RTCPeerConnection(rtcConfig);
 
             viewerPC.ontrack = function(e) {
-                var remoteVideo = document.getElementById('remoteVideo');
-                if (remoteVideo && e.streams && e.streams[0]) {
-                    remoteVideo.srcObject = e.streams[0];
+                var vid = document.getElementById('remoteVideo');
+                if (vid && e.streams && e.streams[0]) {
+                    vid.srcObject = e.streams[0];
                     document.getElementById('liveConnectingState').classList.add('hidden');
                 }
             };
@@ -351,41 +358,29 @@
                 });
         }
 
-        // ===== START STREAM (Broadcaster) =====
-        function startStream() {
-            var modal = document.getElementById('createStreamModal');
-            if (!modal) { alert("Sistem hatasi."); return; }
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-
-            startCameraPreview();
-        }
-
+        // ===== PREVIEW HELPERS =====
         function cleanupPreview() {
-            if (window._previewStream) {
-                window._previewStream.getTracks().forEach(function(t) { t.stop(); });
-                window._previewStream = null;
-            }
-            if (window._camStream) {
-                window._camStream.getTracks().forEach(function(t) { t.stop(); });
-                window._camStream = null;
-            }
-            if (window._screenStream) {
-                window._screenStream.getTracks().forEach(function(t) { t.stop(); });
-                window._screenStream = null;
-            }
-            if (window._compositeRAF) { cancelAnimationFrame(window._compositeRAF); window._compositeRAF = null; }
+            if (_compositeRAF) { cancelAnimationFrame(_compositeRAF); _compositeRAF = null; }
+            if (_previewStream) { _previewStream.getTracks().forEach(function(t) { t.stop(); }); _previewStream = null; }
+            if (_camStream) { _camStream.getTracks().forEach(function(t) { t.stop(); }); _camStream = null; }
+            if (_screenStream) { _screenStream.getTracks().forEach(function(t) { t.stop(); }); _screenStream = null; }
             var canvas = document.getElementById('compositeCanvas');
             if (canvas) canvas.classList.add('hidden');
+            var video = document.getElementById('previewVideo');
+            if (video) { video.srcObject = null; video.style.display = 'none'; }
+            _selectedSource = null;
         }
 
-        function showPreview(stream, label) {
+        function showPreviewVideo(stream, label) {
             var video = document.getElementById('previewVideo');
             var icon = document.getElementById('cameraOffIcon');
             var canvas = document.getElementById('compositeCanvas');
             if (canvas) canvas.classList.add('hidden');
-            if (video) { video.srcObject = stream; video.style.display = 'block'; video.classList.remove('hidden'); video.play().catch(function(){}); }
+            if (video) {
+                video.srcObject = stream;
+                video.style.display = 'block';
+                video.play().catch(function(){});
+            }
             if (icon) icon.style.display = 'none';
             var nameEl = document.getElementById('cameraName');
             var statusEl = document.getElementById('cameraStatusText');
@@ -393,103 +388,172 @@
             if (statusEl) statusEl.classList.remove('hidden');
         }
 
+        // ===== SOURCE: Camera =====
         function startCameraPreview() {
             cleanupPreview();
-            navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true })
-                .catch(function() { return navigator.mediaDevices.getUserMedia({ video: true }); })
-                .then(function(stream) {
-                    if (!stream) return;
-                    window._previewStream = stream;
-                    var track = stream.getVideoTracks()[0];
-                    showPreview(stream, track ? track.label : 'Kamera');
-                })
-                .catch(function(err) { console.error("Kamera hatasi:", err); });
+            _selectedSource = 'camera';
+            navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+                audio: true
+            })
+            .then(function(stream) {
+                _previewStream = stream;
+                showPreviewVideo(stream, 'Kamera');
+            })
+            .catch(function(err) {
+                console.error("Kamera hatasi:", err);
+                alert("Kameraya erisilemedi: " + err.message);
+                _selectedSource = null;
+            });
         }
 
+        // ===== SOURCE: Screen only =====
         function switchToScreen() {
             cleanupPreview();
-            navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true })
-                .then(function(stream) {
-                    window._previewStream = stream;
-                    showPreview(stream, 'Ekran Paylasimi');
-                })
-                .catch(function(err) { console.error("Ekran paylasimi hatasi:", err); });
+            _selectedSource = 'screen';
+            navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30, max: 30 }
+                },
+                audio: true,
+                selfBrowserSurface: 'exclude',
+                surfaceSwitching: 'include'
+            })
+            .then(function(stream) {
+                _previewStream = stream;
+                stream.getVideoTracks()[0].addEventListener('ended', function() {
+                    cleanupPreview();
+                    var icon = document.getElementById('cameraOffIcon');
+                    if (icon) icon.style.display = '';
+                    var statusEl = document.getElementById('cameraStatusText');
+                    if (statusEl) statusEl.classList.add('hidden');
+                });
+                showPreviewVideo(stream, 'Ekran Paylasimi');
+            })
+            .catch(function(err) {
+                console.error("Ekran paylasimi hatasi:", err);
+                _selectedSource = null;
+            });
         }
 
+        // ===== SOURCE: Screen + Camera PIP =====
         function startScreenAndCamera() {
             cleanupPreview();
-            var screenP = navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true });
-            var camP = navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 320 }, height: { ideal: 240 } }, audio: false })
-                .catch(function() { return null; });
+            _selectedSource = 'pip';
 
-            Promise.all([screenP, camP]).then(function(results) {
-                var screenStream = results[0];
-                var camStream = results[1];
-                if (!screenStream) return;
+            navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                    frameRate: { ideal: 30, max: 30 }
+                },
+                audio: true,
+                selfBrowserSurface: 'exclude',
+                surfaceSwitching: 'include'
+            })
+            .then(function(screenStream) {
+                _screenStream = screenStream;
 
-                window._screenStream = screenStream;
-                window._camStream = camStream;
+                screenStream.getVideoTracks()[0].addEventListener('ended', function() {
+                    cleanupPreview();
+                    var icon = document.getElementById('cameraOffIcon');
+                    if (icon) icon.style.display = '';
+                    var statusEl = document.getElementById('cameraStatusText');
+                    if (statusEl) statusEl.classList.add('hidden');
+                });
 
-                var canvas = document.getElementById('compositeCanvas');
-                var ctx = canvas.getContext('2d');
-                canvas.width = 1280;
-                canvas.height = 720;
-
-                var screenVideo = document.createElement('video');
-                screenVideo.srcObject = screenStream;
-                screenVideo.muted = true;
-                screenVideo.play();
-
-                var camVideo = null;
-                if (camStream) {
-                    camVideo = document.createElement('video');
-                    camVideo.srcObject = camStream;
-                    camVideo.muted = true;
-                    camVideo.play();
-                }
-
-                function drawFrame() {
-                    ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-                    if (camVideo && camVideo.readyState >= 2) {
-                        var pipW = 240, pipH = 180;
-                        var pipX = canvas.width - pipW - 16;
-                        var pipY = canvas.height - pipH - 16;
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.roundRect(pipX, pipY, pipW, pipH, 16);
-                        ctx.clip();
-                        ctx.drawImage(camVideo, pipX, pipY, pipW, pipH);
-                        ctx.restore();
-                        ctx.strokeStyle = '#c6ff00';
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.roundRect(pipX, pipY, pipW, pipH, 16);
-                        ctx.stroke();
-                    }
-                    window._compositeRAF = requestAnimationFrame(drawFrame);
-                }
-                drawFrame();
-
-                var compositeStream = canvas.captureStream(30);
-                var audioTracks = screenStream.getAudioTracks();
-                audioTracks.forEach(function(t) { compositeStream.addTrack(t); });
-
-                window._previewStream = compositeStream;
-
-                var previewVideo = document.getElementById('previewVideo');
-                if (previewVideo) previewVideo.style.display = 'none';
-                canvas.classList.remove('hidden');
-
-                var icon = document.getElementById('cameraOffIcon');
-                if (icon) icon.style.display = 'none';
-                var nameEl = document.getElementById('cameraName');
-                var statusEl = document.getElementById('cameraStatusText');
-                if (nameEl) nameEl.innerText = 'Ekran + Kamera (PIP)';
-                if (statusEl) statusEl.classList.remove('hidden');
-            }).catch(function(err) {
+                return navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 320 }, height: { ideal: 240 } },
+                    audio: false
+                }).catch(function() { return null; }).then(function(camStream) {
+                    _camStream = camStream;
+                    buildComposite(screenStream, camStream);
+                });
+            })
+            .catch(function(err) {
                 console.error("Ekran+Kamera hatasi:", err);
-                alert("Ekran veya kamera erisimi saglanamadi.");
+                _selectedSource = null;
             });
+        }
+
+        function buildComposite(screenStream, camStream) {
+            var screenTrack = screenStream.getVideoTracks()[0];
+            var settings = screenTrack.getSettings();
+            var cw = settings.width || 1920;
+            var ch = settings.height || 1080;
+
+            var canvas = document.getElementById('compositeCanvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = cw;
+            canvas.height = ch;
+
+            var screenVid = document.createElement('video');
+            screenVid.srcObject = screenStream;
+            screenVid.muted = true;
+            screenVid.playsInline = true;
+            screenVid.play();
+
+            var camVid = null;
+            if (camStream) {
+                camVid = document.createElement('video');
+                camVid.srcObject = camStream;
+                camVid.muted = true;
+                camVid.playsInline = true;
+                camVid.play();
+            }
+
+            var pipW = Math.round(cw * 0.18);
+            var pipH = Math.round(pipW * 0.75);
+            var pipMargin = Math.round(cw * 0.015);
+
+            function draw() {
+                ctx.drawImage(screenVid, 0, 0, cw, ch);
+                if (camVid && camVid.readyState >= 2) {
+                    var px = cw - pipW - pipMargin;
+                    var py = ch - pipH - pipMargin;
+                    var r = 12;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.roundRect(px, py, pipW, pipH, r);
+                    ctx.clip();
+                    ctx.drawImage(camVid, px, py, pipW, pipH);
+                    ctx.restore();
+                    ctx.strokeStyle = '#c6ff00';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.roundRect(px, py, pipW, pipH, r);
+                    ctx.stroke();
+                }
+                _compositeRAF = requestAnimationFrame(draw);
+            }
+            draw();
+
+            var compositeStream = canvas.captureStream(30);
+            screenStream.getAudioTracks().forEach(function(t) { compositeStream.addTrack(t); });
+
+            _previewStream = compositeStream;
+
+            var previewVideo = document.getElementById('previewVideo');
+            if (previewVideo) previewVideo.style.display = 'none';
+            canvas.classList.remove('hidden');
+
+            var icon = document.getElementById('cameraOffIcon');
+            if (icon) icon.style.display = 'none';
+            var nameEl = document.getElementById('cameraName');
+            var statusEl = document.getElementById('cameraStatusText');
+            if (nameEl) nameEl.innerText = 'Ekran + Kamera (PIP)';
+            if (statusEl) statusEl.classList.remove('hidden');
+        }
+
+        // ===== START STREAM FLOW =====
+        function startStream() {
+            var modal = document.getElementById('createStreamModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
         }
 
         function submitStreamRequest(event) {
@@ -499,14 +563,14 @@
             var btn = event.target.querySelector('button[type="submit"]');
             if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Baslaniyor...'; }
 
-            if (!window._previewStream) {
-                alert("Kamera veya ekran paylasimi aktif degil.");
+            if (!_previewStream) {
+                alert("Kamera veya ekran paylasimi aktif degil. Lutfen bir kaynak secin.");
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="radio" class="h-4 w-4"></i> Canli Yayina Gec'; }
                 return;
             }
 
-            localStream = window._previewStream;
-            window._previewStream = null;
+            localStream = _previewStream;
+            _previewStream = null;
             isBroadcaster = true;
 
             fetch('/Social/YayinBaslat', {
@@ -516,21 +580,45 @@
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (!data.success) { alert(data.message); return; }
+                if (!data.success) { alert(data.message); isBroadcaster = false; return; }
 
                 currentStreamId = data.streamId.toString();
-
                 closeCreateStreamModal();
 
-                document.getElementById('liveStreamModal').classList.remove('hidden');
+                var modal = document.getElementById('liveStreamModal');
+                modal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
                 document.getElementById('liveRoomTitle').innerText = title;
 
-                var localPreview = document.getElementById('localVideoPreview');
-                localPreview.srcObject = localStream;
-                localPreview.classList.remove('hidden');
-                document.getElementById('remoteVideo').classList.add('hidden');
-                document.getElementById('liveConnectingState').classList.add('hidden');
+                // Show the broadcaster's own stream
+                var connecting = document.getElementById('liveConnectingState');
+                connecting.classList.add('hidden');
+
+                if (_selectedSource === 'pip') {
+                    // PIP mode: show canvas in the viewer too
+                    var bCanvas = document.getElementById('broadcasterCanvas');
+                    var srcCanvas = document.getElementById('compositeCanvas');
+                    if (bCanvas && srcCanvas) {
+                        bCanvas.width = srcCanvas.width;
+                        bCanvas.height = srcCanvas.height;
+                        bCanvas.classList.remove('hidden');
+                        var bCtx = bCanvas.getContext('2d');
+                        function mirrorDraw() {
+                            if (!isBroadcaster) return;
+                            bCtx.drawImage(srcCanvas, 0, 0);
+                            requestAnimationFrame(mirrorDraw);
+                        }
+                        mirrorDraw();
+                    }
+                    document.getElementById('remoteVideo').classList.add('hidden');
+                    document.getElementById('localVideoPreview').classList.add('hidden');
+                } else {
+                    var localVid = document.getElementById('localVideoPreview');
+                    localVid.srcObject = localStream;
+                    localVid.classList.remove('hidden');
+                    document.getElementById('remoteVideo').classList.add('hidden');
+                    document.getElementById('broadcasterCanvas').classList.add('hidden');
+                }
 
                 streamStartTime = Date.now();
                 startDurationTimer();
@@ -542,7 +630,11 @@
 
                 refreshRoomsList();
             })
-            .catch(function(err) { alert("Yayin baslatilamadi: " + err); });
+            .catch(function(err) {
+                alert("Yayin baslatilamadi: " + err);
+                isBroadcaster = false;
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="radio" class="h-4 w-4"></i> Canli Yayina Gec'; }
+            });
         }
 
         // ===== WATCH STREAM (Viewer) =====
@@ -550,13 +642,15 @@
             isBroadcaster = false;
             currentStreamId = streamId.toString();
 
-            document.getElementById('liveStreamModal').classList.remove('hidden');
+            var modal = document.getElementById('liveStreamModal');
+            modal.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             document.getElementById('liveRoomTitle').innerText = title || 'Kartist Live';
             document.getElementById('liveConnectingState').classList.remove('hidden');
             document.getElementById('remoteVideo').classList.remove('hidden');
             document.getElementById('localVideoPreview').classList.add('hidden');
-            document.getElementById('chatMessages').innerHTML = '<div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz!</div>';
+            document.getElementById('broadcasterCanvas').classList.add('hidden');
+            document.getElementById('chatMessages').innerHTML = '<div class="text-center text-xs text-white/40 my-4">Sohbete katildiniz!</div>';
 
             streamStartTime = Date.now();
             startDurationTimer();
@@ -574,21 +668,28 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: 'yayinId=' + currentStreamId
-                });
+                }).catch(function(){});
                 if (liveConnection && liveConnection.state === signalR.HubConnectionState.Connected) {
-                    liveConnection.invoke("EndBroadcast", currentStreamId);
+                    liveConnection.invoke("EndBroadcast", currentStreamId).catch(function(){});
                 }
                 Object.keys(peerConnections).forEach(function(k) { peerConnections[k].close(); });
                 peerConnections = {};
             }
 
             if (viewerPC) { viewerPC.close(); viewerPC = null; }
+
+            // Stop all media tracks
             if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
+            if (_screenStream) { _screenStream.getTracks().forEach(function(t) { t.stop(); }); _screenStream = null; }
+            if (_camStream) { _camStream.getTracks().forEach(function(t) { t.stop(); }); _camStream = null; }
+            if (_previewStream) { _previewStream.getTracks().forEach(function(t) { t.stop(); }); _previewStream = null; }
+            if (_compositeRAF) { cancelAnimationFrame(_compositeRAF); _compositeRAF = null; }
 
             document.getElementById('liveStreamModal').classList.add('hidden');
             document.body.style.overflow = '';
             currentStreamId = null;
             isBroadcaster = false;
+            _selectedSource = null;
 
             if (durationTimer) { clearInterval(durationTimer); durationTimer = null; }
 
@@ -596,19 +697,25 @@
             if (remoteVid) remoteVid.srcObject = null;
             var localVid = document.getElementById('localVideoPreview');
             if (localVid) localVid.srcObject = null;
+            var bCanvas = document.getElementById('broadcasterCanvas');
+            if (bCanvas) bCanvas.classList.add('hidden');
 
             refreshRoomsList();
         }
 
         function closeCreateStreamModal() {
             var modal = document.getElementById('createStreamModal');
+            if (!modal) return;
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
 
-            if (window._previewStream && !isBroadcaster) {
-                window._previewStream.getTracks().forEach(function(t) { t.stop(); });
-                window._previewStream = null;
+            if (!isBroadcaster) {
+                cleanupPreview();
+                var icon = document.getElementById('cameraOffIcon');
+                if (icon) icon.style.display = '';
+                var statusEl = document.getElementById('cameraStatusText');
+                if (statusEl) statusEl.classList.add('hidden');
             }
         }
 
@@ -620,7 +727,7 @@
 
             var email = '@(User.Identity?.Name ?? "")';
             var handle = email ? email.split('@@')[0] : 'kartist_user';
-            var avatar = 'https://ui-avatars.com/api/?name=' + handle + '&background=random';
+            var avatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(handle) + '&background=random';
 
             liveConnection.invoke("SendLiveMessage", currentStreamId, handle, avatar, message).catch(function(err) { console.error(err); });
             input.value = '';
@@ -630,11 +737,10 @@
             var chatDiv = document.getElementById('chatMessages');
             if (!chatDiv) return;
             var el = document.createElement('div');
-            el.className = 'flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2';
-            el.innerHTML = '<img src="' + avatar + '" class="h-8 w-8 rounded-full border border-border mt-1" />' +
-                '<div class="bg-secondary/50 rounded-2xl rounded-tl-none p-3 max-w-[85%]">' +
-                '<p class="text-[10px] font-bold text-primary mb-0.5">@@' + handle + '</p>' +
-                '<p class="text-sm text-foreground leading-relaxed">' + escapeHtml(message) + '</p></div>';
+            el.className = 'flex items-start gap-2';
+            el.innerHTML = '<img src="' + avatar + '" class="h-6 w-6 rounded-full mt-0.5 shrink-0" />' +
+                '<div><span class="text-[11px] font-bold text-red-400">@@' + escapeHtml(handle) + '</span> ' +
+                '<span class="text-sm text-white/90">' + escapeHtml(message) + '</span></div>';
             chatDiv.appendChild(el);
             chatDiv.scrollTop = chatDiv.scrollHeight;
         }
@@ -648,11 +754,9 @@
         function sendHeart() {
             var container = document.getElementById('heartsContainer');
             if (!container) return;
-            var colors = ['#f43f5e', '#ec4899', '#d946ef', '#8b5cf6'];
             var heart = document.createElement('div');
             heart.className = 'heart-animation text-2xl';
             heart.innerHTML = '❤️';
-            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
             heart.style.right = Math.random() * 40 + 'px';
             container.appendChild(heart);
             setTimeout(function() { heart.remove(); }, 3000);
@@ -663,10 +767,11 @@
             if (durationTimer) clearInterval(durationTimer);
             durationTimer = setInterval(function() {
                 var elapsed = Math.floor((Date.now() - streamStartTime) / 1000);
-                var mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                var hrs = Math.floor(elapsed / 3600);
+                var mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
                 var secs = String(elapsed % 60).padStart(2, '0');
                 var el = document.getElementById('liveDuration');
-                if (el) el.innerText = mins + ':' + secs;
+                if (el) el.innerText = (hrs > 0 ? hrs + ':' : '') + mins + ':' + secs;
             }, 1000);
         }
 
@@ -704,10 +809,10 @@
                 });
         }
 
-        function showToast(message, color) {
+        function showToast(message) {
             var toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 z-[70] bg-' + (color || 'primary') + ' text-' + (color || 'primary') + '-foreground px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-2';
-            toast.innerHTML = '<i data-lucide="radio" class="h-5 w-5"></i> ' + message;
+            toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] bg-zinc-800 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 border border-white/10';
+            toast.innerHTML = '<i data-lucide="radio" class="h-4 w-4 text-red-400"></i> ' + message;
             document.body.appendChild(toast);
             if (typeof lucide !== 'undefined') lucide.createIcons();
             setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 3000);
@@ -717,13 +822,12 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 var liveModal = document.getElementById('liveStreamModal');
-                if (liveModal && !liveModal.classList.contains('hidden')) leaveRoom();
+                if (liveModal && !liveModal.classList.contains('hidden')) { leaveRoom(); return; }
                 var streamModal = document.getElementById('createStreamModal');
                 if (streamModal && !streamModal.classList.contains('hidden')) closeCreateStreamModal();
             }
         });
 
-        // Init icons
         if (typeof lucide !== 'undefined') lucide.createIcons();
     </script>
 }
