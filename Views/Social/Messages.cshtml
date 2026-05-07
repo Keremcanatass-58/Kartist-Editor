@@ -206,7 +206,7 @@
             var items = document.getElementsByClassName('conv-item');
             
             for (var i = 0; i < items.length; i++) {
-                var nameEl = items[i].querySelector('.font-semibold');
+                var nameEl = items[i].querySelector('.font-bold');
                 if (!nameEl) continue;
                 var name = nameEl.textContent;
                 if (name.toLowerCase().indexOf(filter) > -1) {
@@ -397,14 +397,14 @@
             });
             
             // Send to Backend
+            var token = document.querySelector('input[name="__RequestVerificationToken"]');
+            var tokenVal = token ? token.value : '';
             fetch('/Social/MesajGonder', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'aliciId=' + currentConversationId + '&mesaj=' + encodeURIComponent(message)
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': tokenVal },
+                body: 'aliciId=' + currentConversationId + '&mesaj=' + encodeURIComponent(message) + '&__RequestVerificationToken=' + encodeURIComponent(tokenVal)
             })
             .catch(function(err) { console.log('Mesaj API hatasi:', err); });
         }
-    </script>
-}
     </script>
 }

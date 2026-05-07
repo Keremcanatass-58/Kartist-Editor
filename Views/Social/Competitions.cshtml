@@ -226,51 +226,51 @@
         </div>
     </div>
     <!-- Join Competition Modal -->
-    <div id="compJoinModal" class="fixed inset-0 z-50 hidden bg-background/80 backdrop-blur-sm">
-        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
-            <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
-                <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold flex items-center gap-2">
-                            <i data-lucide="upload-cloud" class="h-6 w-6 text-primary"></i> 
-                            Tasarımını Gönder
-                        </h2>
-                        <button onclick="closeCompModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
-                            <i data-lucide="x" class="h-4 w-4"></i>
-                        </button>
+    <div id="compJoinModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCompModal()"></div>
+        <div class="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl">
+            <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="upload-cloud" class="h-6 w-6 text-primary"></i>
+                        Tasarımını Gönder
+                    </h2>
+                    <button type="button" onclick="closeCompModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+
+                <form action="/Social/CreatePost" method="post" enctype="multipart/form-data" class="space-y-4">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label class="text-sm font-medium mb-1.5 block">Yarışma Teması</label>
+                        <input type="text" id="compThemeInput" name="Baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
                     </div>
 
-                    <form action="/Social/CreatePost" method="post" enctype="multipart/form-data" class="space-y-4">
-                        <div>
-                            <label class="text-sm font-medium mb-1.5 block">Yarışma Teması</label>
-                            <input type="text" id="compThemeInput" name="Baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
-                        </div>
-                        
-                        <div>
-                            <label class="text-sm font-medium mb-1.5 block">Açıklama & Etiketler</label>
-                            <textarea name="Icerik" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
-                        </div>
-                        
-                        <div>
-                            <label class="text-sm font-medium mb-1.5 block">Çalışmanı Yükle</label>
-                            <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-8 text-center transition-colors hover:border-primary/50 relative overflow-hidden group">
-                                <input type="file" name="Resim" required accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                <div class="relative z-0">
-                                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-3 shadow-sm">
-                                        <i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i>
-                                    </div>
-                                    <p class="text-sm font-semibold mb-1">Dosya seç veya sürükle</p>
-                                    <p class="text-xs text-muted-foreground">PNG, JPG veya WEBP (Max 5MB)</p>
+                    <div>
+                        <label class="text-sm font-medium mb-1.5 block">Açıklama & Etiketler</label>
+                        <textarea name="Icerik" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none resize-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium mb-1.5 block">Çalışmanı Yükle</label>
+                        <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-8 text-center transition-colors hover:border-primary/50 relative overflow-hidden group">
+                            <input type="file" name="Resim" required accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                            <div class="relative z-0">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-3 shadow-sm">
+                                    <i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i>
                                 </div>
+                                <p class="text-sm font-semibold mb-1">Dosya seç veya sürükle</p>
+                                <p class="text-xs text-muted-foreground">PNG, JPG veya WEBP (Max 5MB)</p>
                             </div>
                         </div>
+                    </div>
 
-                        <button type="submit" class="mt-4 w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
-                            Şimdi Katıl!
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" class="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
+                        Şimdi Katıl!
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -304,33 +304,55 @@
         
         function joinCompetition(title) {
             document.getElementById('compThemeInput').value = title;
-            document.getElementById('compJoinModal').classList.remove('hidden');
+            var modal = document.getElementById('compJoinModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function closeCompModal() {
-            document.getElementById('compJoinModal').classList.add('hidden');
+            var modal = document.getElementById('compJoinModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
         }
 
         function viewResults(id) {
-            document.getElementById('resultsModal').classList.remove('hidden');
-            // Mocking a confetti celebration
+            var modal = document.getElementById('resultsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             }
         }
 
         function closeResultsModal() {
-            document.getElementById('resultsModal').classList.add('hidden');
+            var modal = document.getElementById('resultsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
         }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var comp = document.getElementById('compJoinModal');
+                if (comp && !comp.classList.contains('hidden')) closeCompModal();
+                var res = document.getElementById('resultsModal');
+                if (res && !res.classList.contains('hidden')) closeResultsModal();
+            }
+        });
     </script>
     <!-- Add Confetti JS for WOW effect -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 }
 
     <!-- View Results Modal -->
-    <div id="resultsModal" class="fixed inset-0 z-[60] hidden bg-background/90 backdrop-blur-md">
-        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-            <div class="rounded-3xl border border-border bg-card p-8 shadow-2xl relative overflow-hidden">
+    <div id="resultsModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onclick="closeResultsModal()"></div>
+        <div class="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-8 shadow-2xl">
                 <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
                 <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl"></div>
                 
@@ -387,6 +409,6 @@
                         Tebrik Et & Kapat
                     </button>
                 </div>
-            </div>
         </div>
     </div>
+

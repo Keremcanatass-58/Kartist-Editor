@@ -414,7 +414,8 @@
                 return;
             }
             modal.classList.remove('hidden');
-            
+            document.body.style.overflow = 'hidden';
+
             const constraints = { 
                 video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
                 audio: true 
@@ -482,7 +483,17 @@
 
         function closeCreateStreamModal() {
             document.getElementById('createStreamModal').classList.add('hidden');
+            document.body.style.overflow = '';
         }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var liveModal = document.getElementById('liveStreamModal');
+                if (liveModal && !liveModal.classList.contains('hidden')) leaveRoom();
+                var streamModal = document.getElementById('createStreamModal');
+                if (streamModal && !streamModal.classList.contains('hidden')) closeCreateStreamModal();
+            }
+        });
 
         function submitStreamRequest(event) {
             event.preventDefault();
