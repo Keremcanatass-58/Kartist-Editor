@@ -3,8 +3,6 @@
     ViewData["Title"] = "Canli Yayinlar";
 }
 
-
-
 <style>
     @@keyframes heartFly {
         0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
@@ -17,9 +15,6 @@
         right: 0;
         animation: heartFly 3s ease-out forwards;
         pointer-events: none;
-    }
-    .video-filtered {
-        transition: filter 0.5s ease;
     }
 </style>
 
@@ -35,7 +30,7 @@
     <div class="rounded-3xl bg-gradient-to-r from-red-500/20 via-rose-500/20 to-orange-500/20 p-8 relative overflow-hidden border border-red-500/10">
         <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-500/20 blur-3xl"></div>
         <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
-        
+
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div class="flex items-center gap-4">
                 <div class="relative">
@@ -62,53 +57,48 @@
                     <i data-lucide="radio" class="h-4 w-4 text-destructive"></i>
                     <span class="text-sm font-medium">Canli Yayinlar</span>
                 </div>
-                <p class="text-3xl font-bold">@(ViewBag.LiveCount ?? 2)</p>
+                <p class="text-3xl font-bold" id="statLiveCount">@(ViewBag.LiveCount ?? 0)</p>
             </div>
             <div class="glass-card rounded-xl p-5 border-white/5">
                 <div class="flex items-center gap-2 text-muted-foreground mb-2">
                     <i data-lucide="users" class="h-4 w-4"></i>
                     <span class="text-sm font-medium">Toplam Izleyici</span>
                 </div>
-                <p class="text-3xl font-bold text-accent">@(ViewBag.TotalViewers ?? 213)</p>
+                <p class="text-3xl font-bold text-accent" id="statTotalViewers">0</p>
             </div>
             <div class="glass-card rounded-xl p-5 border-white/5">
                 <div class="flex items-center gap-2 text-muted-foreground mb-2">
-                    <i data-lucide="calendar" class="h-4 w-4"></i>
-                    <span class="text-sm font-medium">Planlanmis</span>
+                    <i data-lucide="clock" class="h-4 w-4"></i>
+                    <span class="text-sm font-medium">Yayin Suresi</span>
                 </div>
-                <p class="text-3xl font-bold text-primary">@(ViewBag.ScheduledCount ?? 1)</p>
+                <p class="text-3xl font-bold text-primary" id="statDuration">--:--</p>
             </div>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="mt-8 flex flex-wrap gap-2" id="liveFilters">
-        <button onclick="setLiveFilter('all')" id="filter-all" class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground neon-glow">
-            <i data-lucide="grid" class="h-4 w-4"></i> Tumu
-        </button>
-        <button onclick="setLiveFilter('live')" id="filter-live" class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
-            <i data-lucide="radio" class="h-4 w-4 text-destructive"></i> Canli
-        </button>
-        <button onclick="setLiveFilter('scheduled')" id="filter-scheduled" class="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
-            <i data-lucide="calendar" class="h-4 w-4 text-primary"></i> Planlanmis
-        </button>
-    </div>
+    <!-- Active Streams Grid -->
+    <div class="mt-8" id="roomsSection">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
+                <span class="relative inline-flex h-3 w-3 rounded-full bg-destructive"></span>
+            </span>
+            Simdi Yayinda
+        </h2>
 
-    <!-- Rooms Grid -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roomsGrid">
-        @if (ViewBag.LiveRooms != null)
-        {
-            foreach (var room in ViewBag.LiveRooms)
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roomsGrid">
+            @if (ViewBag.LiveRooms != null && ((IEnumerable<dynamic>)ViewBag.LiveRooms).Any())
             {
-                var isLive = room.IsLive == true;
-                <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-@(isLive ? "destructive" : "primary")/50 flex flex-col" data-live="@(isLive.ToString().ToLower())">
-                    <div class="relative aspect-video overflow-hidden shrink-0">
-                        <img src="@(room.Thumbnail)" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-                        
-                        <!-- Status Badge -->
-                        <div class="absolute left-3 top-3">
-                            @if(isLive) {
+                foreach (var room in ViewBag.LiveRooms)
+                {
+                    <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-destructive/50 flex flex-col" data-room-id="@room.Id">
+                        <div class="relative aspect-video overflow-hidden shrink-0 bg-gradient-to-br from-gray-900 to-gray-800">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <i data-lucide="radio" class="h-16 w-16 text-destructive/30"></i>
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+
+                            <div class="absolute left-3 top-3">
                                 <div class="flex items-center gap-1.5 rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground shadow-lg shadow-destructive/20">
                                     <span class="relative flex h-2 w-2">
                                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
@@ -116,32 +106,21 @@
                                     </span>
                                     CANLI
                                 </div>
-                            } else {
-                                <div class="flex items-center gap-1.5 rounded-full bg-secondary/80 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold text-foreground border border-border/50 shadow-lg">
-                                    <i data-lucide="calendar" class="h-3 w-3 text-primary"></i>
-                                    @(room.ScheduledAt ?? "YARIN 20:00")
-                                </div>
-                            }
-                        </div>
-                        
-                        <!-- Viewers Badge -->
-                        @if(isLive) {
+                            </div>
+
                             <div class="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold text-white">
                                 <i data-lucide="eye" class="h-3 w-3"></i>
-                                1.2k
+                                <span>@(room.Viewers)</span>
                             </div>
-                        }
 
-                        <!-- Content Overlay -->
-                        <div class="absolute bottom-0 left-0 right-0 p-4 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                            <h3 class="font-bold text-white text-lg line-clamp-1">@(room.Title)</h3>
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <h3 class="font-bold text-white text-lg line-clamp-1">@(room.Title)</h3>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="p-5 flex flex-col flex-1 bg-card">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(room.HostName))&background=random" class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-primary/20" />
+
+                        <div class="p-5 flex flex-col flex-1 bg-card">
+                            <div class="flex items-center gap-3 mb-4">
+                                <img src="@(room.HostAvatar)" class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-destructive/20" />
                                 <div class="truncate">
                                     <p class="text-sm font-bold text-foreground truncate">@(room.HostName)</p>
                                     <p class="text-xs text-muted-foreground flex items-center gap-1">
@@ -150,99 +129,87 @@
                                     </p>
                                 </div>
                             </div>
-                        </div>
 
-                        <button onclick='joinRoom(@(room.Id), "@(System.Web.HttpUtility.JavaScriptStringEncode(room.Title ?? ""))", "@(room.Thumbnail)")' class="mt-auto w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 @(isLive ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20" : "bg-primary text-primary-foreground hover:opacity-90 neon-glow")">
-                            @if(isLive) {
-                                <i data-lucide="play" class="h-4 w-4"></i> @("Yayina Katil")
-                            } else {
-                                <i data-lucide="bell" class="h-4 w-4"></i> @("Hatirlatici Kur")
-                            }
-                        </button>
+                            <button onclick="watchStream(@room.Id, '@System.Web.HttpUtility.JavaScriptStringEncode(room.Title ?? "")')" class="mt-auto w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20">
+                                <i data-lucide="play" class="h-4 w-4"></i> Yayina Katil
+                            </button>
+                        </div>
                     </div>
+                }
+            }
+            else
+            {
+                <div class="col-span-full rounded-3xl border-2 border-dashed border-border p-16 text-center bg-card/30">
+                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary mb-6">
+                        <i data-lucide="radio" class="h-10 w-10 text-muted-foreground"></i>
+                    </div>
+                    <h3 class="text-xl font-bold">Simdi Aktif Yayin Yok</h3>
+                    <p class="mt-2 text-muted-foreground max-w-md mx-auto">Ilk yayini sen baslat! Kamerani ac veya ekranini paylas, tasarim yaparken diger kullanicilar seni izlesin.</p>
+                    <button onclick="startStream()" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-destructive px-8 py-3.5 font-bold text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20">
+                        <i data-lucide="video" class="h-5 w-5"></i> Yayin Baslat
+                    </button>
                 </div>
             }
-        }
+        </div>
     </div>
+</div>
 
-    <!-- Live Stream Modal -->
-    <div id="liveStreamModal" class="fixed inset-0 z-50 hidden bg-background/95 backdrop-blur-xl">
-        <div class="flex h-full flex-col lg:flex-row">
-            <!-- Left: Video Area -->
-            <div class="flex-1 p-6 flex flex-col relative">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-4">
-                        <span class="flex h-8 items-center rounded-full bg-destructive/20 px-3 text-xs font-bold text-destructive">
-                            <span class="relative flex h-2 w-2 mr-2">
-                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
-                                <span class="relative inline-flex h-2 w-2 rounded-full bg-destructive"></span>
-                            </span>
-                            CANLI
+<!-- Live Stream Viewer Modal (Full-screen) -->
+<div id="liveStreamModal" class="fixed inset-0 z-50 hidden bg-background/95 backdrop-blur-xl">
+    <div class="flex h-full flex-col lg:flex-row">
+        <!-- Left: Video Area -->
+        <div class="flex-1 p-4 lg:p-6 flex flex-col relative">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-4">
+                    <span class="flex h-8 items-center rounded-full bg-destructive/20 px-3 text-xs font-bold text-destructive">
+                        <span class="relative flex h-2 w-2 mr-2">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-destructive"></span>
                         </span>
-                        <h2 class="text-xl font-bold" id="liveRoomTitle">Yayin Adi</h2>
-                    </div>
-                    <div class="flex items-center gap-2">
-                         <!-- Filter Dropdown -->
-                         <div class="relative group/filter">
-                             <button class="h-10 px-4 rounded-xl bg-secondary flex items-center gap-2 text-sm font-bold text-muted-foreground hover:bg-secondary/80">
-                                 <i data-lucide="sparkles" class="h-4 w-4"></i> Filtreler
-                             </button>
-                             <div class="absolute right-0 top-full mt-2 w-48 rounded-xl bg-card border border-border shadow-2xl opacity-0 invisible group-hover/filter:opacity-100 group-hover/filter:visible transition-all z-50 p-2 space-y-1">
-                                 <button onclick="applyFilter('none')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm font-medium">✨ Normal</button>
-                                 <button onclick="applyFilter('grayscale(1)')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm font-medium">🎞️ Siyah Beyaz</button>
-                                 <button onclick="applyFilter('sepia(0.8)')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm font-medium">📜 Eskitme</button>
-                                 <button onclick="applyFilter('hue-rotate(90deg) brightness(1.2)')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm font-medium">🌈 Neon</button>
-                             </div>
-                         </div>
-
-                        <button onclick="leaveRoom()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-all">
-                            <i data-lucide="x" class="h-5 w-5"></i>
-                        </button>
-                    </div>
+                        CANLI
+                    </span>
+                    <h2 class="text-xl font-bold" id="liveRoomTitle">Yayin</h2>
                 </div>
-                
-                <!-- Video Player -->
-                <div class="flex-1 rounded-2xl bg-black overflow-hidden relative border border-border" id="mainVideoContainer">
-                    <img id="liveRoomVideo" src="" class="absolute inset-0 w-full h-full object-cover opacity-50" />
-                    <video id="liveActualVideo" class="absolute inset-0 w-full h-full object-cover hidden" autoplay muted playsinline></video>
-                    <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <i data-lucide="play-circle" class="h-20 w-20 text-white/50 mb-4"></i>
-                        <p class="text-white/70">Canlı Bağlantı Kuruluyor...</p>
-                    </div>
-                    <!-- Hearts Container -->
-                    <div id="heartsContainer" class="absolute bottom-6 right-6 h-64 w-32 pointer-events-none overflow-hidden z-20"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-muted-foreground font-bold" id="liveDuration">00:00</span>
+                    <button onclick="leaveRoom()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-all">
+                        <i data-lucide="x" class="h-5 w-5"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Right: Chat Area -->
-            <div class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card/50 flex flex-col h-1/2 lg:h-full">
-                <!-- Chat Header -->
-                <div class="p-4 border-b border-border flex items-center justify-between">
-                    <h3 class="font-bold flex items-center gap-2"><i data-lucide="message-square" class="h-4 w-4"></i> Canlı Sohbet</h3>
-                    <span class="text-xs text-muted-foreground"><i data-lucide="users" class="h-3 w-3 inline"></i> <span id="viewerCount">0</span> izleyici</span>
+            <!-- Video Player -->
+            <div class="flex-1 rounded-2xl bg-black overflow-hidden relative border border-border" id="mainVideoContainer">
+                <video id="remoteVideo" class="absolute inset-0 w-full h-full object-contain" autoplay playsinline></video>
+                <video id="localVideoPreview" class="absolute inset-0 w-full h-full object-contain hidden" autoplay muted playsinline></video>
+                <div id="liveConnectingState" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <i data-lucide="loader-2" class="h-16 w-16 text-white/40 animate-spin mb-4"></i>
+                    <p class="text-white/60 font-bold">Yayina Baglaniliyor...</p>
                 </div>
-                
-                <!-- Messages -->
-                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <!-- Dynamic Messages -->
-                    <div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz!</div>
-                </div>
-                
-                <!-- Input Area -->
-                <div class="p-4 border-t border-border bg-background">
-                    <div class="flex gap-2 relative">
-                        <!-- Floating Hearts Button -->
-                        <button onclick="sendHeart()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
-                            <i data-lucide="heart" class="h-5 w-5"></i>
-                        </button>
-                        
-                        <input type="text" id="chatInput" placeholder="Bir seyler yaz..." class="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none" onkeypress="handleChatKey(event)" />
-                        
-                        <button onclick="sendChatMessage()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 neon-glow transition-all">
-                            <i data-lucide="send" class="h-4 w-4"></i>
-                        </button>
-                    </div>
+                <div id="heartsContainer" class="absolute bottom-6 right-6 h-64 w-32 pointer-events-none overflow-hidden z-20"></div>
+            </div>
+        </div>
+
+        <!-- Right: Chat Area -->
+        <div class="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-border bg-card/50 flex flex-col h-1/2 lg:h-full">
+            <div class="p-4 border-b border-border flex items-center justify-between">
+                <h3 class="font-bold flex items-center gap-2"><i data-lucide="message-square" class="h-4 w-4"></i> Canli Sohbet</h3>
+                <span class="text-xs text-muted-foreground"><i data-lucide="users" class="h-3 w-3 inline"></i> <span id="viewerCount">0</span> izleyici</span>
+            </div>
+
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz!</div>
+            </div>
+
+            <div class="p-4 border-t border-border bg-background">
+                <div class="flex gap-2 relative">
+                    <button onclick="sendHeart()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shrink-0">
+                        <i data-lucide="heart" class="h-5 w-5"></i>
+                    </button>
+                    <input type="text" id="chatInput" placeholder="Bir seyler yaz..." class="flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm focus:border-primary focus:outline-none min-w-0" onkeypress="if(event.key==='Enter')sendChatMessage()" />
+                    <button onclick="sendChatMessage()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shrink-0">
+                        <i data-lucide="send" class="h-4 w-4"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -252,249 +219,291 @@
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script>
-        var liveConnection = new signalR.HubConnectionBuilder().withUrl("/notificationHub").build();
-        var currentRoomId = null;
-        var chatSimInterval = null;
+        // ===== STATE =====
+        var liveConnection = null;
+        var currentStreamId = null;
+        var isBroadcaster = false;
+        var localStream = null;
+        var peerConnections = {};  // broadcaster keeps one per viewer
+        var viewerPC = null;       // viewer keeps one connection to broadcaster
+        var durationTimer = null;
+        var streamStartTime = null;
 
-        liveConnection.on("ReceiveLiveMessage", function(userHandle, userAvatar, message) {
-            receiveLiveMessage(userHandle, userAvatar, message);
-        });
+        var rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        };
 
-        function receiveLiveMessage(userHandle, userAvatar, message) {
-            var chatDiv = document.getElementById('chatMessages');
-            if (!chatDiv) return;
+        // ===== SIGNALR CONNECTION =====
+        function ensureConnection() {
+            if (liveConnection && liveConnection.state === signalR.HubConnectionState.Connected)
+                return Promise.resolve();
 
-            var msgEl = document.createElement('div');
-            msgEl.className = 'flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2';
-            msgEl.innerHTML = `
-                <img src="${userAvatar}" class="h-8 w-8 rounded-full border border-border mt-1" />
-                <div class="bg-secondary/50 rounded-2xl rounded-tl-none p-3 max-w-[85%]">
-                    <p class="text-[10px] font-bold text-primary mb-0.5">@@${userHandle}</p>
-                    <p class="text-sm text-foreground leading-relaxed">${message}</p>
-                </div>
-            `;
-            chatDiv.appendChild(msgEl);
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-        }
+            liveConnection = new signalR.HubConnectionBuilder()
+                .withUrl("/notificationHub")
+                .withAutomaticReconnect()
+                .build();
 
-        function joinRoom(id, title, img) {
-             document.getElementById('liveStreamModal').classList.remove('hidden');
-             document.body.style.overflow = 'hidden';
-             document.getElementById('liveRoomTitle').innerText = title || "Kartist Live Session";
-             
-             var roomVideo = document.getElementById('liveRoomVideo');
-             var liveActualVideo = document.getElementById('liveActualVideo');
-             var stateDiv = document.getElementById('liveConnectingState');
-             
-             if (img === 'self' && window.localStream) {
-                 roomVideo.classList.add('hidden');
-                 liveActualVideo.classList.remove('hidden');
-                 stateDiv.classList.add('hidden');
-                 liveActualVideo.srcObject = window.localStream;
-             } else {
-                 liveActualVideo.classList.add('hidden');
-                 roomVideo.classList.remove('hidden');
-                 stateDiv.classList.remove('hidden');
-                 if(img) roomVideo.src = img;
-             }
-             
-             document.getElementById('chatMessages').innerHTML = '<div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz! (' + title + ')</div>';
-             document.getElementById('viewerCount').innerText = Math.floor(Math.random() * 50) + 20;
-
-             currentRoomId = id;
-             startChatSimulation();
-             
-             if (liveConnection.state === signalR.HubConnectionState.Disconnected) {
-                 liveConnection.start().then(function() {
-                     liveConnection.invoke("JoinLiveRoom", id.toString());
-                 }).catch(err => console.error(err));
-             } else {
-                 liveConnection.invoke("JoinLiveRoom", id.toString());
-             }
-        }
-
-        function leaveRoom() {
-             document.getElementById('liveStreamModal').classList.add('hidden');
-             document.body.style.overflow = '';
-             currentRoomId = null;
-             if(chatSimInterval) clearInterval(chatSimInterval);
-             
-             // Release camera if we were streaming
-             if (window.localStream) {
-                 window.localStream.getTracks().forEach(track => track.stop());
-                 window.localStream = null;
-             }
-             
-             const liveActualVideo = document.getElementById('liveActualVideo');
-             if(liveActualVideo) liveActualVideo.srcObject = null;
-             
-             const previewVideo = document.getElementById('previewVideo');
-             if(previewVideo) previewVideo.srcObject = null;
-        }
-
-        function sendChatMessage() {
-            var input = document.getElementById('chatInput');
-            var message = input.value.trim();
-            if(!message || !currentRoomId) return;
-
-            var email = '@User.Identity.Name';
-            var safeHandle = email ? email.split('@@')[0] : 'kartist_user';
-            var safeAvatar = 'https://ui-avatars.com/api/?name=' + safeHandle + '&background=random';
-
-            liveConnection.invoke("SendLiveMessage", currentRoomId.toString(), safeHandle, safeAvatar, message).catch(function (err) {
-                return console.error(err.toString());
+            // --- BROADCASTER events ---
+            liveConnection.on("ViewerJoined", function(viewerConnId) {
+                if (!isBroadcaster || !localStream) return;
+                createPeerForViewer(viewerConnId);
             });
-            input.value = '';
-        }
 
-        function handleChatKey(e) {
-            if(e.key === 'Enter') sendChatMessage();
-        }
-
-        // --- Social Polish Features ---
-
-        function sendHeart() {
-            const container = document.getElementById('heartsContainer');
-            if(!container) return;
-
-            const colors = ['#f43f5e', '#ec4899', '#d946ef', '#8b5cf6'];
-            const heart = document.createElement('div');
-            heart.className = 'heart-animation flex items-center justify-center';
-            heart.innerHTML = `<i data-lucide="heart" class="h-6 w-6"></i>`;
-            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
-            heart.style.right = Math.random() * 40 + 'px';
-            
-            container.appendChild(heart);
-            lucide.createIcons();
-            
-            setTimeout(() => heart.remove(), 3000);
-        }
-
-        function applyFilter(filter) {
-            const video = document.getElementById('liveActualVideo');
-            if(video) {
-                video.style.filter = filter;
-                video.classList.add('video-filtered');
-            }
-        }
-
-        function startChatSimulation() {
-            if(chatSimInterval) clearInterval(chatSimInterval);
-            const bots = [
-                { h: 'tasarimci_ali', m: 'Harika görünüyor! 🔥' },
-                { h: 'creativ_girl', m: 'Hangi fontu kullanıyorsun?' },
-                { h: 'pixel_master', m: 'Renk paleti muazzam.' },
-                { h: 'ux_expert', m: '🚀🚀🚀' },
-                { h: 'ayse_design', m: 'Soru: Grid sistemini nasıl kurdun?' }
-            ];
-
-            chatSimInterval = setInterval(() => {
-                const bot = bots[Math.floor(Math.random() * bots.length)];
-                receiveLiveMessage(bot.h, `https://ui-avatars.com/api/?name=${bot.h}&background=random`, bot.m);
-                if(Math.random() > 0.5) sendHeart();
-            }, 5000 + Math.random() * 5000);
-        }
-
-        // --- Hardware & Media Functions ---
-
-        function setLiveFilter(filter) {
-            var filterIds = ['all', 'live', 'scheduled'];
-            for (var i = 0; i < filterIds.length; i++) {
-                var btn = document.getElementById('filter-' + filterIds[i]);
-                if (!btn) continue;
-                if (filterIds[i] === filter) {
-                    btn.className = btn.className
-                        .replace('bg-secondary text-secondary-foreground hover:bg-secondary/80', 'bg-primary text-primary-foreground neon-glow');
-                } else {
-                    btn.className = btn.className
-                        .replace('bg-primary text-primary-foreground neon-glow', 'bg-secondary text-secondary-foreground hover:bg-secondary/80');
+            liveConnection.on("ViewerLeft", function(viewerConnId) {
+                if (peerConnections[viewerConnId]) {
+                    peerConnections[viewerConnId].close();
+                    delete peerConnections[viewerConnId];
                 }
-            }
+            });
 
-            var rooms = document.querySelectorAll('[data-live]');
-            rooms.forEach(function(room) {
-                var isLive = room.getAttribute('data-live') === 'true';
-                if (filter === 'all') room.style.display = 'flex';
-                else if (filter === 'live' && isLive) room.style.display = 'flex';
-                else if (filter === 'scheduled' && !isLive) room.style.display = 'flex';
-                else room.style.display = 'none';
+            liveConnection.on("ReceiveAnswer", function(fromConnId, sdpAnswer) {
+                if (peerConnections[fromConnId]) {
+                    peerConnections[fromConnId].setRemoteDescription(new RTCSessionDescription(JSON.parse(sdpAnswer)));
+                }
+            });
+
+            // --- VIEWER events ---
+            liveConnection.on("ReceiveOffer", function(fromConnId, sdpOffer) {
+                if (isBroadcaster) return;
+                handleOffer(fromConnId, sdpOffer);
+            });
+
+            // --- SHARED events ---
+            liveConnection.on("ReceiveICECandidate", function(fromConnId, candidate) {
+                var pc = isBroadcaster ? peerConnections[fromConnId] : viewerPC;
+                if (pc && candidate) {
+                    pc.addIceCandidate(new RTCIceCandidate(JSON.parse(candidate))).catch(function() {});
+                }
+            });
+
+            liveConnection.on("StreamEnded", function() {
+                if (!isBroadcaster) {
+                    showToast('Yayin sona erdi', 'destructive');
+                    leaveRoom();
+                }
+            });
+
+            liveConnection.on("ViewerCountUpdate", function(count) {
+                var el = document.getElementById('viewerCount');
+                if (el) el.innerText = count;
+            });
+
+            liveConnection.on("ReceiveLiveMessage", function(userHandle, userAvatar, message) {
+                appendChatMessage(userHandle, userAvatar, message);
+            });
+
+            liveConnection.on("BroadcastStarted", function() {});
+
+            return liveConnection.start();
+        }
+
+        // ===== BROADCASTER: Create offer for a new viewer =====
+        function createPeerForViewer(viewerConnId) {
+            var pc = new RTCPeerConnection(rtcConfig);
+            peerConnections[viewerConnId] = pc;
+
+            localStream.getTracks().forEach(function(track) {
+                pc.addTrack(track, localStream);
+            });
+
+            pc.onicecandidate = function(e) {
+                if (e.candidate) {
+                    liveConnection.invoke("SendICECandidate", viewerConnId, JSON.stringify(e.candidate));
+                }
+            };
+
+            pc.createOffer().then(function(offer) {
+                return pc.setLocalDescription(offer);
+            }).then(function() {
+                liveConnection.invoke("SendWebRTCOffer", viewerConnId, JSON.stringify(pc.localDescription));
             });
         }
-        
+
+        // ===== VIEWER: Handle incoming offer =====
+        function handleOffer(broadcasterConnId, sdpOffer) {
+            if (viewerPC) viewerPC.close();
+
+            viewerPC = new RTCPeerConnection(rtcConfig);
+
+            viewerPC.ontrack = function(e) {
+                var remoteVideo = document.getElementById('remoteVideo');
+                if (remoteVideo && e.streams && e.streams[0]) {
+                    remoteVideo.srcObject = e.streams[0];
+                    document.getElementById('liveConnectingState').classList.add('hidden');
+                }
+            };
+
+            viewerPC.onicecandidate = function(e) {
+                if (e.candidate) {
+                    liveConnection.invoke("SendICECandidate", broadcasterConnId, JSON.stringify(e.candidate));
+                }
+            };
+
+            viewerPC.setRemoteDescription(new RTCSessionDescription(JSON.parse(sdpOffer)))
+                .then(function() { return viewerPC.createAnswer(); })
+                .then(function(answer) { return viewerPC.setLocalDescription(answer); })
+                .then(function() {
+                    liveConnection.invoke("SendWebRTCAnswer", broadcasterConnId, JSON.stringify(viewerPC.localDescription));
+                });
+        }
+
+        // ===== START STREAM (Broadcaster) =====
         function startStream() {
-            const modal = document.getElementById('createStreamModal');
-            if(!modal) {
-                console.error("Critical Error: createStreamModal not found in DOM");
-                alert("Sistem hatası: Yayın penceresi yüklenemedi. Lütfen sayfayı yenileyin.");
-                return;
-            }
+            var modal = document.getElementById('createStreamModal');
+            if (!modal) { alert("Sistem hatasi."); return; }
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
 
-            const constraints = { 
-                video: { width: { ideal: 1280 }, height: { ideal: 720 } }, 
-                audio: true 
-            };
-
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia(constraints)
-                    .catch(err => {
-                        console.warn("Mikrofon hatasi olabilir, sadece video deneniyor:", err);
-                        return navigator.mediaDevices.getUserMedia({ video: true });
-                    })
-                    .then(stream => {
-                        if (stream) {
-                            showStream(stream);
-                        }
-                    })
-                    .catch(err => {
-                        console.error("Kamera Hatasi:", err);
-                        alert("Kamera erisimi saglanamadi. Lutfen tarayici izinlerini ve donanimi kontrol edin.");
-                    });
-            }
+            startCameraPreview();
         }
 
-        function showStream(stream) {
-            window.localStream = stream;
-            const video = document.getElementById('previewVideo');
-            const icon = document.getElementById('cameraOffIcon');
-            const statusText = document.getElementById('cameraStatusText');
-            const cameraName = document.getElementById('cameraName');
-            const overlay = document.getElementById('forcePlayOverlay');
-            
-            if (video) {
-                video.srcObject = stream;
-                video.style.display = 'block';
-                
-                const track = stream.getVideoTracks()[0];
-                if (track) {
-                    cameraName.innerText = track.label;
-                    statusText.classList.remove('hidden');
+        function startCameraPreview() {
+            navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true })
+                .catch(function() { return navigator.mediaDevices.getUserMedia({ video: true }); })
+                .then(function(stream) {
+                    if (!stream) return;
+                    window._previewStream = stream;
+                    var video = document.getElementById('previewVideo');
+                    var icon = document.getElementById('cameraOffIcon');
+                    if (video) { video.srcObject = stream; video.style.display = 'block'; video.play().catch(function(){}); }
+                    if (icon) icon.style.display = 'none';
+                    var track = stream.getVideoTracks()[0];
+                    if (track) {
+                        var nameEl = document.getElementById('cameraName');
+                        var statusEl = document.getElementById('cameraStatusText');
+                        if (nameEl) nameEl.innerText = track.label;
+                        if (statusEl) statusEl.classList.remove('hidden');
+                    }
+                })
+                .catch(function(err) { console.error("Kamera hatasi:", err); });
+        }
+
+        function switchToScreen() {
+            navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true })
+                .then(function(stream) {
+                    if (window._previewStream) {
+                        window._previewStream.getTracks().forEach(function(t) { t.stop(); });
+                    }
+                    window._previewStream = stream;
+                    var video = document.getElementById('previewVideo');
+                    if (video) { video.srcObject = stream; video.play().catch(function(){}); }
+                    var nameEl = document.getElementById('cameraName');
+                    if (nameEl) nameEl.innerText = 'Ekran Paylasimi';
+                })
+                .catch(function(err) { console.error("Ekran paylasimi hatasi:", err); });
+        }
+
+        function submitStreamRequest(event) {
+            event.preventDefault();
+            var title = document.getElementById('streamTitleInput').value || 'Kartist Live';
+            var tags = document.getElementById('streamTagsInput') ? document.getElementById('streamTagsInput').value : '';
+            var btn = event.target.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Baslaniyor...'; }
+
+            if (!window._previewStream) {
+                alert("Kamera veya ekran paylasimi aktif degil.");
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="radio" class="h-4 w-4"></i> Canli Yayina Gec'; }
+                return;
+            }
+
+            localStream = window._previewStream;
+            window._previewStream = null;
+            isBroadcaster = true;
+
+            fetch('/Social/YayinBaslat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'baslik=' + encodeURIComponent(title) + '&etiketler=' + encodeURIComponent(tags)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) { alert(data.message); return; }
+
+                currentStreamId = data.streamId.toString();
+
+                closeCreateStreamModal();
+
+                document.getElementById('liveStreamModal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                document.getElementById('liveRoomTitle').innerText = title;
+
+                var localPreview = document.getElementById('localVideoPreview');
+                localPreview.srcObject = localStream;
+                localPreview.classList.remove('hidden');
+                document.getElementById('remoteVideo').classList.add('hidden');
+                document.getElementById('liveConnectingState').classList.add('hidden');
+
+                streamStartTime = Date.now();
+                startDurationTimer();
+
+                ensureConnection().then(function() {
+                    liveConnection.invoke("StartBroadcast", currentStreamId);
+                    liveConnection.invoke("JoinLiveRoom", currentStreamId);
+                });
+
+                refreshRoomsList();
+            })
+            .catch(function(err) { alert("Yayin baslatilamadi: " + err); });
+        }
+
+        // ===== WATCH STREAM (Viewer) =====
+        function watchStream(streamId, title) {
+            isBroadcaster = false;
+            currentStreamId = streamId.toString();
+
+            document.getElementById('liveStreamModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('liveRoomTitle').innerText = title || 'Kartist Live';
+            document.getElementById('liveConnectingState').classList.remove('hidden');
+            document.getElementById('remoteVideo').classList.remove('hidden');
+            document.getElementById('localVideoPreview').classList.add('hidden');
+            document.getElementById('chatMessages').innerHTML = '<div class="text-center text-xs text-muted-foreground my-4">Sohbete katildiniz!</div>';
+
+            streamStartTime = Date.now();
+            startDurationTimer();
+
+            ensureConnection().then(function() {
+                liveConnection.invoke("JoinLiveRoom", currentStreamId);
+                liveConnection.invoke("JoinStream", currentStreamId);
+            });
+        }
+
+        // ===== LEAVE / END =====
+        function leaveRoom() {
+            if (isBroadcaster && currentStreamId) {
+                fetch('/Social/YayinBitir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'yayinId=' + currentStreamId
+                });
+                if (liveConnection && liveConnection.state === signalR.HubConnectionState.Connected) {
+                    liveConnection.invoke("EndBroadcast", currentStreamId);
                 }
-
-                if (icon) icon.style.display = 'none';
-
-                video.play().then(() => {
-                    console.log("Kamera akisi basladi.");
-                    overlay.classList.add('hidden');
-                }).catch(e => {
-                    console.warn("Autoplay engellendi, etkilesim bekleniyor.");
-                    overlay.classList.remove('hidden');
-                });
+                Object.keys(peerConnections).forEach(function(k) { peerConnections[k].close(); });
+                peerConnections = {};
             }
-        }
 
-        function forcePlayVideo() {
-            const video = document.getElementById('previewVideo');
-            const overlay = document.getElementById('forcePlayOverlay');
-            if (video && window.localStream) {
-                video.play().then(() => {
-                    overlay.classList.add('hidden');
-                }).catch(err => {
-                    alert("Görüntü başlatılamadı: " + err.message);
-                });
-            }
+            if (viewerPC) { viewerPC.close(); viewerPC = null; }
+            if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
+
+            document.getElementById('liveStreamModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            currentStreamId = null;
+            isBroadcaster = false;
+
+            if (durationTimer) { clearInterval(durationTimer); durationTimer = null; }
+
+            var remoteVid = document.getElementById('remoteVideo');
+            if (remoteVid) remoteVid.srcObject = null;
+            var localVid = document.getElementById('localVideoPreview');
+            if (localVid) localVid.srcObject = null;
+
+            refreshRoomsList();
         }
 
         function closeCreateStreamModal() {
@@ -502,8 +511,115 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             document.body.style.overflow = '';
+
+            if (window._previewStream && !isBroadcaster) {
+                window._previewStream.getTracks().forEach(function(t) { t.stop(); });
+                window._previewStream = null;
+            }
         }
 
+        // ===== CHAT =====
+        function sendChatMessage() {
+            var input = document.getElementById('chatInput');
+            var message = (input.value || '').trim();
+            if (!message || !currentStreamId || !liveConnection) return;
+
+            var email = '@(User.Identity?.Name ?? "")';
+            var handle = email ? email.split('@@')[0] : 'kartist_user';
+            var avatar = 'https://ui-avatars.com/api/?name=' + handle + '&background=random';
+
+            liveConnection.invoke("SendLiveMessage", currentStreamId, handle, avatar, message).catch(function(err) { console.error(err); });
+            input.value = '';
+        }
+
+        function appendChatMessage(handle, avatar, message) {
+            var chatDiv = document.getElementById('chatMessages');
+            if (!chatDiv) return;
+            var el = document.createElement('div');
+            el.className = 'flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2';
+            el.innerHTML = '<img src="' + avatar + '" class="h-8 w-8 rounded-full border border-border mt-1" />' +
+                '<div class="bg-secondary/50 rounded-2xl rounded-tl-none p-3 max-w-[85%]">' +
+                '<p class="text-[10px] font-bold text-primary mb-0.5">@@' + handle + '</p>' +
+                '<p class="text-sm text-foreground leading-relaxed">' + escapeHtml(message) + '</p></div>';
+            chatDiv.appendChild(el);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            var d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
+
+        function sendHeart() {
+            var container = document.getElementById('heartsContainer');
+            if (!container) return;
+            var colors = ['#f43f5e', '#ec4899', '#d946ef', '#8b5cf6'];
+            var heart = document.createElement('div');
+            heart.className = 'heart-animation text-2xl';
+            heart.innerHTML = '❤️';
+            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+            heart.style.right = Math.random() * 40 + 'px';
+            container.appendChild(heart);
+            setTimeout(function() { heart.remove(); }, 3000);
+        }
+
+        // ===== UTILITIES =====
+        function startDurationTimer() {
+            if (durationTimer) clearInterval(durationTimer);
+            durationTimer = setInterval(function() {
+                var elapsed = Math.floor((Date.now() - streamStartTime) / 1000);
+                var mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                var secs = String(elapsed % 60).padStart(2, '0');
+                var el = document.getElementById('liveDuration');
+                if (el) el.innerText = mins + ':' + secs;
+            }, 1000);
+        }
+
+        function refreshRoomsList() {
+            fetch('/Social/GetAktifYayinlar')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data.success) return;
+                    var grid = document.getElementById('roomsGrid');
+                    var stat = document.getElementById('statLiveCount');
+                    if (stat) stat.innerText = data.rooms.length;
+
+                    if (data.rooms.length === 0) {
+                        grid.innerHTML = '<div class="col-span-full rounded-3xl border-2 border-dashed border-border p-16 text-center bg-card/30">' +
+                            '<div class="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary mb-6"><i data-lucide="radio" class="h-10 w-10 text-muted-foreground"></i></div>' +
+                            '<h3 class="text-xl font-bold">Simdi Aktif Yayin Yok</h3>' +
+                            '<p class="mt-2 text-muted-foreground max-w-md mx-auto">Ilk yayini sen baslat!</p>' +
+                            '<button onclick="startStream()" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-destructive px-8 py-3.5 font-bold text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"><i data-lucide="video" class="h-5 w-5"></i> Yayin Baslat</button></div>';
+                    } else {
+                        grid.innerHTML = data.rooms.map(function(r) {
+                            return '<div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-destructive/50 flex flex-col">' +
+                                '<div class="relative aspect-video overflow-hidden shrink-0 bg-gradient-to-br from-gray-900 to-gray-800">' +
+                                '<div class="absolute inset-0 flex items-center justify-center"><i data-lucide="radio" class="h-16 w-16 text-destructive/30"></i></div>' +
+                                '<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>' +
+                                '<div class="absolute left-3 top-3"><div class="flex items-center gap-1.5 rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground shadow-lg"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span></span> CANLI</div></div>' +
+                                '<div class="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold text-white"><i data-lucide="eye" class="h-3 w-3"></i> ' + (r.Viewers || 0) + '</div>' +
+                                '<div class="absolute bottom-0 left-0 right-0 p-4"><h3 class="font-bold text-white text-lg line-clamp-1">' + escapeHtml(r.Title) + '</h3></div></div>' +
+                                '<div class="p-5 flex flex-col flex-1 bg-card"><div class="flex items-center gap-3 mb-4">' +
+                                '<img src="' + (r.HostAvatar || '') + '" class="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-destructive/20" />' +
+                                '<div class="truncate"><p class="text-sm font-bold truncate">' + escapeHtml(r.HostName) + '</p><p class="text-xs text-muted-foreground">Level ' + (r.HostLevel || 1) + '</p></div></div>' +
+                                '<button onclick="watchStream(' + r.Id + ', \'' + escapeHtml(r.Title).replace(/'/g, "\\'") + '\')" class="mt-auto w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"><i data-lucide="play" class="h-4 w-4"></i> Yayina Katil</button></div></div>';
+                        }).join('');
+                    }
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+        }
+
+        function showToast(message, color) {
+            var toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 z-[70] bg-' + (color || 'primary') + ' text-' + (color || 'primary') + '-foreground px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-2';
+            toast.innerHTML = '<i data-lucide="radio" class="h-5 w-5"></i> ' + message;
+            document.body.appendChild(toast);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 3000);
+        }
+
+        // ESC handler
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 var liveModal = document.getElementById('liveStreamModal');
@@ -513,15 +629,7 @@
             }
         });
 
-        function submitStreamRequest(event) {
-            event.preventDefault();
-            closeCreateStreamModal();
-            joinRoom(999, document.getElementById('streamTitleInput').value, 'self');
-        }
-
-        // Initialize Icons
-        lucide.createIcons();
+        // Init icons
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     </script>
 }
-
-

@@ -544,33 +544,28 @@
                             <label class="text-sm font-medium mb-1.5 block">Yayın Başlığı</label>
                             <input type="text" id="streamTitleInput" required placeholder="Örn: Figma ile Sıfırdan Dashboard..." class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-destructive focus:outline-none focus:ring-1 focus:ring-destructive" />
                         </div>
-                        
+
                         <div>
-                            <label class="text-sm font-medium mb-1.5 block">Kategori / Etiketler</label>
-                            <input type="text" placeholder="#ui #figma" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-destructive focus:outline-none focus:ring-1 focus:ring-destructive" />
+                            <label class="text-sm font-medium mb-1.5 block">Etiketler</label>
+                            <input type="text" id="streamTagsInput" placeholder="#ui #figma #logo" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-destructive focus:outline-none focus:ring-1 focus:ring-destructive" />
                         </div>
 
                         <div>
-                            <label class="text-sm font-medium mb-1.5 block">Kamera ve Mikrofon Önizlemesi</label>
-                            <div class="rounded-2xl bg-black aspect-video flex items-center justify-center text-muted-foreground border border-border relative overflow-hidden" id="cameraPreviewContainer" onclick="forcePlayVideo()">
+                            <label class="text-sm font-medium mb-1.5 block">Kaynak Seç</label>
+                            <div class="grid grid-cols-2 gap-2 mb-3">
+                                <button type="button" onclick="startCameraPreview()" class="rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-bold hover:bg-secondary transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="camera" class="h-4 w-4"></i> Kamera
+                                </button>
+                                <button type="button" onclick="switchToScreen()" class="rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-bold hover:bg-secondary transition-all flex items-center justify-center gap-2">
+                                    <i data-lucide="monitor" class="h-4 w-4"></i> Ekran Paylaş
+                                </button>
+                            </div>
+                            <div class="rounded-2xl bg-black aspect-video flex items-center justify-center text-muted-foreground border border-border relative overflow-hidden">
                                 <i id="cameraOffIcon" data-lucide="camera-off" class="h-8 w-8"></i>
-                                <video id="previewVideo" class="absolute inset-0 w-full h-full object-cover" autoplay muted playsinline style="z-index: 5; transform: scaleX(-1); display: none;"></video>
-                                
-                                <div id="forcePlayOverlay" class="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center gap-3 cursor-pointer hidden">
-                                    <div class="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white animate-pulse">
-                                        <i data-lucide="play" class="h-6 w-6"></i>
-                                    </div>
-                                    <p class="text-xs font-bold text-white">Görüntüyü Başlatmak İçin Tıklayın</p>
-                                </div>
+                                <video id="previewVideo" class="absolute inset-0 w-full h-full object-cover" autoplay muted playsinline style="z-index: 5; display: none;"></video>
 
                                 <div id="cameraStatusText" class="absolute top-2 left-2 z-30 bg-black/60 text-[10px] text-white px-2 py-0.5 rounded-full hidden">
-                                    Bağlı: <span id="cameraName">...</span>
-                                </div>
-
-                                <div class="absolute bottom-4 flex gap-2 z-10">
-                                    <button type="button" onclick="startStream(); event.stopPropagation();" class="h-8 px-3 rounded-full bg-primary/80 hover:bg-primary flex items-center justify-center backdrop-blur text-white text-xs font-bold transition-all">
-                                        <i data-lucide="refresh-cw" class="h-3 w-3 mr-1"></i> Kamerayı Yenile
-                                    </button>
+                                    <span id="cameraName">...</span>
                                 </div>
                             </div>
                         </div>
