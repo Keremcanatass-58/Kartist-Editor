@@ -198,6 +198,16 @@
                     <p class="text-white/60 font-bold text-sm">Yayina Baglaniliyor...</p>
                 </div>
 
+                <!-- Mobile Unmute Overlay -->
+                <div id="unmuteOverlay" class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-30 hidden" onclick="unmuteVideo()">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white text-2xl animate-pulse">
+                            <i data-lucide="volume-x"></i>
+                        </div>
+                        <p class="text-white font-bold">Sesi Açmak İçin Dokun</p>
+                    </div>
+                </div>
+
                 <div id="heartsContainer" class="absolute bottom-20 right-6 h-64 w-32 pointer-events-none overflow-hidden z-10"></div>
             </div>
 
@@ -375,7 +385,15 @@ function handleOffer(broadcasterConnId, sdpOffer) {
         var vid = document.getElementById('remoteVideo');
         if (vid && e.streams && e.streams[0]) {
             vid.srcObject = e.streams[0];
-            vid.play().catch(function(){});
+            // Attempt to play. On mobile, this might fail if not muted.
+            vid.play().catch(function(err) {
+                console.warn("Autoplay blocked, muting and retrying...", err);
+                vid.muted = true;
+                vid.play().catch(function(e2){ console.error("Play failed even when muted:", e2); });
+                
+                // Show unmute overlay on mobile
+                document.getElementById('unmuteOverlay').classList.remove('hidden');
+            });
             document.getElementById('liveConnectingState').classList.add('hidden');
         }
     };
@@ -778,11 +796,14 @@ function watchStream(streamId, title) {
     document.getElementById('viewerControls').classList.remove('hidden');
     document.getElementById('broadcasterControls').classList.add('hidden');
 
-    // Reset volume
+    // Prime the video element for mobile autoplay
     var vid = document.getElementById('remoteVideo');
     vid.volume = 1;
     vid.muted = false;
-    document.getElementById('volumeSlider').value = 100;
+    vid.play().catch(function(){ 
+        // If initial play fails, we'll try again in handleOffer with muted=true
+        console.log("Video primed (expected failure or success)");
+    });
 
     streamStartTime = Date.now();
     startDurationTimer();
@@ -790,6 +811,9 @@ function watchStream(streamId, title) {
     ensureConnection().then(function() {
         liveConnection.invoke("JoinLiveRoom", currentStreamId);
         liveConnection.invoke("JoinStream", currentStreamId);
+    }).catch(function(err) {
+        console.error("Connection failed:", err);
+        showToast("Baglanti hatasi oluştu");
     });
 }
 
@@ -841,6 +865,17 @@ function toggleViewerMute() {
         slider.value = vid.volume * 100;
         updateVolumeBtnIcon(vid.volume * 100);
     }
+}
+
+function unmuteVideo() {
+    var vid = document.getElementById('remoteVideo');
+    if (vid) {
+        vid.muted = false;
+        vid.volume = 1;
+        document.getElementById('volumeSlider').value = 100;
+        updateVolumeBtnIcon(100);
+    }
+    document.getElementById('unmuteOverlay').classList.add('hidden');
 }
 
 function updateVolumeBtnIcon(val) {
