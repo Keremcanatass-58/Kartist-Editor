@@ -8,144 +8,258 @@
 }
 
 <style>
+    :root {
+        --ig-primary: #0095f6;
+        --ig-secondary: #262626;
+        --ig-bg: #121212;
+        --ig-bubble-sent: #3797f0;
+        --ig-bubble-received: #262626;
+    }
+
     .dm-layout { 
         display: grid; 
-        grid-template-columns: 320px 1fr; 
-        height: calc(100vh - 0px);
+        grid-template-columns: 350px 1fr; 
+        height: calc(100vh - 64px);
+        background: var(--ig-bg);
+        overflow: hidden;
     }
 
     /* ===== SIDEBAR ===== */
-    .dm-sidebar { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg-glass); backdrop-filter: var(--blur); }
+    .dm-sidebar { 
+        border-right: 1px solid var(--border); 
+        display: flex; 
+        flex-direction: column; 
+        background: rgba(18, 18, 18, 0.8);
+        backdrop-filter: blur(20px);
+    }
     .dm-sidebar-header {
-        padding: 20px; font-weight: 900; font-size: 1.15rem; display: flex; align-items: center; justify-content: space-between;
-        border-bottom: 1px solid var(--border);
+        padding: 24px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .dm-sidebar-header h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -0.5px;
     }
     .dm-new-chat-btn {
-        width: 36px; height: 36px; border-radius: 50%; background: var(--accent-dim);
-        border: none; color: var(--accent); cursor: pointer; font-size: 1rem;
-        display: flex; align-items: center; justify-content: center; transition: var(--transition);
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
     }
-    .dm-new-chat-btn:hover { background: var(--accent); color: #000; }
+    .dm-new-chat-btn:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
     
-    .dm-search { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .dm-search { padding: 0 16px 20px; }
+    .dm-search-container {
+        position: relative;
+        width: 100%;
+    }
+    .dm-search-container i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
     .dm-search input {
-        width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
-        border-radius: var(--radius-pill); padding: 10px 16px; color: #fff; outline: none;
-        font-family: var(--font); font-size: 0.85rem; transition: var(--transition);
+        width: 100%;
+        background: #262626;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px 10px 40px;
+        color: #fff;
+        outline: none;
+        font-size: 0.9rem;
+        transition: all 0.2s;
     }
-    .dm-search input:focus { border-color: rgba(var(--accent-rgb),0.3); }
+    .dm-search input:focus { background: #363636; }
     
+    .dm-tabs {
+        display: flex;
+        padding: 0 16px;
+        gap: 20px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 10px;
+    }
+    .dm-tab {
+        padding: 10px 0;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+    }
+    .dm-tab.active { color: #fff; }
+    .dm-tab.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #fff;
+    }
+
     .dm-chat-list { flex: 1; overflow-y: auto; }
-    .dm-chat-item {
-        display: flex; align-items: center; gap: 12px; padding: 14px 20px;
-        cursor: pointer; transition: var(--transition); border-left: 3px solid transparent;
+    .dm-section-title {
+        padding: 16px 20px 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .dm-chat-item:hover { background: var(--bg-hover); }
-    .dm-chat-item.active { background: var(--bg-hover-strong); border-left-color: var(--accent); }
-    .dm-chat-avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-    .dm-chat-info { flex: 1; min-width: 0; }
-    .dm-chat-name { font-weight: 700; font-size: 0.9rem; }
-    .dm-chat-preview { color: var(--text-muted); font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
-    .dm-chat-time { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+
+    .dm-chat-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .dm-chat-item:hover { background: rgba(255,255,255,0.03); }
+    .dm-chat-item.active { background: rgba(255,255,255,0.05); }
     
-    .dm-unread-badge {
-        width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: #000;
-        font-size: 0.65rem; font-weight: 900; display: flex; align-items: center; justify-content: center;
+    .dm-avatar-container {
+        position: relative;
         flex-shrink: 0;
     }
+    .dm-chat-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid transparent;
+    }
+    .dm-chat-item.unread .dm-chat-avatar { border-color: var(--ig-primary); }
+    .status-dot {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        background: #4ade80;
+        border: 3px solid var(--ig-bg);
+        border-radius: 50%;
+    }
 
+    .dm-chat-info { flex: 1; min-width: 0; }
+    .dm-chat-name { font-weight: 600; font-size: 0.95rem; color: #fff; display: flex; align-items: center; justify-content: space-between; }
+    .dm-chat-preview { 
+        color: var(--text-muted); 
+        font-size: 0.85rem; 
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+        white-space: nowrap; 
+        margin-top: 2px;
+    }
+    .dm-chat-item.unread .dm-chat-preview { color: #fff; font-weight: 600; }
+    
     /* ===== CHAT AREA ===== */
-    .dm-chat-area { display: flex; flex-direction: column; background: var(--bg-base); }
+    .dm-chat-area { 
+        display: flex; 
+        flex-direction: column; 
+        background: var(--ig-bg); 
+    }
     .dm-chat-header {
-        display: flex; align-items: center; gap: 12px; padding: 16px 20px;
-        border-bottom: 1px solid var(--border); background: var(--bg-glass); backdrop-filter: var(--blur);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        border-bottom: 1px solid var(--border);
     }
-    .dm-back-btn {
-        display: none; width: 36px; height: 36px; border-radius: 50%; background: var(--bg-hover);
-        border: none; color: #fff; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;
-    }
-    .dm-chat-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-    .dm-chat-header .name { font-weight: 700; font-size: 1rem; }
-    .dm-chat-header .status { color: var(--accent); font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 4px; }
-    .dm-chat-header .status::before { content: ''; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+    .dm-header-user { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .dm-header-user img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .dm-header-user .name { font-weight: 700; font-size: 1rem; }
+    
+    .dm-header-actions { display: flex; gap: 20px; font-size: 1.2rem; color: #fff; }
+    .dm-header-actions i { cursor: pointer; transition: opacity 0.2s; }
+    .dm-header-actions i:hover { opacity: 0.7; }
 
-    .dm-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 6px; }
-    .dm-msg {
-        max-width: 70%; padding: 12px 16px; border-radius: 18px; font-size: 0.9rem;
-        line-height: 1.45; word-break: break-word; animation: msgPop 0.2s ease;
-    }
-    @@keyframes msgPop { from { opacity: 0; transform: scale(0.95) translateY(8px); } }
-    .dm-msg.sent {
-        background: var(--accent); color: #000; align-self: flex-end;
-        border-bottom-right-radius: 6px; font-weight: 600;
-    }
-    .dm-msg.received {
-        background: var(--bg-surface-solid); color: var(--text-primary); align-self: flex-start;
-        border-bottom-left-radius: 6px; border: 1px solid var(--border);
-    }
-    .dm-msg.collab-msg {
-        background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(198,255,0,0.05));
-        border: 1px solid rgba(255,215,0,0.2); align-self: flex-start;
-        border-bottom-left-radius: 6px; color: var(--text-primary);
-    }
-    .dm-msg .time { font-size: 0.68rem; opacity: 0.6; margin-top: 4px; display: block; text-align: right; }
-    .dm-msg .read-tick { font-size: 0.7rem; margin-left: 4px; }
-    .dm-msg .read-tick.read { color: var(--blue); }
-
-    .dm-typing {
-        padding: 0 20px 10px; font-size: 0.78rem; color: var(--text-muted); font-style: italic;
-        display: none;
-    }
-
-    .dm-input-area {
-        display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border);
-        background: var(--bg-glass); backdrop-filter: var(--blur);
-    }
-    .dm-input {
-        flex: 1; background: var(--bg-hover); border: 1px solid var(--border);
-        border-radius: var(--radius-pill); padding: 12px 18px; color: #fff; font-size: 0.9rem;
-        outline: none; font-family: var(--font); transition: var(--transition);
-    }
-    .dm-input:focus { border-color: rgba(var(--accent-rgb),0.3); }
-    .dm-send-btn {
-        width: 44px; height: 44px; border-radius: 50%; background: var(--accent); border: none;
-        color: #000; font-size: 1.1rem; cursor: pointer; transition: var(--bounce);
-        display: flex; align-items: center; justify-content: center;
-    }
-    .dm-send-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-glow); }
-
-    .dm-empty {
-        flex: 1; display: flex; align-items: center; justify-content: center;
-        flex-direction: column; color: var(--text-muted); gap: 12px;
-    }
-    .dm-empty i { font-size: 3.5rem; opacity: 0.15; }
-
-    /* New Chat Modal */
-    .new-chat-overlay {
-        position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9000;
-        display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
-    }
-    .new-chat-overlay.open { display: flex; }
-    .new-chat-modal {
-        background: var(--bg-surface-solid); border: 1px solid var(--border);
-        border-radius: var(--radius-lg); width: 90%; max-width: 400px; padding: 24px;
-        box-shadow: var(--shadow-lg); animation: dropIn 0.2s ease;
-    }
-    .new-chat-search {
-        width: 100%; background: var(--bg-hover); border: 1px solid var(--border);
-        border-radius: var(--radius-pill); padding: 12px 16px; color: #fff;
-        font-family: var(--font); font-size: 0.9rem; outline: none; margin: 12px 0;
+    .dm-messages { 
+        flex: 1; 
+        overflow-y: auto; 
+        padding: 24px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
     }
     
+    .dm-msg-wrapper { display: flex; flex-direction: column; width: 100%; }
+    .dm-msg-wrapper.sent { align-items: flex-end; }
+    .dm-msg-wrapper.received { align-items: flex-start; }
+
+    .dm-msg {
+        max-width: 60%;
+        padding: 12px 16px;
+        border-radius: 22px;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .dm-msg.sent {
+        background: var(--ig-bubble-sent);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .dm-msg.received {
+        background: var(--ig-bubble-received);
+        color: #fff;
+        border-bottom-left-radius: 4px;
+    }
+
+    .dm-input-container {
+        padding: 20px 24px;
+    }
+    .dm-input-wrapper {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        padding: 4px 16px;
+        gap: 12px;
+    }
+    .dm-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        padding: 10px 0;
+        outline: none;
+        font-size: 0.95rem;
+    }
+    .dm-send-btn {
+        color: var(--ig-primary);
+        font-weight: 700;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        padding: 8px 4px;
+        transition: opacity 0.2s;
+    }
+    .dm-send-btn:disabled { opacity: 0.3; cursor: default; }
+
     @@media (max-width: 768px) {
-        .dm-layout { display: flex; flex-direction: column; height: calc(100vh - 60px); }
-        .dm-sidebar { flex: 1; max-height: none; width: 100%; display: flex; }
-        .dm-chat-area { display: none; flex: 1; }
-        .dm-layout.chat-open .dm-sidebar { display: none; }
+        .dm-layout { grid-template-columns: 1fr; height: calc(100vh - 60px); }
+        .dm-sidebar { width: 100%; }
+        .dm-chat-area { position: fixed; inset: 0; z-index: 100; display: none; }
         .dm-layout.chat-open .dm-chat-area { display: flex; }
-        .dm-back-btn { display: flex; }
+        .dm-back-btn { display: block; margin-right: 12px; cursor: pointer; }
         .dm-msg { max-width: 85%; }
-        .dm-input-area { padding: 10px; }
     }
 </style>
 
@@ -153,20 +267,39 @@
     <!-- SIDEBAR -->
     <div class="dm-sidebar">
         <div class="dm-sidebar-header">
-            <span>Mesajlar</span>
-            <button class="dm-new-chat-btn" onclick="openNewChatModal()" title="Yeni Sohbet"><i class="fa-solid fa-pen-to-square"></i></button>
+            <h1>Mesajlar</h1>
+            <button class="dm-new-chat-btn" onclick="openNewChatModal()" title="Yeni Sohbet"><i class="fa-solid fa-plus"></i></button>
         </div>
-        <div class="dm-search"><input placeholder="Sohbetlerde ara..." id="dmSearchInput" oninput="searchChats(this.value)"></div>
-        <div class="dm-chat-list" id="chatList"></div>
+        
+        <div class="dm-search">
+            <div class="dm-search-container">
+                <i class="fa-solid fa-search"></i>
+                <input placeholder="Ara..." id="dmSearchInput" oninput="searchChats(this.value)">
+            </div>
+        </div>
+
+        <div class="dm-tabs">
+            <div class="dm-tab active" onclick="switchTab('all')">Hepsi</div>
+            <div class="dm-tab" onclick="switchTab('unread')">Okunmamış</div>
+        </div>
+
+        <div class="dm-chat-list" id="chatList">
+            <!-- Loader -->
+            <div style="padding:40px;text-align:center;opacity:0.5;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+        </div>
     </div>
 
     <!-- CHAT AREA -->
     <div class="dm-chat-area" id="chatArea">
         <div class="dm-empty" id="chatEmpty">
-            <i class="fa-regular fa-comments"></i>
-            <h3 style="margin:0;font-weight:900;">Mesajlarınız</h3>
-            <p style="font-size:0.88rem;color:var(--text-muted);">Bir sohbet seçin veya yeni bir konuşma başlatın.</p>
-            <button class="btn-primary" onclick="openNewChatModal()"><i class="fa-solid fa-plus" style="margin-right:6px"></i> Yeni Sohbet</button>
+            <div style="width:100px;height:100px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+                <i class="fa-regular fa-paper-plane" style="font-size:40px;opacity:1;margin-top:5px;margin-right:5px;"></i>
+            </div>
+            <h2 style="margin:0;font-weight:800;color:#fff;">Mesajların</h2>
+            <p style="font-size:0.95rem;color:var(--text-muted);max-width:250px;text-align:center;">Bir arkadaşına mesaj göndererek sohbete başla.</p>
+            <button class="btn-primary" style="margin-top:10px;border-radius:10px;padding:10px 20px;font-weight:700;" onclick="openNewChatModal()">Mesaj Gönder</button>
         </div>
     </div>
 </div>
@@ -174,9 +307,15 @@
 <!-- New Chat Modal -->
 <div class="new-chat-overlay" id="newChatOverlay" onclick="closeNewChatModal()">
     <div class="new-chat-modal" onclick="event.stopPropagation()">
-        <h3 style="margin:0;font-weight:900;font-size:1.1rem;">Yeni Sohbet Başlat</h3>
-        <input class="new-chat-search" id="newChatSearch" placeholder="Kullanıcı ara..." oninput="searchNewChat(this.value)">
-        <div id="newChatResults" style="max-height:250px;overflow-y:auto;"></div>
+        <div style="display:flex;align-items:center;justify-content:between;margin-bottom:20px;">
+            <h3 style="margin:0;font-weight:800;flex:1;">Yeni Sohbet</h3>
+            <i class="fa-solid fa-xmark" onclick="closeNewChatModal()" style="cursor:pointer;opacity:0.5;"></i>
+        </div>
+        <div class="dm-search-container">
+            <i class="fa-solid fa-search"></i>
+            <input class="new-chat-search" id="newChatSearch" placeholder="Kullanıcı ara..." oninput="searchNewChat(this.value)">
+        </div>
+        <div id="newChatResults" style="max-height:300px;overflow-y:auto;margin-top:10px;"></div>
     </div>
 </div>
 
@@ -228,28 +367,71 @@
             return;
         }
 
-        data.sohbetler.forEach(s => {
-            const div = document.createElement('div');
-            div.className = `dm-chat-item ${activeChatId === s.Id ? 'active' : ''}`;
-            div.onclick = () => openChat(s.Id);
-            div.innerHTML = `
-                ${avatarHTML(s.ProfilResmi, s.AdSoyad, 46)}
-                <div class="dm-chat-info">
-                    <div class="dm-chat-name">${s.AdSoyad}</div>
-                    <div class="dm-chat-preview">${s.SonMesaj || 'Henüz mesaj yok'}</div>
-                </div>
-                ${s.OkunmamisSayi > 0 ? `<div class="dm-unread-badge">${s.OkunmamisSayi}</div>` : ''}
-            `;
-            list.appendChild(div);
-        });
+        // Separate chats into 'Recent' and 'Discover'
+        const recent = data.sohbetler.filter(s => s.SonMesaj);
+        const discover = data.sohbetler.filter(s => !s.SonMesaj);
+
+        if (recent.length > 0) {
+            const title = document.createElement('div');
+            title.className = 'dm-section-title';
+            title.textContent = 'Sohbetler';
+            list.appendChild(title);
+
+            recent.forEach(s => list.appendChild(createChatItem(s)));
+        }
+
+        if (discover.length > 0) {
+            const title = document.createElement('div');
+            title.className = 'dm-section-title';
+            title.textContent = 'Keşfet';
+            list.appendChild(title);
+
+            discover.forEach(s => list.appendChild(createChatItem(s)));
+        }
 
         if (hedefParam && !activeChatId) openChat(parseInt(hedefParam));
     }
 
+    function createChatItem(s) {
+        const div = document.createElement('div');
+        div.className = `dm-chat-item ${activeChatId === s.Id ? 'active' : ''} ${s.OkunmamisSayi > 0 ? 'unread' : ''}`;
+        div.id = `chat-item-${s.Id}`;
+        div.onclick = () => openChat(s.Id);
+        div.innerHTML = `
+            <div class="dm-avatar-container">
+                <img src="${s.ProfilResmi || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(s.AdSoyad) + '&background=random'}" class="dm-chat-avatar">
+                ${Math.random() > 0.7 ? '<div class="status-dot"></div>' : ''}
+            </div>
+            <div class="dm-chat-info">
+                <div class="dm-chat-name">
+                    <span>${s.AdSoyad}</span>
+                    ${s.SonTarih ? `<span style="font-size:0.7rem;font-weight:400;opacity:0.5;">${timeShort(s.SonTarih)}</span>` : ''}
+                </div>
+                <div style="font-size:0.75rem;opacity:0.5;margin-bottom:2px;">@@${s.Handle || 'kartist'}</div>
+                <div class="dm-chat-preview">${s.SonMesaj || 'Sohbeti başlat...'}</div>
+            </div>
+            ${s.OkunmamisSayi > 0 ? `<div style="width:8px;height:8px;border-radius:50%;background:var(--ig-primary);margin-left:10px;"></div>` : ''}
+        `;
+        return div;
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.dm-tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+        // Simple filtering for demo
+        const items = document.querySelectorAll('.dm-chat-item');
+        items.forEach(item => {
+            if (tab === 'unread') {
+                item.style.display = item.classList.contains('unread') ? 'flex' : 'none';
+            } else {
+                item.style.display = 'flex';
+            }
+        });
+    }
+
     async function openChat(hedefId) {
-        activeChatId = hedefId;
-        const data = await secureFetch(`/Social/GetMesajlar?hedefId=${hedefId}`);
-        if (!data || !data.success) return;
+        if (chatPollTimer) clearInterval(chatPollTimer);
+        activeChatId = parseInt(hedefId);
 
         // Mobile layout switch
         document.getElementById('dmLayout').classList.add('chat-open');
@@ -257,51 +439,65 @@
         const area = document.getElementById('chatArea');
         area.innerHTML = `
             <div class="dm-chat-header">
-                <button class="dm-back-btn" onclick="closeChatMobile()"><i class="fa-solid fa-arrow-left"></i></button>
-                ${avatarHTML(data.hedef?.ProfilResmi, data.hedef?.AdSoyad, 40)}
-                <div>
-                    <div class="name">${data.hedef?.AdSoyad || 'Kullanıcı'}</div>
-                    <div class="status">Çevrimiçi</div>
+                <div class="dm-header-user">
+                    <i class="fa-solid fa-chevron-left dm-back-btn" onclick="closeChat()"></i>
+                    <img src="" id="chatHeaderAvatar" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                    <div>
+                        <div class="name" id="chatHeaderName">Yükleniyor...</div>
+                        <div style="font-size:0.75rem;opacity:0.5;display:flex;align-items:center;gap:4px;">
+                            <div style="width:6px;height:6px;border-radius:50%;background:#4ade80;"></div> Aktif
+                        </div>
+                    </div>
                 </div>
-                <div style="flex:1"></div>
-                <a href="/Social/Profil/${hedefId}" style="color:var(--text-muted);font-size:0.8rem;text-decoration:none;">
-                    <i class="fa-solid fa-user"></i> Profil
-                </a>
+                <div class="dm-header-actions">
+                    <i class="fa-solid fa-phone"></i>
+                    <i class="fa-solid fa-video"></i>
+                    <i class="fa-solid fa-circle-info" onclick="window.location.href='/Social/Profil/${hedefId}'"></i>
+                </div>
             </div>
-            <div class="dm-messages" id="messagesContainer"></div>
-            <div class="dm-typing" id="typingIndicator">yazıyor...</div>
-            <div class="dm-input-area">
-                <input class="dm-input" id="dmInput" placeholder="Mesaj yaz..." onkeydown="if(event.key==='Enter')sendDM()">
-                <button class="dm-send-btn" onclick="sendDM()"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="dm-messages" id="msgContainer">
+                <div style="padding:40px;text-align:center;opacity:0.5;"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+            </div>
+            <div class="dm-input-container">
+                <div class="dm-input-wrapper">
+                    <i class="fa-regular fa-face-smile" style="font-size:1.2rem;cursor:pointer;"></i>
+                    <input class="dm-input" id="dmInput" placeholder="Mesaj yaz..." onkeydown="if(event.key==='Enter') sendDM()">
+                    <button class="dm-send-btn" id="sendBtn" onclick="sendDM()">Gönder</button>
+                </div>
             </div>
         `;
 
-        renderMessages(data.mesajlar, data.myId);
-        loadChats();
+        const data = await secureFetch(`/Social/GetMesajlar?hedefId=${hedefId}`);
+        if (!data || !data.success) return;
 
-        clearInterval(chatPollTimer);
-        chatPollTimer = setInterval(() => refreshMessages(hedefId), 3000);
+        document.getElementById('chatHeaderName').textContent = data.hedef.AdSoyad;
+        document.getElementById('chatHeaderAvatar').src = data.hedef.ProfilResmi || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.hedef.AdSoyad)}&background=random`;
         
-        // Focus input
-        setTimeout(() => document.getElementById('dmInput')?.focus(), 100);
+        renderMessages(data.mesajlar, data.myId);
+        
+        chatPollTimer = setInterval(() => refreshMessages(hedefId), 3000);
     }
 
-    function closeChatMobile() {
-        document.getElementById('dmLayout').classList.remove('chat-open');
-        clearInterval(chatPollTimer);
+    function closeChat() {
         activeChatId = null;
+        if (chatPollTimer) clearInterval(chatPollTimer);
+        document.getElementById('dmLayout').classList.remove('chat-open');
     }
 
     function renderMessages(mesajlar, myId) {
-        const container = document.getElementById('messagesContainer');
+        const container = document.getElementById('msgContainer');
         if (!container) return;
+        
         container.innerHTML = '';
         
         if (mesajlar.length === 0) {
-            container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:0.88rem;">
-                <i class="fa-regular fa-hand-peace" style="font-size:2rem;display:block;margin-bottom:10px;opacity:0.3"></i>
-                Henüz mesaj yok. İlk mesajı sen gönder!
-            </div>`;
+            container.innerHTML = `
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text-muted);text-align:center;">
+                    <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;margin-bottom:15px;">
+                        <i class="fa-regular fa-comment-dots" style="font-size:24px;"></i>
+                    </div>
+                    <p style="font-size:0.9rem;">Henüz mesaj yok. <br>Sohbeti başlatan ilk kişi sen ol!</p>
+                </div>`;
             return;
         }
 
@@ -309,15 +505,19 @@
             const isMine = m.GonderenId === myId;
             const isCollab = m.Tip === 'Collab';
             let msgClass = isMine ? 'sent' : 'received';
-            if (isCollab) msgClass = 'collab-msg';
             
-            const collabIcon = isCollab ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-weight:800;color:var(--gold);font-size:0.8rem;"><i class="fa-solid fa-bolt"></i> İş Birliği Teklifi</div>' : '';
+            const collabInfo = isCollab ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-weight:800;color:#eab308;font-size:0.75rem;"><i class="fa-solid fa-bolt"></i> İş Birliği Teklifi</div>` : '';
             
-            container.innerHTML += `<div class="dm-msg ${msgClass}">
-                ${collabIcon}
-                ${m.Mesaj}
-                <span class="time">${timeShort(m.Tarih)}${isMine ? ' <span class="read-tick read">✓✓</span>' : ''}</span>
-            </div>`;
+            container.innerHTML += `
+                <div class="dm-msg-wrapper ${msgClass}">
+                    <div class="dm-msg ${msgClass}">
+                        ${collabInfo}
+                        ${m.Mesaj}
+                        <div style="font-size:0.65rem;opacity:0.5;margin-top:4px;text-align:${isMine ? 'right' : 'left'}">
+                            ${timeShort(m.Tarih)} ${isMine ? '<i class="fa-solid fa-check-double" style="margin-left:2px;color:#38bdf8;"></i>' : ''}
+                        </div>
+                    </div>
+                </div>`;
         });
         container.scrollTop = container.scrollHeight;
     }

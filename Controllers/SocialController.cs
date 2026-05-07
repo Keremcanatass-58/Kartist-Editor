@@ -876,6 +876,7 @@ namespace Kartist.Controllers
 
             var conversations = db.Query(@"
                 SELECT k.Id, k.AdSoyad as Name,
+                       SUBSTRING(k.Email, 1, CHARINDEX('@', k.Email) - 1) as Handle,
                        ISNULL(NULLIF(k.ProfilResmi, ''),
                               'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as Avatar,
                        (SELECT TOP 1 Mesaj FROM DirektMesajlar
@@ -923,6 +924,7 @@ namespace Kartist.Controllers
 
             var sohbetler = db.Query(@"
                 SELECT k.Id, k.AdSoyad, k.ProfilResmi,
+                    SUBSTRING(k.Email, 1, CHARINDEX('@', k.Email) - 1) as Handle,
                     (SELECT TOP 1 Mesaj FROM DirektMesajlar
                      WHERE (GonderenId = @uid AND AliciId = k.Id) OR (GonderenId = k.Id AND AliciId = @uid)
                      ORDER BY Tarih DESC) as SonMesaj,
