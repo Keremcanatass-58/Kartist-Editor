@@ -362,40 +362,134 @@
             startCameraPreview();
         }
 
+        function cleanupPreview() {
+            if (window._previewStream) {
+                window._previewStream.getTracks().forEach(function(t) { t.stop(); });
+                window._previewStream = null;
+            }
+            if (window._camStream) {
+                window._camStream.getTracks().forEach(function(t) { t.stop(); });
+                window._camStream = null;
+            }
+            if (window._screenStream) {
+                window._screenStream.getTracks().forEach(function(t) { t.stop(); });
+                window._screenStream = null;
+            }
+            if (window._compositeRAF) { cancelAnimationFrame(window._compositeRAF); window._compositeRAF = null; }
+            var canvas = document.getElementById('compositeCanvas');
+            if (canvas) canvas.classList.add('hidden');
+        }
+
+        function showPreview(stream, label) {
+            var video = document.getElementById('previewVideo');
+            var icon = document.getElementById('cameraOffIcon');
+            var canvas = document.getElementById('compositeCanvas');
+            if (canvas) canvas.classList.add('hidden');
+            if (video) { video.srcObject = stream; video.style.display = 'block'; video.classList.remove('hidden'); video.play().catch(function(){}); }
+            if (icon) icon.style.display = 'none';
+            var nameEl = document.getElementById('cameraName');
+            var statusEl = document.getElementById('cameraStatusText');
+            if (nameEl) nameEl.innerText = label || '';
+            if (statusEl) statusEl.classList.remove('hidden');
+        }
+
         function startCameraPreview() {
+            cleanupPreview();
             navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true })
                 .catch(function() { return navigator.mediaDevices.getUserMedia({ video: true }); })
                 .then(function(stream) {
                     if (!stream) return;
                     window._previewStream = stream;
-                    var video = document.getElementById('previewVideo');
-                    var icon = document.getElementById('cameraOffIcon');
-                    if (video) { video.srcObject = stream; video.style.display = 'block'; video.play().catch(function(){}); }
-                    if (icon) icon.style.display = 'none';
                     var track = stream.getVideoTracks()[0];
-                    if (track) {
-                        var nameEl = document.getElementById('cameraName');
-                        var statusEl = document.getElementById('cameraStatusText');
-                        if (nameEl) nameEl.innerText = track.label;
-                        if (statusEl) statusEl.classList.remove('hidden');
-                    }
+                    showPreview(stream, track ? track.label : 'Kamera');
                 })
                 .catch(function(err) { console.error("Kamera hatasi:", err); });
         }
 
         function switchToScreen() {
+            cleanupPreview();
             navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true })
                 .then(function(stream) {
-                    if (window._previewStream) {
-                        window._previewStream.getTracks().forEach(function(t) { t.stop(); });
-                    }
                     window._previewStream = stream;
-                    var video = document.getElementById('previewVideo');
-                    if (video) { video.srcObject = stream; video.play().catch(function(){}); }
-                    var nameEl = document.getElementById('cameraName');
-                    if (nameEl) nameEl.innerText = 'Ekran Paylasimi';
+                    showPreview(stream, 'Ekran Paylasimi');
                 })
                 .catch(function(err) { console.error("Ekran paylasimi hatasi:", err); });
+        }
+
+        function startScreenAndCamera() {
+            cleanupPreview();
+            var screenP = navigator.mediaDevices.getDisplayMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: true });
+            var camP = navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 320 }, height: { ideal: 240 } }, audio: false })
+                .catch(function() { return null; });
+
+            Promise.all([screenP, camP]).then(function(results) {
+                var screenStream = results[0];
+                var camStream = results[1];
+                if (!screenStream) return;
+
+                window._screenStream = screenStream;
+                window._camStream = camStream;
+
+                var canvas = document.getElementById('compositeCanvas');
+                var ctx = canvas.getContext('2d');
+                canvas.width = 1280;
+                canvas.height = 720;
+
+                var screenVideo = document.createElement('video');
+                screenVideo.srcObject = screenStream;
+                screenVideo.muted = true;
+                screenVideo.play();
+
+                var camVideo = null;
+                if (camStream) {
+                    camVideo = document.createElement('video');
+                    camVideo.srcObject = camStream;
+                    camVideo.muted = true;
+                    camVideo.play();
+                }
+
+                function drawFrame() {
+                    ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                    if (camVideo && camVideo.readyState >= 2) {
+                        var pipW = 240, pipH = 180;
+                        var pipX = canvas.width - pipW - 16;
+                        var pipY = canvas.height - pipH - 16;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.roundRect(pipX, pipY, pipW, pipH, 16);
+                        ctx.clip();
+                        ctx.drawImage(camVideo, pipX, pipY, pipW, pipH);
+                        ctx.restore();
+                        ctx.strokeStyle = '#c6ff00';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.roundRect(pipX, pipY, pipW, pipH, 16);
+                        ctx.stroke();
+                    }
+                    window._compositeRAF = requestAnimationFrame(drawFrame);
+                }
+                drawFrame();
+
+                var compositeStream = canvas.captureStream(30);
+                var audioTracks = screenStream.getAudioTracks();
+                audioTracks.forEach(function(t) { compositeStream.addTrack(t); });
+
+                window._previewStream = compositeStream;
+
+                var previewVideo = document.getElementById('previewVideo');
+                if (previewVideo) previewVideo.style.display = 'none';
+                canvas.classList.remove('hidden');
+
+                var icon = document.getElementById('cameraOffIcon');
+                if (icon) icon.style.display = 'none';
+                var nameEl = document.getElementById('cameraName');
+                var statusEl = document.getElementById('cameraStatusText');
+                if (nameEl) nameEl.innerText = 'Ekran + Kamera (PIP)';
+                if (statusEl) statusEl.classList.remove('hidden');
+            }).catch(function(err) {
+                console.error("Ekran+Kamera hatasi:", err);
+                alert("Ekran veya kamera erisimi saglanamadi.");
+            });
         }
 
         function submitStreamRequest(event) {

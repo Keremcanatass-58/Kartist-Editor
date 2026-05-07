@@ -552,17 +552,21 @@
 
                         <div>
                             <label class="text-sm font-medium mb-1.5 block">Kaynak Seç</label>
-                            <div class="grid grid-cols-2 gap-2 mb-3">
-                                <button type="button" onclick="startCameraPreview()" class="rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-bold hover:bg-secondary transition-all flex items-center justify-center gap-2">
+                            <div class="grid grid-cols-3 gap-2 mb-3">
+                                <button type="button" onclick="startCameraPreview()" class="rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-bold hover:bg-secondary transition-all flex items-center justify-center gap-1.5">
                                     <i data-lucide="camera" class="h-4 w-4"></i> Kamera
                                 </button>
-                                <button type="button" onclick="switchToScreen()" class="rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-bold hover:bg-secondary transition-all flex items-center justify-center gap-2">
-                                    <i data-lucide="monitor" class="h-4 w-4"></i> Ekran Paylaş
+                                <button type="button" onclick="switchToScreen()" class="rounded-xl border border-border bg-secondary/50 px-3 py-2.5 text-xs font-bold hover:bg-secondary transition-all flex items-center justify-center gap-1.5">
+                                    <i data-lucide="monitor" class="h-4 w-4"></i> Ekran
+                                </button>
+                                <button type="button" onclick="startScreenAndCamera()" class="rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2.5 text-xs font-bold hover:bg-destructive/20 text-destructive transition-all flex items-center justify-center gap-1.5">
+                                    <i data-lucide="layout" class="h-4 w-4"></i> Ekran+Kam
                                 </button>
                             </div>
-                            <div class="rounded-2xl bg-black aspect-video flex items-center justify-center text-muted-foreground border border-border relative overflow-hidden">
+                            <div class="rounded-2xl bg-black aspect-video flex items-center justify-center text-muted-foreground border border-border relative overflow-hidden" id="previewContainer">
                                 <i id="cameraOffIcon" data-lucide="camera-off" class="h-8 w-8"></i>
                                 <video id="previewVideo" class="absolute inset-0 w-full h-full object-cover" autoplay muted playsinline style="z-index: 5; display: none;"></video>
+                                <canvas id="compositeCanvas" class="absolute inset-0 w-full h-full object-contain hidden" style="z-index: 6;"></canvas>
 
                                 <div id="cameraStatusText" class="absolute top-2 left-2 z-30 bg-black/60 text-[10px] text-white px-2 py-0.5 rounded-full hidden">
                                     <span id="cameraName">...</span>
