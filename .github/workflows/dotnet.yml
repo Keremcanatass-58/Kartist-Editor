@@ -107,22 +107,31 @@ jobs:
       - name: Deploy via signed webhook
         shell: bash
         run: |
-          curl -X POST -f -S -s \
-            -H "X-Kartist-Timestamp: ${{ steps.deploy_signature.outputs.timestamp }}" \
-            -H "X-Kartist-Signature: ${{ steps.deploy_signature.outputs.signature }}" \
-            -F "file=@release.zip" \
-            "$DEPLOY_URL"
+          for attempt in 1 2 3; do
+            TIMESTAMP=$(date +%s)
+            SIGNATURE=$(printf '%s' "$TIMESTAMP" | openssl dgst -sha256 -hmac "$DEPLOY_SECRET" -hex | sed 's/^.* //')
+            HTTP_CODE=$(curl -X POST -f -S -s -o /dev/null -w '%{http_code}' \
+              --max-time 300 --connect-timeout 30 \
+              -H "X-Kartist-Timestamp: $TIMESTAMP" \
+              -H "X-Kartist-Signature: $SIGNATURE" \
+              -F "file=@release.zip" \
+              "$DEPLOY_URL") && exit 0
+            echo "Attempt $attempt failed (HTTP $HTTP_CODE). Retrying in 15s..."
+            sleep 15
+          done
+          echo "Deploy failed after 3 attempts"
+          exit 1
 
       - name: Wait for app warmup
         shell: bash
-        run: sleep 20
+        run: sleep 30
 
       - name: Health check home page
         shell: bash
         run: |
           TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}"
           for i in 1 2 3 4 5; do
-            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+            if curl -f -S -s --max-time 30 "$TARGET_URL" > /dev/null; then
               exit 0
             fi
             sleep 10
@@ -134,7 +143,7 @@ jobs:
         run: |
           TARGET_URL="${HEALTHCHECK_URL:-https://kartistt.com.tr}/api/health/ai"
           for i in 1 2 3 4 5; do
-            if curl -f -S -s "$TARGET_URL" > /dev/null; then
+            if curl -f -S -s --max-time 30 "$TARGET_URL" > /dev/null; then
               exit 0
             fi
             sleep 10
