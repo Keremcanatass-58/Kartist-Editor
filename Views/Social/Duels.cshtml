@@ -3,6 +3,12 @@
     ViewData["Title"] = "Duellolar";
 }
 
+@section Styles {
+    <style>
+        @@keyframes slideInFromTop { from { transform: translateX(-50%) translateY(-20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    </style>
+}
+
 <!-- Header -->
 <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur">
     <div class="flex items-center gap-4">
@@ -249,78 +255,112 @@
         }
         
         function startDuel() {
-            document.getElementById('createDuelModal').classList.remove('hidden');
+            var modal = document.getElementById('createDuelModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function closeCreateDuelModal() {
-            document.getElementById('createDuelModal').classList.add('hidden');
+            var modal = document.getElementById('createDuelModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            var form = modal.querySelector('form');
+            if (form) form.reset();
         }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var modal = document.getElementById('createDuelModal');
+                if (modal && !modal.classList.contains('hidden')) closeCreateDuelModal();
+            }
+        });
 
         function submitDuelRequest(event) {
             event.preventDefault();
-            closeCreateDuelModal();
-            const toast = document.createElement('div');
-            toast.className = 'fixed top-4 left-[50%] translate-x-[-50%] z-50 bg-primary text-primary-foreground px-6 py-4 rounded-xl shadow-2xl font-bold animate-in slide-in-from-top flex items-center gap-2';
-            toast.innerHTML = '<i data-lucide="zap" class="h-5 w-5"></i> Meydan okuma rakibe iletildi!';
-            document.body.appendChild(toast);
-            lucide.createIcons();
-            setTimeout(() => { toast.classList.add('opacity-0', 'transition-opacity'); setTimeout(() => toast.remove(), 500); }, 3000);
+            var btn = event.target.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Gönderiliyor...'; }
+            setTimeout(function() {
+                closeCreateDuelModal();
+                var toast = document.createElement('div');
+                toast.className = 'fixed top-4 left-[50%] translate-x-[-50%] z-[60] bg-primary text-primary-foreground px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-2';
+                toast.style.animation = 'slideInFromTop 0.4s ease-out';
+                toast.innerHTML = '<i data-lucide="zap" class="h-5 w-5"></i> Meydan okuma rakibe iletildi!';
+                document.body.appendChild(toast);
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 3000);
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+            }, 800);
         }
     </script>
 }
 
     <!-- Create Duel Modal -->
-    <div id="createDuelModal" class="fixed inset-0 z-50 hidden bg-background/80 backdrop-blur-sm">
-        <div class="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%]">
-            <div class="rounded-3xl border border-border bg-card p-6 shadow-2xl relative overflow-hidden">
-                <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-2xl font-bold flex items-center gap-2">
-                            <i data-lucide="swords" class="h-6 w-6 text-accent"></i> 
-                            Düello Başlat
-                        </h2>
-                        <button onclick="closeCreateDuelModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
-                            <i data-lucide="x" class="h-4 w-4"></i>
-                        </button>
+    <div id="createDuelModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCreateDuelModal()"></div>
+        <div class="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl">
+            <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <i data-lucide="swords" class="h-6 w-6 text-accent"></i>
+                        Düello Başlat
+                    </h2>
+                    <button type="button" onclick="closeCreateDuelModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+
+                @{
+                    var rakipler = new[] {
+                        new { Ad = "Ahmet Y.", Renk = "4F46E5" },
+                        new { Ad = "Zeynep K.", Renk = "E11D48" },
+                        new { Ad = "Mehmet C.", Renk = "059669" },
+                        new { Ad = "Ayşe D.", Renk = "D97706" },
+                        new { Ad = "Can Ö.", Renk = "7C3AED" },
+                        new { Ad = "Elif S.", Renk = "0891B2" }
+                    };
+                }
+
+                <form onsubmit="submitDuelRequest(event)" class="space-y-6">
+                    <div>
+                        <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
+                        <div class="flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
+                            @for(int i = 0; i < rakipler.Length; i++) {
+                                var r = rakipler[i];
+                                <label class="cursor-pointer snap-start flex-shrink-0 text-center">
+                                    <input type="radio" name="opponent" required class="peer sr-only" value="@(i+1)" />
+                                    <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
+                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(r.Ad))&background=@(r.Renk)&color=fff" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
+                                        <p class="text-xs text-muted-foreground mt-1.5 font-medium">@r.Ad</p>
+                                    </div>
+                                </label>
+                            }
+                        </div>
                     </div>
 
-                    <form onsubmit="submitDuelRequest(event)" class="space-y-6">
-                        <div>
-                            <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
-                            <div class="flex gap-4 overflow-x-auto pb-2 snap-x">
-                                @for(int i = 1; i <= 6; i++) {
-                                    <label class="cursor-pointer snap-start flex-shrink-0">
-                                        <input type="radio" name="opponent" required class="peer sr-only" value="@i" />
-                                        <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
-                                            <img src="https://ui-avatars.com/api/?name=User@(i)&background=random" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
-                                        </div>
-                                    </label>
-                                }
-                            </div>
-                        </div>
+                    <div>
+                        <label class="text-sm font-medium mb-1.5 block">Düello Kategorisi</label>
+                        <select name="category" required class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent appearance-none">
+                            <option value="">Bir kategori seç...</option>
+                            <option value="ui">UI/UX Tasarımı</option>
+                            <option value="logo">Logo / Branding</option>
+                            <option value="illustration">İllüstrasyon</option>
+                            <option value="3d">3D Modelleme</option>
+                        </select>
+                    </div>
 
-                        <div>
-                            <label class="text-sm font-medium mb-1.5 block">Düello Kategorisi</label>
-                            <select required class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent">
-                                <option value="">Bir kategori seç...</option>
-                                <option value="ui">UI/UX Tasarımı</option>
-                                <option value="logo">Logo / Branding</option>
-                                <option value="illustration">İllüstrasyon</option>
-                                <option value="3d">3D Modelleme</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="text-sm font-medium mb-1.5 block">İddianı Yaz (Meydan Okuma)</label>
-                            <textarea rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Senin tasarımın benimkinin yanından bile geçemez..."></textarea>
-                        </div>
+                    <div>
+                        <label class="text-sm font-medium mb-1.5 block">İddianı Yaz (Meydan Okuma)</label>
+                        <textarea name="challenge" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none" placeholder="Senin tasarımın benimkinin yanından bile geçemez..."></textarea>
+                    </div>
 
-                        <button type="submit" class="mt-4 w-full rounded-xl bg-accent py-3.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 pink-glow flex items-center justify-center gap-2">
-                            <i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" class="w-full rounded-xl bg-accent py-3.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 pink-glow flex items-center justify-center gap-2">
+                        <i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!
+                    </button>
+                </form>
             </div>
         </div>
     </div>
