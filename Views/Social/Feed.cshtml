@@ -441,5 +441,142 @@
                 activeBtn.classList.remove('bg-secondary', 'text-secondary-foreground'); 
             }
         }
+
+        // ===== CSRF TOKEN HELPER =====
+        function getToken() {
+            var el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
+        }
+
+        // ===== LIKE =====
+        function likePost(postId) {
+            fetch('/Social/Begen', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getToken() },
+                body: 'gonderiId=' + postId + '&__RequestVerificationToken=' + encodeURIComponent(getToken())
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var countEls = document.querySelectorAll('.like-count-' + postId);
+                countEls.forEach(function(el) { el.innerText = data.count; });
+                var btns = document.querySelectorAll('.like-btn-' + postId);
+                btns.forEach(function(btn) {
+                    if (data.liked) {
+                        btn.classList.add('text-red-500');
+                        btn.classList.remove('text-white');
+                    } else {
+                        btn.classList.remove('text-red-500');
+                        btn.classList.add('text-white');
+                    }
+                });
+                if (data.xp > 0) showFeedToast('+' + data.xp + ' XP kazandin!');
+            })
+            .catch(function(err) { console.error('Like error:', err); });
+        }
+
+        // ===== SAVE / BOOKMARK =====
+        function savePost(postId) {
+            fetch('/Social/Kaydet', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getToken() },
+                body: 'gonderiId=' + postId + '&__RequestVerificationToken=' + encodeURIComponent(getToken())
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var btns = document.querySelectorAll('.save-btn-' + postId);
+                btns.forEach(function(btn) {
+                    if (data.saved) {
+                        btn.classList.add('text-primary');
+                        btn.classList.remove('text-white');
+                        showFeedToast('Gonderi kaydedildi!');
+                    } else {
+                        btn.classList.remove('text-primary');
+                        btn.classList.add('text-white');
+                        showFeedToast('Kayit kaldirildi');
+                    }
+                });
+            })
+            .catch(function(err) { console.error('Save error:', err); });
+        }
+
+        // ===== FOLLOW =====
+        function followDesigner(userId) {
+            fetch('/Social/TakipEt', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getToken() },
+                body: 'hedefId=' + userId + '&__RequestVerificationToken=' + encodeURIComponent(getToken())
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) return;
+                var btn = document.querySelector('.follow-btn-' + userId);
+                if (!btn) return;
+                if (data.following) {
+                    btn.innerText = 'Takipte';
+                    btn.classList.add('bg-primary', 'text-primary-foreground');
+                    btn.classList.remove('bg-primary/10', 'text-primary');
+                } else {
+                    btn.innerText = 'Takip Et';
+                    btn.classList.remove('bg-primary', 'text-primary-foreground');
+                    btn.classList.add('bg-primary/10', 'text-primary');
+                }
+            })
+            .catch(function(err) { console.error('Follow error:', err); });
+        }
+
+        // ===== SHARE =====
+        function sharePost(postId) {
+            var url = window.location.origin + '/Social/Design/' + postId;
+            if (navigator.share) {
+                navigator.share({ title: 'Kartist Tasarim', url: url }).catch(function(){});
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function() {
+                    showFeedToast('Baglanti kopyalandi!');
+                });
+            } else {
+                prompt('Baglanti:', url);
+            }
+        }
+
+        // ===== CREATE MODAL =====
+        function openCreateModal() {
+            window.location.href = '/Social/Design';
+        }
+
+        // ===== DROPDOWN TOGGLE =====
+        function toggleDropdown(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            var isHidden = el.classList.contains('hidden');
+            // Close all dropdowns first
+            document.querySelectorAll('#notifDropdown, #msgDropdown').forEach(function(d) {
+                d.classList.add('hidden');
+            });
+            if (isHidden) el.classList.remove('hidden');
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#notifBtn') && !e.target.closest('#notifDropdown')) {
+                var nd = document.getElementById('notifDropdown');
+                if (nd) nd.classList.add('hidden');
+            }
+            if (!e.target.closest('#msgBtn') && !e.target.closest('#msgDropdown')) {
+                var md = document.getElementById('msgDropdown');
+                if (md) md.classList.add('hidden');
+            }
+        });
+
+        // ===== TOAST =====
+        function showFeedToast(message) {
+            var toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] bg-zinc-800 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-2 border border-white/10';
+            toast.innerHTML = '<i data-lucide="check-circle" class="h-4 w-4 text-primary"></i> ' + message;
+            document.body.appendChild(toast);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 2500);
+        }
     </script>
 }
