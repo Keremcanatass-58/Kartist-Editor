@@ -175,7 +175,16 @@ namespace Kartist.Controllers
             ViewBag.ActiveDuels = 5;
             ViewBag.TotalVotes = 1284;
             ViewBag.WeeklyWinners = 12;
-            
+
+            // Rakip secimi icin gercek kullanicilar
+            ViewBag.Rakipler = db.Query(@"
+                SELECT TOP 12 k.Id, k.AdSoyad, k.Seviye,
+                       ISNULL(NULLIF(k.ProfilResmi, ''),
+                              'https://ui-avatars.com/api/?name=' + REPLACE(k.AdSoyad, ' ', '+') + '&background=random&size=128') as ProfilResmi
+                FROM Kullanicilar k
+                WHERE k.Id != @uid
+                ORDER BY k.ToplamXP DESC", new { uid = userId }).ToList();
+
             // Mock duels data
             ViewBag.Duels = new List<dynamic> {
                 new {

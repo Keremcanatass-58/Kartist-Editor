@@ -313,43 +313,45 @@
                     </button>
                 </div>
 
-                @{
-                    var rakipler = new[] {
-                        new { Ad = "Ahmet Y.", Renk = "4F46E5" },
-                        new { Ad = "Zeynep K.", Renk = "E11D48" },
-                        new { Ad = "Mehmet C.", Renk = "059669" },
-                        new { Ad = "Ayşe D.", Renk = "D97706" },
-                        new { Ad = "Can Ö.", Renk = "7C3AED" },
-                        new { Ad = "Elif S.", Renk = "0891B2" }
-                    };
-                }
-
                 <form onsubmit="submitDuelRequest(event)" class="space-y-6">
                     <div>
                         <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
-                        <div class="flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
-                            @for(int i = 0; i < rakipler.Length; i++) {
-                                var r = rakipler[i];
-                                <label class="cursor-pointer snap-start flex-shrink-0 text-center">
-                                    <input type="radio" name="opponent" required class="peer sr-only" value="@(i+1)" />
-                                    <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
-                                        <img src="https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(r.Ad))&background=@(r.Renk)&color=fff" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
-                                        <p class="text-xs text-muted-foreground mt-1.5 font-medium">@r.Ad</p>
-                                    </div>
-                                </label>
-                            }
-                        </div>
+                        @if (ViewBag.Rakipler != null && ((IEnumerable<dynamic>)ViewBag.Rakipler).Any())
+                        {
+                            <div class="flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
+                                @foreach (var r in ViewBag.Rakipler)
+                                {
+                                    <label class="cursor-pointer snap-start flex-shrink-0 text-center">
+                                        <input type="radio" name="opponent" required class="peer sr-only" value="@r.Id" />
+                                        <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
+                                            <img src="@r.ProfilResmi" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
+                                            <p class="text-xs text-muted-foreground mt-1.5 font-medium truncate max-w-[72px]">@r.AdSoyad</p>
+                                            <p class="text-[10px] text-accent font-bold">Lv.@r.Seviye</p>
+                                        </div>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-sm text-muted-foreground py-4 text-center">Henüz rakip bulunmuyor.</p>
+                        }
                     </div>
 
                     <div>
                         <label class="text-sm font-medium mb-1.5 block">Düello Kategorisi</label>
-                        <select name="category" required class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent appearance-none">
-                            <option value="">Bir kategori seç...</option>
-                            <option value="ui">UI/UX Tasarımı</option>
-                            <option value="logo">Logo / Branding</option>
-                            <option value="illustration">İllüstrasyon</option>
-                            <option value="3d">3D Modelleme</option>
-                        </select>
+                        <div class="relative">
+                            <select name="category" required class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 pr-10 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer">
+                                <option value="">Bir kategori seç...</option>
+                                <option value="ui">🎨 UI/UX Tasarımı</option>
+                                <option value="logo">✏️ Logo / Branding</option>
+                                <option value="illustration">🖌️ İllüstrasyon</option>
+                                <option value="3d">🧊 3D Modelleme</option>
+                                <option value="motion">🎬 Motion Design</option>
+                                <option value="typography">🔤 Tipografi</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
+                        </div>
                     </div>
 
                     <div>
