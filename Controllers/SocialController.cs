@@ -308,41 +308,52 @@ namespace Kartist.Controllers
         [IgnoreAntiforgeryToken]
         public IActionResult YayinBaslat(string baslik, string etiketler)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false, message = "Giris yapmaniz gerekiyor." });
+            try
+            {
+                string email = GetEmail();
+                if (email == null) return Json(new { success = false, message = "Giris yapmaniz gerekiyor." });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
-            if (userId == 0) return Json(new { success = false, message = "Kullanici bulunamadi." });
+                using var db = new SqlConnection(_conn);
+                int userId = GetUserId(db, email);
+                if (userId == 0) return Json(new { success = false, message = "Kullanici bulunamadi." });
 
-            var aktifYayin = db.ExecuteScalar<int>("SELECT COUNT(*) FROM CanliYayinlar WHERE YayinciId = @uid AND Aktif = 1", new { uid = userId });
-            if (aktifYayin > 0) return Json(new { success = false, message = "Zaten aktif bir yayininiz var." });
+                var aktifYayin = db.ExecuteScalar<int>("SELECT COUNT(*) FROM CanliYayinlar WHERE YayinciId = @uid AND Aktif = 1", new { uid = userId });
+                if (aktifYayin > 0) return Json(new { success = false, message = "Zaten aktif bir yayininiz var." });
 
-            var streamId = db.ExecuteScalar<int>(@"
-                INSERT INTO CanliYayinlar (YayinciId, Baslik, Etiketler)
-                VALUES (@uid, @baslik, @etiketler);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);",
-                new { uid = userId, baslik = baslik ?? "Kartist Live", etiketler });
+                var streamId = db.ExecuteScalar<int>(@"
+                    INSERT INTO CanliYayinlar (YayinciId, Baslik, Etiketler)
+                    VALUES (@uid, @baslik, @etiketler);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                    new { uid = userId, baslik = baslik ?? "Kartist Live", etiketler });
 
-            KazanXP(db, userId, 30, "canli_yayin", "Canli yayin baslatti");
+                KazanXP(db, userId, 30, "canli_yayin", "Canli yayin baslatti");
 
-            return Json(new { success = true, streamId });
+                return Json(new { success = true, streamId });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Yayin baslatilamadi: " + ex.Message });
+            }
         }
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public IActionResult YayinBitir(int yayinId)
         {
-            string email = GetEmail();
-            if (email == null) return Json(new { success = false });
+            try
+            {
+                string email = GetEmail();
+                if (email == null) return Json(new { success = false });
 
-            using var db = new SqlConnection(_conn);
-            int userId = GetUserId(db, email);
+                using var db = new SqlConnection(_conn);
+                int userId = GetUserId(db, email);
 
-            db.Execute(@"UPDATE CanliYayinlar SET Aktif = 0, BitisTarihi = GETUTCDATE()
-                         WHERE Id = @id AND YayinciId = @uid", new { id = yayinId, uid = userId });
+                db.Execute(@"UPDATE CanliYayinlar SET Aktif = 0, BitisTarihi = GETUTCDATE()
+                             WHERE Id = @id AND YayinciId = @uid", new { id = yayinId, uid = userId });
 
-            return Json(new { success = true });
+                return Json(new { success = true });
+            }
+            catch { return Json(new { success = false }); }
         }
 
         [HttpGet]
