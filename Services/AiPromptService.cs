@@ -19,7 +19,9 @@ namespace Kartist.Services
 
         public bool HasConfiguredProvider()
         {
-            return !string.IsNullOrWhiteSpace(GetProviderApiKey());
+            return !string.IsNullOrWhiteSpace(_configuration["Gemini:ApiKey"])
+                || !string.IsNullOrWhiteSpace(_configuration["Groq:ApiKey"])
+                || !string.IsNullOrWhiteSpace(_configuration["OpenAI:ApiKey"]);
         }
 
         public string GetConfiguredProviderName()
