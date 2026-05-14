@@ -92,6 +92,8 @@ jobs:
             echo "DEBUG_EMAIL_MAIL=$(python3 -c 'import sys,json;print(json.load(sys.stdin).get("EmailSettings",{}).get("Mail","MISSING"))' < ./publish/appsettings.json)"
             echo "DEBUG_SMTP_PASS_LEN=$(python3 -c 'import sys,json;print(len(json.load(sys.stdin).get("Smtp",{}).get("Pass","")))' < ./publish/appsettings.json)"
             echo "DEBUG_JSON_VALID=$(python3 -c 'import sys,json; json.load(sys.stdin); print("yes")' < ./publish/appsettings.json 2>&1 || echo "NO - JSON PARSE FAIL")"
+            echo "DEBUG_SMTP_PASS_HASH8=$(python3 -c 'import sys,json,hashlib; print(hashlib.sha256(json.load(sys.stdin).get("Smtp",{}).get("Pass","").encode()).hexdigest()[:8])' < ./publish/appsettings.json)"
+            echo "DEBUG_SMTP_PASS_NORM_HASH8=$(python3 -c 'import sys,json,hashlib; p=json.load(sys.stdin).get("Smtp",{}).get("Pass","").strip(); p="".join(c for c in p if not c.isspace()); print(hashlib.sha256(p.encode()).hexdigest()[:8])' < ./publish/appsettings.json)"
           else
             echo "No APPSETTINGS_PRODUCTION_JSON secret found; keeping default appsettings.json."
           fi
