@@ -504,9 +504,9 @@ namespace Kartist.Controllers
             try
             {
                 var contactInbox = _configuration["EmailSettings:ContactInbox"]
-                                   ?? _configuration["EmailSettings:Mail"]
                                    ?? _configuration["Smtp:From"]
-                                   ?? _configuration["Smtp:User"];
+                                   ?? _configuration["Smtp:User"]
+                                   ?? _configuration["EmailSettings:Mail"];
 
                 if (string.IsNullOrWhiteSpace(contactInbox))
                 {

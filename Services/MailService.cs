@@ -28,22 +28,22 @@ namespace Kartist.Services
             string host, gonderenMail, kullanici, uygulamaSifresi, gonderenAd;
             int port;
 
-            if (emailSettingsHazir)
-            {
-                host = emailSettings["Host"] ?? "smtp.gmail.com";
-                port = int.TryParse(emailSettings["Port"], out var p) ? p : 587;
-                gonderenMail = emailSettings["Mail"]!;
-                kullanici = emailSettings["Mail"]!;
-                uygulamaSifresi = emailSettings["Password"]!;
-                gonderenAd = smtpSettings["FromName"] ?? "Kartist";
-            }
-            else if (smtpSettingsHazir)
+            if (smtpSettingsHazir)
             {
                 host = smtpSettings["Host"] ?? "smtp.gmail.com";
                 port = int.TryParse(smtpSettings["Port"], out var p) ? p : 587;
-                gonderenMail = smtpSettings["From"] ?? smtpSettings["User"]!;
-                kullanici = smtpSettings["User"]!;
-                uygulamaSifresi = smtpSettings["Pass"]!;
+                gonderenMail = (smtpSettings["From"] ?? smtpSettings["User"]!).Trim();
+                kullanici = smtpSettings["User"]!.Trim();
+                uygulamaSifresi = NormalizeSmtpPassword(smtpSettings["Pass"]!);
+                gonderenAd = smtpSettings["FromName"] ?? "Kartist";
+            }
+            else if (emailSettingsHazir)
+            {
+                host = emailSettings["Host"] ?? "smtp.gmail.com";
+                port = int.TryParse(emailSettings["Port"], out var p) ? p : 587;
+                gonderenMail = emailSettings["Mail"]!.Trim();
+                kullanici = emailSettings["Mail"]!.Trim();
+                uygulamaSifresi = NormalizeSmtpPassword(emailSettings["Password"]!);
                 gonderenAd = smtpSettings["FromName"] ?? "Kartist";
             }
             else
@@ -79,6 +79,14 @@ namespace Kartist.Services
             return !normalized.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase)
                    && !normalized.Contains("your-email", StringComparison.OrdinalIgnoreCase)
                    && !normalized.Contains("example.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizeSmtpPassword(string password)
+        {
+            var normalized = password.Trim();
+            return normalized.Length == 19 && normalized.Count(char.IsWhiteSpace) == 3
+                ? new string(normalized.Where(c => !char.IsWhiteSpace(c)).ToArray())
+                : normalized;
         }
     }
 }
