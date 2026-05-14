@@ -87,7 +87,8 @@ jobs:
         run: |
           if [ -n "$APPSETTINGS_PRODUCTION_JSON" ]; then
             echo "$APPSETTINGS_PRODUCTION_JSON" > ./publish/appsettings.json
-            echo "Injected production appsettings from secret."
+            echo "$APPSETTINGS_PRODUCTION_JSON" > ./publish/appsettings.json.bak
+            echo "Injected production appsettings (+ .bak override) from secret."
             echo "DEBUG_SMTP_USER=$(python3 -c 'import sys,json;print(json.load(sys.stdin).get("Smtp",{}).get("User","MISSING"))' < ./publish/appsettings.json)"
             echo "DEBUG_EMAIL_MAIL=$(python3 -c 'import sys,json;print(json.load(sys.stdin).get("EmailSettings",{}).get("Mail","MISSING"))' < ./publish/appsettings.json)"
             echo "DEBUG_SMTP_PASS_LEN=$(python3 -c 'import sys,json;print(len(json.load(sys.stdin).get("Smtp",{}).get("Pass","")))' < ./publish/appsettings.json)"
