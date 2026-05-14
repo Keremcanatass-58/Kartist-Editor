@@ -167,6 +167,7 @@ namespace Kartist.Controllers
         public IActionResult Duels()
         {
             using var db = new SqlConnection(_conn);
+            EnsureDuelloTables(db);
             string email = GetEmail() ?? "test@test.com";
             int userId = GetUserId(db, email);
             if (userId == 0) userId = 1;
@@ -232,6 +233,7 @@ namespace Kartist.Controllers
                 return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
 
             using var db = new SqlConnection(_conn);
+            EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
             if (userId == 0) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
             if (userId == opponent) return Json(new { success = false, message = "Kendinize dÃ¼ello atamazsÄ±nÄ±z." });
@@ -282,6 +284,7 @@ namespace Kartist.Controllers
                 return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
 
             using var db = new SqlConnection(_conn);
+            EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
@@ -303,6 +306,7 @@ namespace Kartist.Controllers
                 return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
 
             using var db = new SqlConnection(_conn);
+            EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
@@ -322,6 +326,7 @@ namespace Kartist.Controllers
                 return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
 
             using var db = new SqlConnection(_conn);
+            EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
@@ -372,6 +377,7 @@ namespace Kartist.Controllers
             try
             {
                 using var db = new SqlConnection(_conn);
+                EnsureDuelloTables(db);
                 int userId = GetUserId(db, GetEmail());
                 if (userId == 0) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
 
@@ -410,6 +416,102 @@ namespace Kartist.Controllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        private void EnsureDuelloTables(SqlConnection db)
+        {
+            db.Execute(@"
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('Duellolar') AND type = 'U')
+BEGIN
+    CREATE TABLE Duellolar (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        MeydanOkuyanId INT NOT NULL,
+        RakipId INT NOT NULL,
+        Kategori NVARCHAR(50) NOT NULL,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(500) NULL,
+        Durum NVARCHAR(20) NOT NULL DEFAULT 'bekliyor',
+        TasarimSuresiSaat INT NOT NULL DEFAULT 24,
+        OylamaSuresiSaat INT NOT NULL DEFAULT 48,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        KabulTarihi DATETIME NULL,
+        OylamaBaslangic DATETIME NULL,
+        BitisTarihi DATETIME NULL,
+        MeydanOkuyanTasarimUrl NVARCHAR(500) NULL,
+        RakipTasarimUrl NVARCHAR(500) NULL,
+        MeydanOkuyanOy INT NOT NULL DEFAULT 0,
+        RakipOy INT NOT NULL DEFAULT 0,
+        KazananId INT NULL,
+        FOREIGN KEY (MeydanOkuyanId) REFERENCES Kullanicilar(Id),
+        FOREIGN KEY (RakipId) REFERENCES Kullanicilar(Id)
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('DuelloOylari') AND type = 'U')
+BEGIN
+    CREATE TABLE DuelloOylari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        DuelloId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Secenek INT NOT NULL,
+        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        FOREIGN KEY (DuelloId) REFERENCES Duellolar(Id) ON DELETE CASCADE,
+        FOREIGN KEY (KullaniciId) REFERENCES Kullanicilar(Id),
+        CONSTRAINT UQ_DuelloOy UNIQUE (DuelloId, KullaniciId)
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'MeydanOkuyanId')
+    ALTER TABLE Duellolar ADD MeydanOkuyanId INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'RakipId')
+    ALTER TABLE Duellolar ADD RakipId INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'Kategori')
+    ALTER TABLE Duellolar ADD Kategori NVARCHAR(50) NOT NULL DEFAULT 'ui';
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'Baslik')
+    ALTER TABLE Duellolar ADD Baslik NVARCHAR(200) NOT NULL DEFAULT 'Tasarim Duellosu';
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'Aciklama')
+    ALTER TABLE Duellolar ADD Aciklama NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'Durum')
+    ALTER TABLE Duellolar ADD Durum NVARCHAR(20) NOT NULL DEFAULT 'bekliyor';
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'TasarimSuresiSaat')
+    ALTER TABLE Duellolar ADD TasarimSuresiSaat INT NOT NULL DEFAULT 24;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'OylamaSuresiSaat')
+    ALTER TABLE Duellolar ADD OylamaSuresiSaat INT NOT NULL DEFAULT 48;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'OlusturmaTarihi')
+    ALTER TABLE Duellolar ADD OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE();
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'KabulTarihi')
+    ALTER TABLE Duellolar ADD KabulTarihi DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'OylamaBaslangic')
+    ALTER TABLE Duellolar ADD OylamaBaslangic DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'BitisTarihi')
+    ALTER TABLE Duellolar ADD BitisTarihi DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'MeydanOkuyanTasarimUrl')
+    ALTER TABLE Duellolar ADD MeydanOkuyanTasarimUrl NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'RakipTasarimUrl')
+    ALTER TABLE Duellolar ADD RakipTasarimUrl NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'MeydanOkuyanOy')
+    ALTER TABLE Duellolar ADD MeydanOkuyanOy INT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'RakipOy')
+    ALTER TABLE Duellolar ADD RakipOy INT NOT NULL DEFAULT 0;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Duellolar') AND name = 'KazananId')
+    ALTER TABLE Duellolar ADD KazananId INT NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DuelloOylari') AND name = 'DuelloId')
+    ALTER TABLE DuelloOylari ADD DuelloId INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DuelloOylari') AND name = 'KullaniciId')
+    ALTER TABLE DuelloOylari ADD KullaniciId INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DuelloOylari') AND name = 'Secenek')
+    ALTER TABLE DuelloOylari ADD Secenek INT NOT NULL DEFAULT 1;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('DuelloOylari') AND name = 'Tarih')
+    ALTER TABLE DuelloOylari ADD Tarih DATETIME NOT NULL DEFAULT GETUTCDATE();
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Durum' AND object_id = OBJECT_ID('Duellolar'))
+    CREATE INDEX IX_Duellolar_Durum ON Duellolar(Durum);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_MeydanOkuyan' AND object_id = OBJECT_ID('Duellolar'))
+    CREATE INDEX IX_Duellolar_MeydanOkuyan ON Duellolar(MeydanOkuyanId);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND object_id = OBJECT_ID('Duellolar'))
+    CREATE INDEX IX_Duellolar_Rakip ON Duellolar(RakipId);
+");
         }
 
         private void DuelloSureDolanlariGuncelle(SqlConnection db)
