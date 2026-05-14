@@ -518,6 +518,13 @@ namespace Kartist.Controllers
             }
             catch (Exception ex)
             {
+                if (ex.Message.Contains("535", StringComparison.OrdinalIgnoreCase) ||
+                    ex.Message.Contains("Username and Password not accepted", StringComparison.OrdinalIgnoreCase) ||
+                    ex.Message.Contains("BadCredentials", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Json(new { success = false, message = "E-posta gönderilemedi: SMTP kullanıcı adı veya uygulama şifresi hatalı." });
+                }
+
                 return Json(new { success = false, message = "Hata oluştu: " + ex.Message });
             }
         }

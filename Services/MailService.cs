@@ -20,10 +20,10 @@ namespace Kartist.Services
             var emailSettings = _configuration.GetSection("EmailSettings");
             var smtpSettings = _configuration.GetSection("Smtp");
 
-            bool emailSettingsHazir = !string.IsNullOrWhiteSpace(emailSettings["Mail"]) &&
-                                      !string.IsNullOrWhiteSpace(emailSettings["Password"]);
-            bool smtpSettingsHazir = !string.IsNullOrWhiteSpace(smtpSettings["User"]) &&
-                                     !string.IsNullOrWhiteSpace(smtpSettings["Pass"]);
+            bool emailSettingsHazir = IsConfigured(emailSettings["Mail"]) &&
+                                      IsConfigured(emailSettings["Password"]);
+            bool smtpSettingsHazir = IsConfigured(smtpSettings["User"]) &&
+                                     IsConfigured(smtpSettings["Pass"]);
 
             string host, gonderenMail, kullanici, uygulamaSifresi, gonderenAd;
             int port;
@@ -60,7 +60,8 @@ namespace Kartist.Services
             using var client = new SmtpClient();
             try
             {
-                await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+                var socketOptions = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+                await client.ConnectAsync(host, port, socketOptions);
                 await client.AuthenticateAsync(kullanici, uygulamaSifresi);
                 await client.SendAsync(message);
             }
@@ -68,6 +69,16 @@ namespace Kartist.Services
             {
                 await client.DisconnectAsync(true);
             }
+        }
+
+        private static bool IsConfigured(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            var normalized = value.Trim();
+            return !normalized.StartsWith("YOUR_", StringComparison.OrdinalIgnoreCase)
+                   && !normalized.Contains("your-email", StringComparison.OrdinalIgnoreCase)
+                   && !normalized.Contains("example.com", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
