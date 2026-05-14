@@ -1,12 +1,12 @@
-@{
+﻿@{
     Layout = "_SocialLayoutModern";
-    ViewData["Title"] = "Yarismalar";
+    ViewData["Title"] = "Yarışmalar";
 }
 
 <!-- Header -->
 <header class="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-background/95 px-3 md:px-6 backdrop-blur">
     <div class="flex items-center gap-3 md:gap-4">
-        <h1 class="text-lg md:text-xl font-bold">Yarismalar</h1>
+        <h1 class="text-lg md:text-xl font-bold">Yarışmalar</h1>
     </div>
 </header>
 
@@ -22,8 +22,8 @@
                     <i data-lucide="trophy" class="h-6 w-6 md:h-8 md:w-8 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-3xl font-bold">Tasarim Yarismalari</h1>
-                    <p class="text-muted-foreground text-sm md:text-base mt-0.5 md:mt-1">Yarismaya katil, yetenegini sergile, oduller kazan!</p>
+                    <h1 class="text-xl md:text-3xl font-bold">Tasarım Yarışmaları</h1>
+                    <p class="text-muted-foreground text-sm md:text-base mt-0.5 md:mt-1">Yarışmaya katıl, yeteneğini sergile, ödüller kazan!</p>
                 </div>
             </div>
             
@@ -38,7 +38,7 @@
             <div class="glass-card rounded-xl p-5 border-white/5">
                 <div class="flex items-center gap-2 text-muted-foreground mb-2">
                     <i data-lucide="target" class="h-4 w-4 text-yellow-500"></i>
-                    <span class="text-sm font-medium">Aktif Yarisma</span>
+                    <span class="text-sm font-medium">Aktif Yarışma</span>
                 </div>
                 <p class="text-3xl font-bold">@(ViewBag.ActiveCompetitions ?? 2)</p>
             </div>
@@ -61,7 +61,7 @@
                     <i data-lucide="medal" class="h-4 w-4"></i>
                     <span class="text-sm font-medium">Bu Ay Kazananlar</span>
                 </div>
-                <p class="text-3xl font-bold text-primary">8</p>
+                <p class="text-3xl font-bold text-primary">@(ViewBag.MonthlyWinners ?? 0)</p>
             </div>
         </div>
     </div>
@@ -90,6 +90,7 @@
             {
                 var isVoting = comp.Status == "voting";
                 var isEnded = comp.Status == "ended";
+                var joined = (comp.Joined ?? 0) == 1;
                 <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-primary/50 flex flex-col" data-status="@comp.Status">
                     <div class="relative aspect-[16/9] overflow-hidden shrink-0">
                         <img src="@(comp.CoverImage)" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
@@ -159,11 +160,13 @@
                                 </div>
                             }
                             
-                            <button onclick='@(isEnded ? $"viewResults({comp.Id})" : $"joinCompetition(\"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Theme ?? "")} - {System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\")")' class="w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 @(isVoting ? "bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-accent-foreground pink-glow" : (isEnded ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-primary text-primary-foreground hover:opacity-90 neon-glow"))">
+                            <button onclick='@(isEnded || isVoting ? $"viewResults({comp.Id}, \"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\", \"{comp.Status}\")" : $"joinCompetition({comp.Id}, \"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Theme ?? "")} - {System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\")")' class="w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 @(isVoting ? "bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-accent-foreground pink-glow" : (isEnded ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-primary text-primary-foreground hover:opacity-90 neon-glow"))">
                                 @if(isVoting) {
                                     <i data-lucide="check-square" class="h-4 w-4"></i> @("Tasarımları Oyla")
                                 } else if(isEnded) {
-                                    <i data-lucide="trophy" class="h-4 w-4 text-yellow-500"></i> @("Sonucları Gör")
+                                    <i data-lucide="trophy" class="h-4 w-4 text-yellow-500"></i> @("Sonuçları Gör")
+                                } else if(joined) {
+                                    <i data-lucide="check-circle" class="h-4 w-4"></i> @("Katildin")
                                 } else {
                                     <i data-lucide="upload" class="h-4 w-4"></i> @("Tasarım Yükle")
                                 }
@@ -241,22 +244,23 @@
                     </button>
                 </div>
 
-                <form action="/Social/CreatePost" method="post" enctype="multipart/form-data" class="space-y-4">
+                <form onsubmit="submitCompetitionEntry(event)" enctype="multipart/form-data" class="space-y-4">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" id="compIdInput" name="yarismaId" />
                     <div>
                         <label class="text-sm font-medium mb-1.5 block">Yarışma Teması</label>
-                        <input type="text" id="compThemeInput" name="Baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
+                        <input type="text" id="compThemeInput" name="baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
                     </div>
 
                     <div>
                         <label class="text-sm font-medium mb-1.5 block">Açıklama & Etiketler</label>
-                        <textarea name="Icerik" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none resize-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
+                        <textarea name="aciklama" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none resize-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
                     </div>
 
                     <div>
                         <label class="text-sm font-medium mb-1.5 block">Çalışmanı Yükle</label>
                         <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-8 text-center transition-colors hover:border-primary/50 relative overflow-hidden group">
-                            <input type="file" name="Resim" required accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                            <input type="file" name="tasarim" required accept="image/png,image/jpeg,image/gif,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                             <div class="relative z-0">
                                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-3 shadow-sm">
                                     <i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i>
@@ -302,13 +306,56 @@
             console.log('Competition filter set:', filter);
         }
         
-        function joinCompetition(title) {
+        function csrfToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        }
+
+        function showCompToast(message, error) {
+            var toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] px-6 py-3 rounded-xl shadow-2xl font-bold text-sm ' + (error ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground');
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.style.transition = 'opacity .4s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 450); }, 2600);
+        }
+
+        function escapeHtml(text) {
+            var d = document.createElement('div');
+            d.textContent = text || '';
+            return d.innerHTML;
+        }
+
+        function joinCompetition(id, title) {
+            document.getElementById('compIdInput').value = id;
             document.getElementById('compThemeInput').value = title;
             var modal = document.getElementById('compJoinModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function submitCompetitionEntry(event) {
+            event.preventDefault();
+            var form = event.target;
+            var btn = form.querySelector('button[type="submit"]');
+            var data = new FormData(form);
+            if (btn) { btn.disabled = true; btn.textContent = 'Yükleniyor...'; }
+
+            fetch('/Social/YarismaKatil', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': csrfToken() },
+                body: data
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                showCompToast(data.message || 'İşlem tamamlandı.', !data.success);
+                if (data.success) {
+                    closeCompModal();
+                    setTimeout(function() { window.location.reload(); }, 900);
+                }
+            }).catch(function() {
+                showCompToast('Bağlantı hatası oluştu.', true);
+            }).finally(function() {
+                if (btn) { btn.disabled = false; btn.textContent = 'Şimdi Katıl!'; }
+            });
         }
 
         function closeCompModal() {
@@ -318,15 +365,60 @@
             document.body.style.overflow = '';
         }
 
-        function viewResults(id) {
+        function viewResults(id, title, status) {
             var modal = document.getElementById('resultsModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+            var titleEl = document.getElementById('resultsTitle');
+            if (titleEl) titleEl.textContent = title || 'Yarışma Sonuçları';
+            loadCompetitionEntries(id, status || 'ended');
             if (typeof lucide !== 'undefined') lucide.createIcons();
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
             }
+        }
+
+        function loadCompetitionEntries(id, status) {
+            var wrap = document.getElementById('resultsEntries');
+            if (!wrap) return;
+            wrap.innerHTML = '<div class="py-10 text-center text-muted-foreground">Tasarımlar yükleniyor...</div>';
+            fetch('/Social/YarismaKatilimlari?yarismaId=' + encodeURIComponent(id))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data.success || !data.entries || data.entries.length === 0) {
+                        wrap.innerHTML = '<div class="rounded-2xl border border-border bg-secondary/40 p-8 text-center text-muted-foreground">Bu yarışmada henüz tasarım yok.</div>';
+                        return;
+                    }
+                    wrap.innerHTML = data.entries.map(function(e, index) {
+                        var canVote = status === 'voting';
+                        return '<div class="rounded-2xl border border-border bg-secondary/30 overflow-hidden">' +
+                            '<div class="aspect-video bg-black"><img src="' + (e.GorselUrl || e.gorselUrl) + '" class="h-full w-full object-cover" /></div>' +
+                            '<div class="p-4 space-y-3"><div class="flex items-center justify-between gap-3">' +
+                            '<div><p class="font-bold">' + escapeHtml(e.Baslik || e.baslik || 'Tasarım') + '</p><p class="text-xs text-muted-foreground">' + escapeHtml(e.KullaniciAdi || e.kullaniciAdi || '') + '</p></div>' +
+                            '<span class="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary" id="entry-votes-' + (e.Id || e.id) + '">' + (e.OySayisi || e.oySayisi || 0) + ' oy</span></div>' +
+                            (canVote ? '<button onclick="voteCompetition(' + id + ',' + (e.Id || e.id) + ')" class="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground">Oy Ver</button>' : '<div class="text-xs text-muted-foreground">Siralama #' + (index + 1) + '</div>') +
+                            '</div></div>';
+                    }).join('');
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+        }
+
+        function voteCompetition(yarismaId, katilimId) {
+            var body = new URLSearchParams();
+            body.append('yarismaId', yarismaId);
+            body.append('katilimId', katilimId);
+            fetch('/Social/YarismaOyVer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'RequestVerificationToken': csrfToken() },
+                body: body.toString()
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                showCompToast(data.message || 'Oyun kaydedildi.', !data.success);
+                if (data.success) {
+                    var el = document.getElementById('entry-votes-' + katilimId);
+                    if (el) el.textContent = data.votes + ' oy';
+                }
+            }).catch(function() { showCompToast('Oy verilemedi.', true); });
         }
 
         function closeResultsModal() {
@@ -360,12 +452,14 @@
                     <div class="flex items-center justify-between mb-8">
                         <div>
                             <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md mb-2 inline-block">Yarışma Sonuçları</span>
-                            <h2 class="text-3xl font-black">Podyum Tamamlandı!</h2>
+                            <h2 class="text-3xl font-black" id="resultsTitle">Podyum Tamamlandı!</h2>
                         </div>
                         <button onclick="closeResultsModal()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary hover:bg-destructive hover:text-destructive-foreground transition-colors">
                             <i data-lucide="x" class="h-5 w-5"></i>
                         </button>
                     </div>
+
+                    <div id="resultsEntries" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"></div>
 
                     <!-- Podium Layout -->
                     <div class="flex items-end justify-center gap-4 mt-12 mb-8 h-48">
@@ -411,4 +505,3 @@
                 </div>
         </div>
     </div>
-

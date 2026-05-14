@@ -160,10 +160,12 @@
             backdrop-filter: blur(4px);
             z-index: 39;
             opacity: 0;
+            pointer-events: none;
             transition: opacity 0.3s;
         }
         .sidebar-overlay.active {
             opacity: 1;
+            pointer-events: auto;
         }
 
         /* Mobile bottom nav */

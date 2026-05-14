@@ -100,88 +100,107 @@ SADECE ÜRETTİĞİN METNİ DÖNDÜR. Başka hiçbir açıklama, yorum veya tır
 
         private async Task<string> SendChatRequestAsync(string systemPrompt, string userPrompt, int maxTokens, double temperature, string historyJson = null, CancellationToken cancellationToken = default)
         {
-            var endpoint = GetProviderEndpoint();
-            var apiKey = GetProviderApiKey();
-            var model = GetProviderModel();
-            var provider = ResolveProviderName();
+            var primary = ResolveProviderName();
+            var providers = GetFallbackOrder(primary);
 
-            if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(model))
+            foreach (var provider in providers)
             {
-                return null;
+                var (endpoint, apiKey, model) = GetProviderConfig(provider);
+                if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(model))
+                    continue;
+
+                var result = await SendToProviderAsync(provider, endpoint, apiKey, model, systemPrompt, userPrompt, maxTokens, temperature, historyJson, cancellationToken);
+                if (!string.IsNullOrEmpty(result))
+                    return result;
             }
 
-            using var client = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(Math.Max(5, _options.TimeoutSeconds))
-            };
+            return null;
+        }
 
-            // Gemini OpenAI-compat endpoint: API key goes as query parameter
-            // Groq & OpenAI: API key goes as Bearer token
-            string requestUrl;
+        private List<string> GetFallbackOrder(string primary)
+        {
+            var all = new List<string> { "Gemini", "Groq", "OpenAI" };
+            var order = new List<string> { primary };
+            foreach (var p in all)
+                if (!p.Equals(primary, StringComparison.OrdinalIgnoreCase))
+                    order.Add(p);
+            return order;
+        }
+
+        private (string endpoint, string apiKey, string model) GetProviderConfig(string provider)
+        {
             if (provider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
-            {
-                // Gemini uses API key as query parameter on its OpenAI-compatible endpoint
-                var separator = endpoint.Contains("?") ? "&" : "?";
-                requestUrl = $"{endpoint}{separator}key={apiKey}";
-            }
-            else
-            {
-                requestUrl = endpoint;
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            }
+                return (_options.GeminiEndpoint, _configuration["Gemini:ApiKey"] ?? "", _options.GeminiModel);
+            if (provider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+                return (_options.OpenAiChatEndpoint, _configuration["OpenAI:ApiKey"] ?? "", _options.OpenAiChatModel);
+            return (_options.GroqEndpoint, _configuration["Groq:ApiKey"] ?? "", _options.GroqModel);
+        }
 
-            var messages = new List<object>
+        private async Task<string> SendToProviderAsync(string provider, string endpoint, string apiKey, string model, string systemPrompt, string userPrompt, int maxTokens, double temperature, string historyJson, CancellationToken cancellationToken)
+        {
+            try
             {
-                new { role = "system", content = systemPrompt }
-            };
-
-            // Parse and add history if present
-            if (!string.IsNullOrWhiteSpace(historyJson))
-            {
-                try
+                using var client = new HttpClient
                 {
-                    var history = JsonSerializer.Deserialize<List<JsonElement>>(historyJson);
-                    if (history != null)
+                    Timeout = TimeSpan.FromSeconds(Math.Max(5, _options.TimeoutSeconds))
+                };
+
+                string requestUrl = endpoint;
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+                var messages = new List<object>
+                {
+                    new { role = "system", content = systemPrompt }
+                };
+
+                if (!string.IsNullOrWhiteSpace(historyJson))
+                {
+                    try
                     {
-                        foreach (var msg in history)
-                        {
-                            messages.Add(msg);
-                        }
+                        var history = JsonSerializer.Deserialize<List<JsonElement>>(historyJson);
+                        if (history != null)
+                            foreach (var msg in history)
+                                messages.Add(msg);
                     }
+                    catch { }
                 }
-                catch { /* Ignore malformed history */ }
+
+                messages.Add(new { role = "user", content = userPrompt });
+
+                var payload = new
+                {
+                    model,
+                    messages,
+                    temperature,
+                    max_tokens = maxTokens
+                };
+
+                using var response = await client.PostAsync(
+                    requestUrl,
+                    new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    Console.WriteLine($"[AiPromptService] {provider} error ({response.StatusCode}): {errorBody}");
+                    return null;
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
+                using var jsonDoc = JsonDocument.Parse(responseString);
+                return jsonDoc.RootElement
+                    .GetProperty("choices")[0]
+                    .GetProperty("message")
+                    .GetProperty("content")
+                    .GetString()
+                    ?.Trim();
             }
-
-            messages.Add(new { role = "user", content = userPrompt });
-
-            var payload = new
+            catch (Exception ex)
             {
-                model,
-                messages,
-                temperature,
-                max_tokens = maxTokens
-            };
-
-            using var response = await client.PostAsync(
-                requestUrl,
-                new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json"),
-                cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                System.Diagnostics.Debug.WriteLine($"[AiPromptService] {provider} error ({response.StatusCode}): {errorBody}");
+                Console.WriteLine($"[AiPromptService] {provider} exception: {ex.Message}");
                 return null;
             }
-
-            var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-            using var jsonDoc = JsonDocument.Parse(responseString);
-            return jsonDoc.RootElement
-                .GetProperty("choices")[0]
-                .GetProperty("message")
-                .GetProperty("content")
-                .GetString()
-                ?.Trim();
         }
 
         private string ResolveProviderName()

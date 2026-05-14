@@ -160,27 +160,27 @@
                     foreach (var card in otherPosts.Take(2))
                     {
                         <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:border-primary/50">
-                            <div class="relative overflow-hidden aspect-video bg-gradient-to-br from-secondary to-background">
+                            <a href="/Social/Design/@card.Id" class="block relative overflow-hidden aspect-video bg-gradient-to-br from-secondary to-background cursor-pointer">
                                 <i data-lucide="image" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-white/20"></i>
-                                <img src="@(string.IsNullOrEmpty(card.ImageUrl) ? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800&q=80" : card.ImageUrl)" 
+                                <img src="@(string.IsNullOrEmpty(card.ImageUrl) ? "https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800&q=80" : card.ImageUrl)"
                                      onerror="this.src='https://images.unsplash.com/photo-1634017839464-5c3399be3d0d?w=800&q=80'; this.onerror=null;"
                                      alt="@card.Title" class="relative z-10 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100"></div>
-                                
+                                <div class="absolute inset-0 z-20 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none"></div>
+
                                 <!-- Category Badge -->
-                                <div class="absolute left-4 top-4">
+                                <div class="absolute left-4 top-4 pointer-events-none">
                                     <span class="rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">UI/UX</span>
                                 </div>
-                                
+
                                 <!-- Tags & Content Overlay -->
-                                <div class="absolute bottom-0 left-0 right-0 p-4 md:p-5 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30">
+                                <div class="absolute bottom-0 left-0 right-0 p-4 md:p-5 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 z-30 pointer-events-none">
                                     <h3 class="text-base md:text-lg font-bold text-white line-clamp-2 leading-tight">@(card.Title ?? "Tasarim")</h3>
                                     <div class="mt-2.5 flex items-center gap-2">
-                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">#design</span>
-                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">#creative</span>
+                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10">#design</span>
+                                        <span class="rounded-md bg-white/10 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md border border-white/10">#creative</span>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                             
                             <!-- Right Actions (Always partially visible but more prominent on hover) -->
                             <div class="absolute right-4 top-4 flex flex-col gap-3 translate-x-4 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 z-10">

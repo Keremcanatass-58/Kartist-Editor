@@ -467,6 +467,59 @@
             margin-bottom: 10px;
         }
 
+        /* AI MODE TABS */
+        .ai-mode-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 14px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 3px;
+        }
+        .ai-mode-tab {
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            background: transparent;
+            color: #888;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .ai-mode-tab.active {
+            background: rgba(198,255,0,0.15);
+            color: #c6ff00;
+        }
+        .ai-mode-tab:hover:not(.active) {
+            color: #ccc;
+        }
+        .ai-bg-type-grid {
+            display: flex;
+            gap: 6px;
+        }
+        .ai-bg-type {
+            flex: 1;
+            padding: 7px 0;
+            border: 1px solid #333;
+            background: transparent;
+            color: #999;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .ai-bg-type.active {
+            background: rgba(198,255,0,0.1);
+            border-color: #c6ff00;
+            color: #c6ff00;
+        }
+
         /* AI STUDIO STİLLERİ */
         .ai-style-grid {
             display: flex;
@@ -612,6 +665,27 @@
             color: #888;
             cursor: not-allowed;
             transform: none;
+        }
+        .ai-len-btn {
+            flex: 1;
+            padding: 8px 0;
+            border: 1px solid #444;
+            background: transparent;
+            color: #aaa;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .ai-len-btn.active {
+            background: rgba(198,255,0,0.15);
+            border-color: #c6ff00;
+            color: #c6ff00;
+            font-weight: 600;
+        }
+        .ai-len-btn:hover:not(.active) {
+            border-color: #666;
+            color: #ccc;
         }
 
         /* --- YENİ FX (FİLTRE) STİLLERİ --- */
@@ -2574,46 +2648,82 @@
                 <div id="tabAI" class="tool-section">
                     <div class="panel-title">KARTIST AI STUDIO ⚡</div>
 
-                    <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">1. Görsel Tarzını Seç</div>
-                    <div class="ai-style-grid">
-                        <div class="ai-style-card active" onclick="selectAiStyle('Standart', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #1e293b, #334155);">✨</div>
-                            <span>Standart</span>
-                        </div>
-                        <div class="ai-style-card" onclick="selectAiStyle('Sulu Boya', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #f472b6, #38bdf8);">🎨</div>
-                            <span>Sulu Boya</span>
-                        </div>
-                        <div class="ai-style-card" onclick="selectAiStyle('Cyberpunk', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">🌃</div>
-                            <span>Cyberpunk</span>
-                        </div>
-                        <div class="ai-style-card" onclick="selectAiStyle('Anime', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #fbbf24, #f43f5e);">🌸</div>
-                            <span>Anime</span>
-                        </div>
-                        <div class="ai-style-card" onclick="selectAiStyle('3D Render', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #34d399, #3b82f6);">🧊</div>
-                            <span>3D Render</span>
-                        </div>
-                        <div class="ai-style-card" onclick="selectAiStyle('Gerçekçi', this)">
-                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #9ca3af, #4b5563);">📸</div>
-                            <span>Gerçekçi</span>
-                        </div>
+                    <div class="ai-mode-tabs">
+                        <button class="ai-mode-tab active" onclick="switchAiMode('bg', this)"><i class="fa-solid fa-image"></i> Arkaplan</button>
+                        <button class="ai-mode-tab" onclick="switchAiMode('design', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> Tasarımcı</button>
                     </div>
 
-                    <div style="font-size:0.75rem; color:#aaa; margin-top:15px; margin-bottom:8px; font-weight:600;">2. Asistan ile Sohbet</div>
-                    <div class="ai-chat-window" id="aiChatWindow">
-                        <div class="ai-chat-message bot">
-                            Mükemmel bir tasarım için buradayım! Ne çizmemi veya nasıl bir arka plan oluşturmamı istersin?
+                    <!-- BÖLÜM 1: AI ARKAPLAN -->
+                    <div id="aiModeBg" class="ai-mode-content">
+                        <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">Arkaplan Türü</div>
+                        <div class="ai-bg-type-grid">
+                            <button class="ai-bg-type active" data-type="pexels" onclick="selectAiBgType(this)">📷 Fotoğraf</button>
+                            <button class="ai-bg-type" data-type="gradient" onclick="selectAiBgType(this)">🎨 Gradient</button>
+                            <button class="ai-bg-type" data-type="pattern" onclick="selectAiBgType(this)">🔲 Desen</button>
                         </div>
-                    </div>
 
-                    <div class="ai-input-area">
-                        <textarea id="aiMagicPrompt" placeholder="Örn: Annem için pembe ve romantik doğum günü..."></textarea>
-                        <button onclick="generateMagicDesign()" class="ai-magic-btn" id="aiMagicBtn" title="Tasarla">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <div style="font-size:0.75rem; color:#aaa; margin-top:12px; margin-bottom:6px; font-weight:600;">Ne tür arkaplan istersin?</div>
+                        <textarea id="aiBgPrompt" class="sidebar-input" rows="2" placeholder="Örn: Gün batımı, deniz manzarası, çiçekli bahçe..." style="resize:vertical;"></textarea>
+
+                        <div id="aiBgPreview" style="display:none; margin-top:10px;">
+                            <div style="font-size:0.7rem; color:#888; margin-bottom:4px;">Önizleme</div>
+                            <div id="aiBgPreviewImg" style="width:100%; height:120px; border-radius:8px; background-size:cover; background-position:center; border:1px solid #333;"></div>
+                            <div style="display:flex; gap:6px; margin-top:8px;">
+                                <button onclick="applyAiBg()" class="sidebar-btn" style="flex:1; font-size:12px; padding:8px;">Uygula</button>
+                                <button onclick="generateAiBg()" class="sidebar-btn" style="flex:1; font-size:12px; padding:8px; background:transparent; border:1px solid #c6ff00; color:#c6ff00;">Yenile</button>
+                            </div>
+                        </div>
+
+                        <button onclick="generateAiBg()" class="sidebar-btn" id="aiBgBtn" style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                            <i class="fa-solid fa-image"></i> ARKAPLAN OLUŞTUR
                         </button>
+
+                        <div style="font-size:0.7rem; color:#555; margin-top:8px; text-align:center;">Pexels üzerinden yüksek kaliteli görseller</div>
+                    </div>
+
+                    <!-- BÖLÜM 2: AI TASARIMCI -->
+                    <div id="aiModeDesign" class="ai-mode-content" style="display:none;">
+                        <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">Görsel Tarzını Seç</div>
+                        <div class="ai-style-grid">
+                            <div class="ai-style-card active" onclick="selectAiStyle('Standart', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #1e293b, #334155);">✨</div>
+                                <span>Standart</span>
+                            </div>
+                            <div class="ai-style-card" onclick="selectAiStyle('Sulu Boya', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #f472b6, #38bdf8);">🎨</div>
+                                <span>Sulu Boya</span>
+                            </div>
+                            <div class="ai-style-card" onclick="selectAiStyle('Cyberpunk', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">🌃</div>
+                                <span>Cyberpunk</span>
+                            </div>
+                            <div class="ai-style-card" onclick="selectAiStyle('Anime', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #fbbf24, #f43f5e);">🌸</div>
+                                <span>Anime</span>
+                            </div>
+                            <div class="ai-style-card" onclick="selectAiStyle('3D Render', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #34d399, #3b82f6);">🧊</div>
+                                <span>3D Render</span>
+                            </div>
+                            <div class="ai-style-card" onclick="selectAiStyle('Gerçekçi', this)">
+                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #9ca3af, #4b5563);">📸</div>
+                                <span>Gerçekçi</span>
+                            </div>
+                        </div>
+
+                        <div style="font-size:0.75rem; color:#aaa; margin-top:15px; margin-bottom:8px; font-weight:600;">Asistan ile Sohbet</div>
+                        <div class="ai-chat-window" id="aiChatWindow">
+                            <div class="ai-chat-message bot">
+                                Mükemmel bir tasarım için buradayım! Ne çizmemi veya nasıl bir arka plan oluşturmamı istersin?
+                            </div>
+                        </div>
+
+                        <div class="ai-input-area">
+                            <textarea id="aiMagicPrompt" placeholder="Örn: Annem için pembe ve romantik doğum günü..."></textarea>
+                            <button onclick="generateMagicDesign()" class="ai-magic-btn" id="aiMagicBtn" title="Tasarla">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2911,14 +3021,67 @@
     </div>
 
     <div id="aiModal" class="modal-overlay">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width:480px; width:95%;">
             <span class="close-modal" onclick="closeModals()">×</span>
-            <h3>AI Yazar</h3>
-            <select id="aiCategory" class="sidebar-input">
-                <option value="dogumgunu">Doğum Günü</option>
-                <option value="ask">Aşk</option>
-            </select>
-            <button onclick="generateAIText()" class="sidebar-btn">YAZDIR</button>
+            <h3 style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-wand-magic-sparkles" style="color:#c6ff00;"></i> AI Metin Yazarı</h3>
+
+            <div id="aiTextForm">
+                <label class="input-label" style="margin-top:12px;">Kategori</label>
+                <select id="aiCategory" class="sidebar-input">
+                    <option value="dogumgunu">🎂 Doğum Günü</option>
+                    <option value="ask">❤️ Aşk / Sevgi</option>
+                    <option value="motivasyon">💪 Motivasyon</option>
+                    <option value="tebrik">🎉 Tebrik / Kutlama</option>
+                    <option value="tesekkur">🙏 Teşekkür</option>
+                    <option value="ozur">😔 Özür</option>
+                    <option value="davet">📩 Davet</option>
+                    <option value="is">💼 İş / Profesyonel</option>
+                    <option value="mezuniyet">🎓 Mezuniyet</option>
+                    <option value="yilbasi">🎄 Yılbaşı / Bayram</option>
+                    <option value="ozel">✨ Serbest / Özel</option>
+                </select>
+
+                <label class="input-label" style="margin-top:10px;">Ton / Üslup</label>
+                <select id="aiTone" class="sidebar-input">
+                    <option value="samimi">😊 Samimi</option>
+                    <option value="romantik">💕 Romantik</option>
+                    <option value="komik">😄 Komik / Eğlenceli</option>
+                    <option value="resmi">📝 Resmi / Ciddi</option>
+                    <option value="ilham">🌟 İlham Verici</option>
+                    <option value="siirsel">🎭 Şiirsel</option>
+                </select>
+
+                <label class="input-label" style="margin-top:10px;">Uzunluk</label>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="ai-len-btn active" data-len="kisa" onclick="selectAiLen(this)">Kısa</button>
+                    <button type="button" class="ai-len-btn" data-len="orta" onclick="selectAiLen(this)">Orta</button>
+                    <button type="button" class="ai-len-btn" data-len="uzun" onclick="selectAiLen(this)">Uzun</button>
+                </div>
+
+                <label class="input-label" style="margin-top:10px;">Kime / Ne hakkında? <span style="color:#666; font-weight:normal;">(opsiyonel)</span></label>
+                <textarea id="aiCustomPrompt" class="sidebar-input" rows="2" placeholder="Örn: En yakın arkadaşım Ayşe için 25. yaş sürprizi..." style="resize:vertical;"></textarea>
+
+                <button onclick="generateAIText()" class="sidebar-btn" id="aiGenerateBtn" style="margin-top:14px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> METİN OLUŞTUR
+                </button>
+            </div>
+
+            <div id="aiTextResult" style="display:none;">
+                <label class="input-label" style="margin-top:12px;">Oluşturulan Metin</label>
+                <div id="aiResultBox" style="background:rgba(198,255,0,0.05); border:1px solid rgba(198,255,0,0.2); border-radius:10px; padding:16px; color:#eee; font-size:15px; line-height:1.6; min-height:60px; max-height:200px; overflow-y:auto; white-space:pre-wrap;"></div>
+
+                <div style="display:flex; gap:8px; margin-top:14px;">
+                    <button onclick="acceptAIText()" class="sidebar-btn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:#c6ff00; color:#000;">
+                        <i class="fa-solid fa-check"></i> Tuvale Ekle
+                    </button>
+                    <button onclick="regenerateAIText()" class="sidebar-btn" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid #c6ff00; color:#c6ff00;">
+                        <i class="fa-solid fa-arrows-rotate"></i> Tekrar Üret
+                    </button>
+                </div>
+                <button onclick="backToAiForm()" style="margin-top:8px; background:none; border:none; color:#888; cursor:pointer; font-size:13px; width:100%; text-align:center;">
+                    <i class="fa-solid fa-arrow-left"></i> Ayarları Değiştir
+                </button>
+            </div>
         </div>
     </div>
 
@@ -3884,15 +4047,57 @@
 			}
 		}
 
+		var _lastAiText = '';
+		var _selectedAiLen = 'kisa';
+
+		function selectAiLen(btn) {
+			document.querySelectorAll('.ai-len-btn').forEach(b => b.classList.remove('active'));
+			btn.classList.add('active');
+			_selectedAiLen = btn.dataset.len;
+		}
+
+		function backToAiForm() {
+			document.getElementById('aiTextForm').style.display = 'block';
+			document.getElementById('aiTextResult').style.display = 'none';
+		}
+
+		function acceptAIText() {
+			if (_lastAiText) {
+				closeModals();
+				addText(_lastAiText, 24, 400);
+				showToast("Metin tuvale eklendi!");
+				backToAiForm();
+			}
+		}
+
+		function regenerateAIText() {
+			generateAIText();
+		}
+
 		async function generateAIText() {
 			var categoryEl = document.getElementById("aiCategory");
-			var category = categoryEl ? categoryEl.options[categoryEl.selectedIndex].text : "Genel";
-			
-			// Hızlıca bir prompt uyduralım
-			var prompt = category + " konulu anlamlı, kısa ve etkileyici bir söz veya mesaj yaz.";
+			var toneEl = document.getElementById("aiTone");
+			var customEl = document.getElementById("aiCustomPrompt");
 
-			showToast("Yapay Zeka yazıyor... ✍️");
-			
+			var category = categoryEl ? categoryEl.options[categoryEl.selectedIndex].text : "Genel";
+			var tone = toneEl ? toneEl.options[toneEl.selectedIndex].text : "Samimi";
+			var custom = customEl ? customEl.value.trim() : "";
+
+			var lenMap = { kisa: "1-2 cümle", orta: "3-4 cümle", uzun: "5-7 cümle, paragraf halinde" };
+			var lenDesc = lenMap[_selectedAiLen] || "1-2 cümle";
+
+			var prompt = category.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '') + " konulu";
+			prompt += ", " + tone.replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '') + " üslupla";
+			prompt += ", " + lenDesc + " uzunluğunda";
+			prompt += " anlamlı ve etkileyici bir metin yaz.";
+			if (custom) prompt += " Detay: " + custom;
+
+			var genBtn = document.getElementById('aiGenerateBtn');
+			if (genBtn) {
+				genBtn.disabled = true;
+				genBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yazılıyor...';
+			}
+
 			try {
 				const formData = new FormData();
 				formData.append("prompt", prompt);
@@ -3910,15 +4115,21 @@
 
 				const result = await res.json();
 				if (result.success && result.text) {
-					closeModals();
-					addText(result.text, 24, 400);
-					showToast("Metin eklendi!");
+					_lastAiText = result.text;
+					document.getElementById('aiResultBox').textContent = result.text;
+					document.getElementById('aiTextForm').style.display = 'none';
+					document.getElementById('aiTextResult').style.display = 'block';
 				} else {
 					showToast(result.message || "Metin üretilemedi.");
 				}
 			} catch (e) {
 				console.error(e);
 				showToast("Sunucu hatası oluştu.");
+			} finally {
+				if (genBtn) {
+					genBtn.disabled = false;
+					genBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> METİN OLUŞTUR';
+				}
 			}
 		}
 
@@ -4392,6 +4603,79 @@
         function removeTypingIndicator() {
             const ind = document.getElementById('aiTypingIndicator');
             if (ind) ind.remove();
+        }
+
+        var _aiBgDataUrl = null;
+        var _aiBgType = 'pexels';
+
+        function switchAiMode(mode, btn) {
+            document.querySelectorAll('.ai-mode-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('aiModeBg').style.display = mode === 'bg' ? 'block' : 'none';
+            document.getElementById('aiModeDesign').style.display = mode === 'design' ? 'block' : 'none';
+        }
+
+        function selectAiBgType(btn) {
+            document.querySelectorAll('.ai-bg-type').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _aiBgType = btn.dataset.type;
+        }
+
+        async function generateAiBg() {
+            var prompt = (document.getElementById('aiBgPrompt').value || '').trim();
+            if (!prompt) { showToast('Arkaplan açıklaması gir.'); return; }
+
+            var btn = document.getElementById('aiBgBtn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aranıyor...'; }
+
+            if (_aiBgType === 'gradient') {
+                prompt += ', gradient background, abstract colors';
+            } else if (_aiBgType === 'pattern') {
+                prompt += ', seamless pattern, texture, repeating design';
+            }
+
+            try {
+                var fd = new FormData();
+                fd.append('prompt', prompt);
+                fd.append('__RequestVerificationToken', getCSRFToken());
+                var headers = {};
+                var token = getCSRFToken();
+                if (token) headers['RequestVerificationToken'] = token;
+
+                var res = await fetch('/Home/FetchAiImageBase64', { method: 'POST', headers: headers, body: fd });
+                var data = await res.json();
+
+                if (data.success && data.dataUrl) {
+                    _aiBgDataUrl = data.dataUrl;
+                    var preview = document.getElementById('aiBgPreview');
+                    document.getElementById('aiBgPreviewImg').style.backgroundImage = 'url(' + data.dataUrl + ')';
+                    preview.style.display = 'block';
+                    showToast('Arkaplan bulundu!');
+                } else {
+                    showToast(data.error || 'Arkaplan bulunamadı.');
+                }
+            } catch (e) {
+                console.error(e);
+                showToast('Bağlantı hatası.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-image"></i> ARKAPLAN OLUŞTUR'; }
+            }
+        }
+
+        function applyAiBg() {
+            if (!_aiBgDataUrl) return;
+            fabric.Image.fromURL(_aiBgDataUrl, function(img) {
+                var cw = canvas.getWidth();
+                var ch = canvas.getHeight();
+                img.scaleToWidth(cw);
+                if (img.getScaledHeight() < ch) img.scaleToHeight(ch);
+                img.set({ left: cw / 2, top: ch / 2, originX: 'center', originY: 'center', selectable: false, evented: false, name: 'ai-background' });
+                var existing = canvas.getObjects().filter(o => o.name === 'ai-background');
+                existing.forEach(o => canvas.remove(o));
+                canvas.insertAt(img, 0);
+                canvas.renderAll();
+                showToast('Arkaplan uygulandı!');
+            }, { crossOrigin: 'anonymous' });
         }
 
         const aiChatHistory = [];
@@ -5170,15 +5454,6 @@
                 o.set('underline', !o.underline);
                 canvas.requestRenderAll();
                 updateUI(); // Butonun aktifliğini güncellemek için
-            }
-        }
-
-        // Hizalama (Left, Center, Right)
-        function setTextAlign(align) {
-            var o = canvas.getActiveObject();
-            if (o && o.type && o.type.includes('text')) {
-                o.set('textAlign', align);
-                canvas.requestRenderAll();
             }
         }
 

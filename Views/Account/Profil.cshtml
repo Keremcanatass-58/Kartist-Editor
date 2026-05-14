@@ -28,6 +28,7 @@
     string biyografiGosterim = "";
     bool ikiFaktorAktif = false;
     int satisSayisi = 0;
+    string kapakResmi = "";
 
     List<dynamic> tasarimlar = new List<dynamic>();
     List<dynamic> favoriler = new List<dynamic>();
@@ -35,7 +36,7 @@
 
     using (var db = new SqlConnection(Config.GetConnectionString("DefaultConnection")))
     {
-        var user = db.QueryFirstOrDefault("SELECT ProfilResmi, UyelikTipi, KalanKredi, UyelikBitisTarihi, Biyografi, IkiFactorAktif FROM Kullanicilar WHERE Email = @e", new { e = email });
+        var user = db.QueryFirstOrDefault("SELECT ProfilResmi, UyelikTipi, KalanKredi, UyelikBitisTarihi, Biyografi, IkiFactorAktif, KapakResmi FROM Kullanicilar WHERE Email = @e", new { e = email });
 
         if (user != null)
         {
@@ -45,6 +46,7 @@
             if (user.UyelikBitisTarihi != null) bitisTarihiStr = ((DateTime)user.UyelikBitisTarihi).ToString("dd.MM.yyyy");
             if (user.Biyografi != null) biyografi = user.Biyografi;
             if (user.IkiFactorAktif != null) ikiFaktorAktif = (bool)user.IkiFactorAktif;
+            if (user.KapakResmi != null) kapakResmi = user.KapakResmi;
         }
 
         biyografiGosterim = string.IsNullOrWhiteSpace(biyografi)
@@ -117,6 +119,17 @@ ORDER BY k.Tarih DESC";
     .hero-orb-1 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(198,255,0,0.07) 0%, transparent 70%); top: -60px; right: 15%; }
     .hero-orb-2 { width: 150px; height: 150px; background: radial-gradient(circle, rgba(198,255,0,0.05) 0%, transparent 70%); bottom: -40px; left: 10%; animation-delay: -3s; }
     @@keyframes orbFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+    /* ===== BANNER UPLOAD ===== */
+    .banner-upload-btn {
+        position: absolute; top: 16px; right: 16px; z-index: 10;
+        background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);
+        color: #fff; padding: 8px 16px; border-radius: 12px;
+        font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: 0.3s; backdrop-filter: blur(8px);
+    }
+    .banner-upload-btn:hover { background: rgba(198,255,0,0.15); border-color: rgba(198,255,0,0.3); color: #c6ff00; }
 
     /* ===== PROFILE HEADER CARD ===== */
     .profile-header-card {
@@ -285,6 +298,10 @@ ORDER BY k.Tarih DESC";
     .btn-card.delete { width: 38px; color: #ff6666; border-color: rgba(255,86,86,0.15); }
     .btn-card.delete:hover { background: rgba(255,86,86,0.08); }
 
+    /* ===== CREATE CARD ===== */
+    .create-card:hover { border-color: rgba(198,255,0,0.3) !important; background: rgba(198,255,0,0.04) !important; }
+    .create-card:hover div[style*="border-radius:50%"] { transform: scale(1.1); }
+
     /* ===== FAVORITES ===== */
     .fav-card { position: relative; }
     .fav-remove-btn {
@@ -396,10 +413,22 @@ ORDER BY k.Tarih DESC";
     @Html.AntiForgeryToken()
 
     <!-- HERO BANNER -->
-    <div class="dash-hero">
-        <div class="hero-grid"></div>
-        <div class="hero-orb hero-orb-1"></div>
-        <div class="hero-orb hero-orb-2"></div>
+    <div class="dash-hero" id="heroBanner">
+        @if (!string.IsNullOrEmpty(kapakResmi))
+        {
+            <img src="@kapakResmi" alt="Kapak" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;">
+            <div style="position:absolute; inset:0; background:linear-gradient(to top, var(--bg-deep, #0d0d0d) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%); z-index:1;"></div>
+        }
+        else
+        {
+            <div class="hero-grid"></div>
+            <div class="hero-orb hero-orb-1"></div>
+            <div class="hero-orb hero-orb-2"></div>
+        }
+        <label for="bannerInput" class="banner-upload-btn" title="Kapak Resmi Degistir">
+            <i class="fa-solid fa-camera"></i> Kapak Degistir
+        </label>
+        <input type="file" id="bannerInput" accept="image/*" style="display:none;" onchange="bannerYukle(this)">
     </div>
 
     <!-- PROFILE HEADER CARD -->
@@ -486,6 +515,28 @@ ORDER BY k.Tarih DESC";
     <!-- PROJECTS TAB -->
     <div id="projects" class="tab-panel" style="display:block;">
         <div class="projects-grid">
+            <!-- Yeni Tasarım Oluştur Kartı -->
+            <a href="/Home/Tasarim/0" class="project-card create-card" style="text-decoration:none; border-style:dashed; border-color:rgba(198,255,0,0.15); background:rgba(198,255,0,0.02); display:flex; align-items:center; justify-content:center; min-height:280px;">
+                <div style="text-align:center; padding:24px;">
+                    <div style="width:64px; height:64px; background:rgba(198,255,0,0.08); border:2px solid rgba(198,255,0,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; transition:0.3s;">
+                        <i class="fa-solid fa-plus" style="color:#c6ff00; font-size:1.4rem;"></i>
+                    </div>
+                    <div style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:6px;">Yeni Tasarim Olustur</div>
+                    <div style="color:#555; font-size:0.78rem;">Bos tuvalden basla</div>
+                </div>
+            </a>
+
+            <!-- Şablon Seç Kartı -->
+            <a href="/#koleksiyon" class="project-card create-card" style="text-decoration:none; border-style:dashed; border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.01); display:flex; align-items:center; justify-content:center; min-height:280px;">
+                <div style="text-align:center; padding:24px;">
+                    <div style="width:64px; height:64px; background:rgba(255,255,255,0.04); border:2px solid rgba(255,255,255,0.08); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; transition:0.3s;">
+                        <i class="fa-solid fa-palette" style="color:#888; font-size:1.4rem;"></i>
+                    </div>
+                    <div style="color:#fff; font-weight:700; font-size:0.95rem; margin-bottom:6px;">Sablon Sec</div>
+                    <div style="color:#555; font-size:0.78rem;">Hazir sablonlardan basla</div>
+                </div>
+            </a>
+
             @if (tasarimlar != null && tasarimlar.Count > 0)
             {
                 @foreach (var t in tasarimlar)
@@ -515,14 +566,6 @@ ORDER BY k.Tarih DESC";
                         </div>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="empty-state-box" style="grid-column: 1 / -1;">
-                    <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
-                    <h4>Henuz projen yok</h4>
-                    <a href="/#koleksiyon" class="btn-empty">Sablon Sec</a>
-                </div>
             }
         </div>
     </div>
@@ -747,6 +790,49 @@ ORDER BY k.Tarih DESC";
                     if (el) { el.style.transform = 'scale(0.8)'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }
                 }
             });
+    }
+
+    // Banner upload
+    function bannerYukle(input) {
+        if (!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+            Swal.fire({ title: 'Hata', text: 'Dosya 10MB\'dan büyük olamaz.', icon: 'error', background: '#1e1e1e', color: '#fff', confirmButtonColor: '#ff4444' });
+            return;
+        }
+        var fd = new FormData();
+        fd.append('kapak', file);
+        fd.append('__RequestVerificationToken', getCSRFToken());
+
+        var btn = document.querySelector('.banner-upload-btn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...';
+
+        fetch('/Social/KapakResmiYukle', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    var hero = document.getElementById('heroBanner');
+                    var existingImg = hero.querySelector('img');
+                    if (existingImg) {
+                        existingImg.src = d.url;
+                    } else {
+                        hero.querySelectorAll('.hero-grid, .hero-orb').forEach(e => e.remove());
+                        var img = document.createElement('img');
+                        img.src = d.url;
+                        img.alt = 'Kapak';
+                        img.style.cssText = 'position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;';
+                        hero.insertBefore(img, hero.firstChild);
+                        var overlay = document.createElement('div');
+                        overlay.style.cssText = 'position:absolute; inset:0; background:linear-gradient(to top, #0d0d0d 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%); z-index:1;';
+                        img.after(overlay);
+                    }
+                    Swal.fire({ title: 'Kapak güncellendi!', icon: 'success', background: '#1e1e1e', color: '#fff', iconColor: '#c6ff00', confirmButtonColor: '#c6ff00', confirmButtonText: '<span style="color:black; font-weight:bold;">Tamam</span>', timer: 2000 });
+                } else {
+                    Swal.fire({ title: 'Hata', text: d.message || 'Yükleme başarısız.', icon: 'error', background: '#1e1e1e', color: '#fff', confirmButtonColor: '#ff4444' });
+                }
+            })
+            .catch(() => Swal.fire({ title: 'Hata', text: 'Bağlantı hatası.', icon: 'error', background: '#1e1e1e', color: '#fff' }))
+            .finally(() => { btn.innerHTML = '<i class="fa-solid fa-camera"></i> Kapak Degistir'; });
     }
 
     // PRO upgrade

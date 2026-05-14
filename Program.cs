@@ -18,6 +18,7 @@ builder.Services.AddScoped<IAiImageService, AiImageService>();
 builder.Services.AddScoped<AiModerationService>();
 builder.Services.AddScoped<Kartist.Data.Repositories.ISocialRepository, Kartist.Data.Repositories.SocialRepository>();
 builder.Services.AddScoped<Kartist.Services.Business.ISocialService, Kartist.Services.Business.SocialService>();
+builder.Services.AddSingleton<IMailService, MailService>();
 
 builder.Services.AddResponseCompression(options =>
 {

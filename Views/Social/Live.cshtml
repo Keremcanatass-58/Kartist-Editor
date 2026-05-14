@@ -23,6 +23,9 @@
     .stream-card:hover .stream-thumbnail { transform: scale(1.05); }
     .stream-thumbnail { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     .stream-card-body { position: relative; z-index: 2; }
+    .studio-chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); padding: .35rem .6rem; font-size: 11px; font-weight: 800; color: rgba(255,255,255,.72); }
+    .studio-chip-live { border-color: rgba(239,68,68,.45); background: rgba(239,68,68,.14); color: white; }
+    .scene-mode-active { border-color: rgba(198,255,0,.7) !important; background: rgba(198,255,0,.14) !important; color: white !important; }
 
     /* Mobile chat toggle */
     .chat-toggle-mobile {
@@ -206,6 +209,17 @@
                         </div>
                         <p class="text-white font-bold">Sesi Açmak İçin Dokun</p>
                     </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40">Ekran yakalama</p>
+                            <p id="screenSurfaceText" class="mt-1 text-sm font-bold text-white">Hazir degil</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40">Ses miksaji</p>
+                            <p id="audioMixText" class="mt-1 text-sm font-bold text-white">Mikrofon</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="heartsContainer" class="absolute bottom-20 right-6 h-64 w-32 pointer-events-none overflow-hidden z-10"></div>
@@ -286,6 +300,10 @@
                         <div id="cameraStatusText" class="absolute bottom-3 left-3 px-2 py-1 rounded-md bg-black/60 backdrop-blur-md text-[10px] text-white/80 font-bold hidden flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> <span id="cameraName">Kamera</span>
                         </div>
+                        <div class="absolute right-3 top-3 flex flex-wrap justify-end gap-1.5">
+                            <span id="sourceTypeBadge" class="studio-chip hidden">Kaynak</span>
+                            <span id="sourceQualityBadge" class="studio-chip hidden">720p</span>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-3 gap-2">
@@ -302,6 +320,22 @@
                             <span class="text-[10px] font-bold text-white/40 uppercase">E+K</span>
                         </button>
                     </div>
+
+                    <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-3 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-bold text-white/80">Stüdyo Sahnesi</p>
+                                <p class="text-[10px] text-white/40">Tum ekran, pencere veya sekme secimini guvenli seciciden yap.</p>
+                            </div>
+                            <span id="studioReadyBadge" class="studio-chip">Kaynak bekleniyor</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="setSceneMode('fit')" data-scene-mode="fit" class="scene-mode-btn scene-mode-active rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-white/60 hover:bg-white/10">Fit</button>
+                            <button type="button" onclick="setSceneMode('fill')" data-scene-mode="fill" class="scene-mode-btn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-white/60 hover:bg-white/10">Fill</button>
+                            <button type="button" onclick="setSceneMode('focus')" data-scene-mode="focus" class="scene-mode-btn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-white/60 hover:bg-white/10">Focus</button>
+                        </div>
+                        <div id="captureWarning" class="hidden rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] font-semibold text-amber-100"></div>
+                    </div>
                 </div>
 
                 <!-- Right: Settings -->
@@ -316,6 +350,25 @@
                         <input id="streamTagsInput" type="text" placeholder="tasarım, oyun, sohbet..." class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-red-500 focus:outline-none" />
                     </div>
 
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-white/40 uppercase tracking-wider">Kalite</label>
+                            <select id="streamQualitySelect" class="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-red-500 focus:outline-none" onchange="updateQualityHint()">
+                                <option value="720">720p / Stabil</option>
+                                <option value="1080" selected>1080p / Net</option>
+                                <option value="1440">1440p / Sunum</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-white/40 uppercase tracking-wider">FPS</label>
+                            <select id="streamFpsSelect" class="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-red-500 focus:outline-none" onchange="updateQualityHint()">
+                                <option value="24">24 FPS</option>
+                                <option value="30" selected>30 FPS</option>
+                                <option value="60">60 FPS</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-white/80">Mikrofon</span>
@@ -324,6 +377,16 @@
                             </div>
                         </div>
                         <p class="text-[10px] text-white/40">Yayın sırasında mikrofonunuzu dilediğiniz zaman kapatabilirsiniz.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40">Ekran yakalama</p>
+                            <p id="screenSurfaceText" class="mt-1 text-sm font-bold text-white">Hazir degil</p>
+                        </div>
+                        <div class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-white/40">Ses miksaji</p>
+                            <p id="audioMixText" class="mt-1 text-sm font-bold text-white">Mikrofon</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -358,6 +421,7 @@ var _previewStream = null;    // combined stream for preview & broadcast
 var _compositeRAF = null;     // requestAnimationFrame handle for PIP
 var _selectedSource = null;   // 'camera' | 'screen' | 'pip'
 var _micEnabled = true;
+var _sceneMode = 'fit';       // 'fit' | 'fill' | 'focus'
 
 var rtcConfig = {
     iceServers: [
@@ -535,6 +599,18 @@ function cleanupPreview() {
     if (icon) icon.style.display = '';
     var statusEl = document.getElementById('cameraStatusText');
     if (statusEl) statusEl.classList.add('hidden');
+    ['sourceTypeBadge', 'sourceQualityBadge'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    var ready = document.getElementById('studioReadyBadge');
+    if (ready) { ready.innerText = 'Kaynak bekleniyor'; ready.classList.remove('studio-chip-live'); }
+    var surfaceText = document.getElementById('screenSurfaceText');
+    if (surfaceText) surfaceText.innerText = 'Hazir degil';
+    var audioText = document.getElementById('audioMixText');
+    if (audioText) audioText.innerText = 'Mikrofon';
+    var warning = document.getElementById('captureWarning');
+    if (warning) warning.classList.add('hidden');
     clearSourceButtons();
 }
 
@@ -549,6 +625,7 @@ function showPreviewVideo(stream, label) {
     var statusEl = document.getElementById('cameraStatusText');
     if (nameEl) nameEl.innerText = label || '';
     if (statusEl) statusEl.classList.remove('hidden');
+    updateSourceMeta(stream, label || 'Kaynak');
 }
 
 function setActiveSourceButton(index) {
@@ -560,6 +637,98 @@ function setActiveSourceButton(index) {
 }
 function clearSourceButtons() {
     document.querySelectorAll('.source-pick-btn').forEach(function(b) { b.classList.remove('source-btn-active'); });
+}
+
+function getSelectedQuality() {
+    var q = parseInt(document.getElementById('streamQualitySelect')?.value || '1080', 10);
+    var fps = parseInt(document.getElementById('streamFpsSelect')?.value || '30', 10);
+    var map = {
+        720: { width: 1280, height: 720 },
+        1080: { width: 1920, height: 1080 },
+        1440: { width: 2560, height: 1440 }
+    };
+    return { width: map[q].width, height: map[q].height, fps: fps, label: q + 'p / ' + fps + ' FPS' };
+}
+
+function getDisplayOptions() {
+    var quality = getSelectedQuality();
+    return {
+        video: {
+            width: { ideal: quality.width },
+            height: { ideal: quality.height },
+            frameRate: { ideal: quality.fps, max: quality.fps },
+            displaySurface: 'monitor'
+        },
+        audio: true,
+        selfBrowserSurface: 'exclude',
+        surfaceSwitching: 'include',
+        systemAudio: 'include',
+        monitorTypeSurfaces: 'include',
+        preferCurrentTab: false
+    };
+}
+
+function updateQualityHint() {
+    var badge = document.getElementById('sourceQualityBadge');
+    if (badge) {
+        badge.innerText = getSelectedQuality().label;
+        badge.classList.remove('hidden');
+    }
+}
+
+function setSceneMode(mode) {
+    _sceneMode = mode;
+    document.querySelectorAll('.scene-mode-btn').forEach(function(btn) {
+        btn.classList.toggle('scene-mode-active', btn.dataset.sceneMode === mode);
+    });
+    applySceneMode();
+}
+
+function applySceneMode() {
+    var fit = _sceneMode === 'fill' ? 'cover' : 'contain';
+    var focus = _sceneMode === 'focus';
+    ['previewVideo', 'localVideoPreview', 'remoteVideo', 'broadcasterCanvas', 'compositeCanvas'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.style.objectFit = focus ? 'cover' : fit;
+        el.style.filter = focus ? 'contrast(1.06) saturate(1.08)' : '';
+    });
+}
+
+function updateSourceMeta(stream, label) {
+    var badge = document.getElementById('sourceTypeBadge');
+    var ready = document.getElementById('studioReadyBadge');
+    var qualityBadge = document.getElementById('sourceQualityBadge');
+    var surfaceText = document.getElementById('screenSurfaceText');
+    var audioText = document.getElementById('audioMixText');
+    var warning = document.getElementById('captureWarning');
+    var videoTrack = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    var settings = videoTrack && videoTrack.getSettings ? videoTrack.getSettings() : {};
+    var surface = settings.displaySurface || (_selectedSource === 'camera' ? 'camera' : 'unknown');
+    var surfaceLabel = surface === 'monitor' ? 'Tum ekran' : surface === 'window' ? 'Pencere' : surface === 'browser' ? 'Sekme' : surface === 'camera' ? 'Kamera' : label;
+
+    if (badge) { badge.innerText = surfaceLabel; badge.classList.remove('hidden'); }
+    if (ready) { ready.innerText = 'Yayina hazir'; ready.classList.add('studio-chip-live'); }
+    if (qualityBadge) {
+        var size = settings.width && settings.height ? settings.width + 'x' + settings.height : getSelectedQuality().label;
+        qualityBadge.innerText = size;
+        qualityBadge.classList.remove('hidden');
+    }
+    if (surfaceText) surfaceText.innerText = surfaceLabel;
+    if (audioText) audioText.innerText = stream && stream.getAudioTracks && stream.getAudioTracks().length > 0 ? 'Mikrofon + sistem' : 'Ses yok';
+
+    if (warning) {
+        if (surface === 'browser') {
+            warning.innerText = 'Sekme secildi. OBS etkisi icin secicide "Tum ekran" veya uygulama penceresi sec.';
+            warning.classList.remove('hidden');
+        } else if (_selectedSource === 'screen' || _selectedSource === 'pip') {
+            warning.innerText = 'Ekran paylasimi tarayicinin guvenli izin sistemiyle calisir; kayit/kopyalama yapilmaz, sadece canli aktarim yapilir.';
+            warning.classList.remove('hidden');
+        } else {
+            warning.classList.add('hidden');
+        }
+    }
+    applySceneMode();
 }
 
 // ===================== CAPTURE MIC (reusable) =====================
@@ -609,12 +778,7 @@ function switchToScreen() {
         return;
     }
 
-    navigator.mediaDevices.getDisplayMedia({
-        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } },
-        audio: true,
-        selfBrowserSurface: 'exclude',
-        surfaceSwitching: 'include'
-    })
+    navigator.mediaDevices.getDisplayMedia(getDisplayOptions())
     .then(function(screenStream) {
         _screenStream = screenStream;
 
@@ -627,6 +791,7 @@ function switchToScreen() {
             // Build combined stream: screen video + mic audio
             var combined = new MediaStream();
             screenStream.getVideoTracks().forEach(function(t) { combined.addTrack(t); });
+            screenStream.getAudioTracks().forEach(function(t) { combined.addTrack(t); });
             if (micStream) {
                 micStream.getAudioTracks().forEach(function(t) { combined.addTrack(t); });
             }
@@ -653,12 +818,7 @@ function startScreenAndCamera() {
         return;
     }
 
-    navigator.mediaDevices.getDisplayMedia({
-        video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } },
-        audio: true,
-        selfBrowserSurface: 'exclude',
-        surfaceSwitching: 'include'
-    })
+    navigator.mediaDevices.getDisplayMedia(getDisplayOptions())
     .then(function(screenStream) {
         _screenStream = screenStream;
 
@@ -736,6 +896,7 @@ function buildComposite(screenStream, camStream) {
 
     // Build combined stream: canvas video + mic audio
     var compositeStream = canvas.captureStream(30);
+    screenStream.getAudioTracks().forEach(function(t) { compositeStream.addTrack(t); });
     if (camStream) {
         camStream.getAudioTracks().forEach(function(t) { compositeStream.addTrack(t); });
     }
@@ -753,6 +914,7 @@ function buildComposite(screenStream, camStream) {
     var statusEl = document.getElementById('cameraStatusText');
     if (nameEl) nameEl.innerText = 'Ekran + Kamera (PIP)';
     if (statusEl) statusEl.classList.remove('hidden');
+    updateSourceMeta(compositeStream, 'Ekran + Kamera (PIP)');
 
     if (camStream) startMicMeter(camStream);
 }
@@ -780,7 +942,7 @@ function startMicMeter(stream) {
             for (var i = 0; i < data.length; i++) sum += data[i];
             var avg = sum / data.length;
             var pct = Math.min(100, Math.round(avg / 128 * 100));
-            bar.style.height = pct + '%';
+            bar.style.width = pct + '%';
             bar.style.background = pct > 60 ? '#ef4444' : pct > 30 ? '#eab308' : '#22c55e';
             _micMeterRAF = requestAnimationFrame(tick);
         }
@@ -1150,6 +1312,9 @@ function refreshRoomsList() {
             var grid = document.getElementById('roomsGrid');
             var stat = document.getElementById('statLiveCount');
             if (stat) stat.innerText = data.rooms.length;
+            var totalViewers = data.rooms.reduce(function(sum, r) { return sum + (parseInt(r.Viewers || 0, 10) || 0); }, 0);
+            var viewerStat = document.getElementById('statTotalViewers');
+            if (viewerStat) viewerStat.innerText = totalViewers;
 
             if (data.rooms.length === 0) {
                 grid.innerHTML = '<div class="col-span-full rounded-3xl border-2 border-dashed border-border p-16 text-center bg-card/30">' +
@@ -1195,6 +1360,8 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+refreshRoomsList();
+updateQualityHint();
 if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
 }

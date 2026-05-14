@@ -270,12 +270,13 @@
                 }
                 
                 @if (isOwnProfile) {
-                    <button onclick="openCreateModal()" class="group flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-border/50 bg-card/30 p-8 min-h-[250px] transition-all hover:bg-card/80 hover:border-primary/50">
+                    <a href="/Home/Tasarim/0" class="group flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-border/50 bg-card/30 p-8 min-h-[250px] transition-all hover:bg-card/80 hover:border-primary/50 no-underline">
                         <div class="flex h-16 w-16 items-center justify-center rounded-full bg-secondary text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all shadow-xl">
                             <i data-lucide="plus" class="h-8 w-8"></i>
                         </div>
                         <p class="font-bold text-foreground">Yeni Tasarım Ekle</p>
-                    </button>
+                        <p class="text-sm text-muted-foreground">Boş tuvalden başla</p>
+                    </a>
                 }
             }
         </div>

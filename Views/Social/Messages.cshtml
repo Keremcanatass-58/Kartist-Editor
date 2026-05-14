@@ -1,417 +1,369 @@
-@{
+﻿@{
     Layout = "_SocialLayoutModern";
     ViewData["Title"] = "Mesajlar";
 }
 
-<div class="flex h-[calc(100vh-4rem)] md:h-screen w-full bg-background overflow-hidden relative border-t border-border/50 md:border-none">
-    
-    <!-- Dynamic Background Accent -->
-    <div class="absolute -top-[10%] -right-[10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-[120px] pointer-events-none"></div>
-    <div class="absolute -bottom-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-accent/5 blur-[120px] pointer-events-none"></div>
+<div class="h-[calc(100vh-4rem)] md:h-screen overflow-hidden bg-background border-t border-border/50 md:border-none">
+    <div class="grid h-full grid-cols-1 md:grid-cols-[360px_minmax(0,1fr)] lg:grid-cols-[410px_minmax(0,1fr)]">
+        <aside id="conversationsPane" class="relative z-20 flex h-full min-h-0 flex-col border-r border-border/50 bg-card/70 backdrop-blur-xl transition-transform duration-300 md:translate-x-0">
+            <div class="shrink-0 border-b border-border/50 p-4 sm:p-5">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Kartist Chat</p>
+                        <h1 class="text-2xl font-black tracking-tight">Mesajlar</h1>
+                    </div>
+                    <button type="button" onclick="openNewChat()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-105" title="Yeni sohbet">
+                        <i data-lucide="plus" class="h-5 w-5"></i>
+                    </button>
+                </div>
 
-    <!-- Conversations Sidebar -->
-    <div class="w-full md:w-80 lg:w-96 border-r border-border/50 flex flex-col bg-card/20 backdrop-blur-sm shrink-0 transition-transform duration-300 md:translate-x-0 absolute md:relative z-20 h-full" id="conversationsContainer">
-        <!-- Header -->
-        <div class="p-5 border-b border-border/50 backdrop-blur-xl bg-background/40 sticky top-0 z-10 shrink-0">
-            <div class="flex items-center justify-between mb-4">
-                <h1 class="text-2xl font-black tracking-tight flex items-center gap-2">
-                    <span class="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Mesajlar</span>
-                </h1>
-                <button class="h-9 w-9 flex items-center justify-center rounded-xl bg-secondary/50 hover:bg-secondary transition-all text-muted-foreground hover:text-foreground">
-                    <i data-lucide="plus" class="h-5 w-5"></i>
-                </button>
-            </div>
-            
-            <div class="relative group">
-                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary"></i>
-                <input type="text" id="searchInput" placeholder="Sohbet ara..." onkeyup="searchConversations()" class="w-full rounded-xl bg-secondary/30 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-primary/20 focus:bg-secondary/50 border border-border/30 transition-all font-medium" />
-            </div>
-        </div>
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+                    <input id="conversationSearch" oninput="filterConversations()" type="text" placeholder="Kişi veya mesaj ara..." class="w-full rounded-xl border border-border/40 bg-secondary/40 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary/60 focus:ring-4 focus:ring-primary/10" />
+                </div>
 
-        <!-- Conversation List -->
-        <div class="flex-1 overflow-y-auto scrollbar-hide space-y-1 p-2" id="conversationList">
-            @if (ViewBag.Conversations != null)
-            {
-                foreach (var conv in ViewBag.Conversations)
+                <div class="mt-3 grid grid-cols-3 gap-2 text-xs font-bold">
+                    <button type="button" data-filter="all" onclick="setConversationFilter('all')" class="dm-filter rounded-lg bg-primary px-3 py-2 text-primary-foreground">Hepsi</button>
+                    <button type="button" data-filter="unread" onclick="setConversationFilter('unread')" class="dm-filter rounded-lg bg-secondary px-3 py-2 text-muted-foreground">Okunmamış</button>
+                    <button type="button" data-filter="online" onclick="setConversationFilter('online')" class="dm-filter rounded-lg bg-secondary px-3 py-2 text-muted-foreground">Aktif</button>
+                </div>
+            </div>
+
+            <div id="conversationList" class="min-h-0 flex-1 overflow-y-auto p-2">
+                @if (ViewBag.Conversations != null)
                 {
-                    var isUnread = conv.UnreadCount > 0;
-                    <button onclick="selectConversation(@(conv.Id))" id="conv-@(conv.Id)" class="conv-item w-full flex items-start gap-3.5 p-3 rounded-2xl text-left transition-all hover:bg-secondary/40 border border-transparent hover:border-border/30 group @(isUnread ? "bg-primary/5" : "")">
-                        <div class="relative shrink-0">
-                            <div class="h-12 w-12 rounded-2xl overflow-hidden ring-2 ring-transparent transition-all group-hover:ring-primary/30">
-                                <img src="@(conv.Avatar ?? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(conv.Name ?? "U") + "&background=random")" class="h-full w-full object-cover" />
-                            </div>
-                            @if (isUnread)
-                            {
-                                <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-lg bg-primary text-[10px] font-black text-primary-foreground border-2 border-background shadow-lg shadow-primary/30">
-                                    @(conv.UnreadCount > 99 ? "99+" : conv.UnreadCount)
-                                </span>
-                            } else {
-                                <div class="absolute -right-0.5 -bottom-0.5 block h-3.5 w-3.5 rounded-full bg-[#10b981] ring-2 ring-card shadow-sm"></div>
-                            }
-                        </div>
-                        
-                        <div class="flex-1 min-w-0 pt-0.5">
-                            <div class="flex items-center justify-between mb-0.5">
-                                <span class="font-bold text-sm truncate pr-2 @(isUnread ? "text-foreground" : "text-foreground/90")">@(conv.Name)</span>
-                                <span class="text-[10px] whitespace-nowrap @(isUnread ? "text-primary font-bold" : "text-muted-foreground/70 font-medium")">@(conv.LastMessageAt)</span>
-                            </div>
-                            <p class="text-xs truncate block w-full @(isUnread ? "text-foreground font-semibold" : "text-muted-foreground/80")">@(conv.LastMessage)</p>
-                        </div>
-                    </button>
-                }
-            }
-            else
-            {
-                <div class="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground/70">
-                    <div class="h-16 w-16 rounded-2xl bg-secondary/30 flex items-center justify-center mb-4 border border-border/20">
-                        <i data-lucide="message-square-dashed" class="h-7 w-7 text-muted-foreground/50"></i>
-                    </div>
-                    <p class="font-bold text-sm">Mesaj kutusu boş</p>
-                    <p class="text-xs mt-1 text-muted-foreground/60 font-medium">Yeni bir sohbet başlatın</p>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- Chat Area Box -->
-    <div class="flex-1 flex flex-col bg-background/30 backdrop-blur-[2px] relative h-full w-full" id="chatArea">
-        <!-- Empty State Default -->
-        <div class="h-full flex flex-col items-center justify-center p-8 text-center" id="emptyChatState">
-            <div class="group relative">
-                <div class="h-32 w-32 rounded-[2.5rem] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-8 relative transition-transform group-hover:scale-105 duration-500">
-                    <i data-lucide="sparkles" class="h-14 w-14 text-primary absolute animate-pulse"></i>
-                    <div class="absolute inset-0 bg-primary/30 blur-3xl rounded-full opacity-50 group-hover:opacity-80 transition-opacity"></div>
-                </div>
-            </div>
-            <h3 class="text-3xl font-black mb-3 tracking-tight">Kartist Mesaj Merkezi</h3>
-            <p class="text-muted-foreground max-w-sm text-sm sm:text-base font-medium leading-relaxed italic">"İlhâm paylaştıkça çoğalır."</p>
-            <div class="mt-8 flex gap-3">
-                <button class="px-5 py-2.5 rounded-xl bg-secondary/50 border border-border/50 text-xs font-bold hover:bg-secondary transition-all">Rehber</button>
-                <button class="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all shadow-lg shadow-primary/20">Yeni Sohbet</button>
-            </div>
-        </div>
-        
-        <!-- Chat Content Container (Hidden by Default) -->
-        <div id="activeChatContainer" class="hidden flex-col h-full w-full bg-gradient-to-b from-card/10 to-transparent">
-            <!-- Active Chat Header -->
-            <div class="h-18 border-b border-border/30 bg-background/60 backdrop-blur-2xl px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-10">
-                <div class="flex items-center gap-3 md:gap-4 py-3">
-                    <!-- Mobile Back Button -->
-                    <button onclick="closeMobileChat()" class="md:hidden flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground mr-1">
-                        <i data-lucide="arrow-left" class="h-5 w-5"></i>
-                    </button>
-                    
-                    <div class="relative group cursor-pointer">
-                        <img id="activeChatAvatar" src="https://ui-avatars.com/api/?name=User&background=random" class="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl object-cover ring-2 ring-primary/10 transition-transform group-hover:scale-105 shadow-md" />
-                        <div class="absolute -right-1 -bottom-1 block h-4 w-4 rounded-full bg-[#10b981] ring-2 ring-background shadow-sm"></div>
-                    </div>
-                    
-                    <div class="cursor-pointer">
-                        <p id="activeChatName" class="font-black text-base leading-tight">Yükleniyor...</p>
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="relative flex h-1.5 w-1.5">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                    foreach (var conv in ViewBag.Conversations)
+                    {
+                        var isUnread = conv.UnreadCount > 0;
+                        var lastMessage = string.IsNullOrWhiteSpace((string)conv.LastMessage) ? "Sohbeti başlat..." : (string)conv.LastMessage;
+                        <button type="button" onclick="selectConversation(@(conv.Id))" id="conv-@(conv.Id)" data-name="@(conv.Name)" data-handle="@(conv.Handle)" data-last="@(lastMessage)" data-unread="@(isUnread ? "1" : "0")" data-online="1" class="conv-item mb-1 flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition hover:border-border/50 hover:bg-secondary/50 @(isUnread ? "bg-primary/10" : "")">
+                            <span class="relative shrink-0">
+                                <img src="@(conv.Avatar)" alt="@(conv.Name)" class="h-12 w-12 rounded-2xl object-cover ring-2 ring-background" />
+                                <span class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card bg-emerald-500"></span>
+                                @if (isUnread)
+                                {
+                                    <span class="unread-badge absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-black text-primary-foreground">@(conv.UnreadCount > 99 ? "99+" : conv.UnreadCount)</span>
+                                }
                             </span>
-                            <p id="chatStatusText" class="text-[11px] text-green-500 font-bold uppercase tracking-wider">Çevrimiçi</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-1.5 sm:gap-3">
-                    <div class="hidden sm:flex items-center bg-secondary/30 rounded-2xl p-1 border border-border/20">
-                         <button class="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-background text-muted-foreground hover:text-primary transition-all">
-                            <i data-lucide="phone" class="h-4 w-4"></i>
+                            <span class="min-w-0 flex-1 pt-0.5">
+                                <span class="mb-1 flex items-center justify-between gap-2">
+                                    <span class="conv-name truncate text-sm font-black text-foreground">@(conv.Name)</span>
+                                    <span class="conv-time shrink-0 text-[10px] font-bold text-muted-foreground">@(conv.LastMessageAt)</span>
+                                </span>
+                                <span class="conv-preview block truncate text-xs @(isUnread ? "font-bold text-foreground" : "text-muted-foreground")">@(lastMessage)</span>
+                            </span>
                         </button>
-                        <button class="h-9 w-9 flex items-center justify-center rounded-xl hover:bg-background text-muted-foreground hover:text-accent transition-all">
-                            <i data-lucide="video" class="h-4 w-4"></i>
+                    }
+                }
+                else
+                {
+                    <div class="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                        <i data-lucide="message-square-dashed" class="mb-4 h-12 w-12 opacity-50"></i>
+                        <p class="font-bold">Mesaj kutusu boş</p>
+                        <p class="mt-1 text-sm">Yeni bir sohbet başlat.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <main id="chatPane" class="relative flex h-full min-h-0 flex-col bg-background">
+            <section id="emptyChatState" class="flex h-full flex-col items-center justify-center px-6 text-center">
+                <div class="mb-7 flex h-28 w-28 items-center justify-center rounded-[2rem] border border-border bg-secondary/40 shadow-2xl shadow-black/10">
+                    <i data-lucide="messages-square" class="h-12 w-12 text-primary"></i>
+                </div>
+                <h2 class="text-3xl font-black tracking-tight">Kartist Mesaj Merkezi</h2>
+                <p class="mt-3 max-w-md text-sm leading-6 text-muted-foreground">Tasarım fikirlerini, iş birliklerini ve hızlı notlarını tek yerde konuş.</p>
+                <button type="button" onclick="openNewChat()" class="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20">Yeni Sohbet Başlat</button>
+            </section>
+
+            <section id="activeChat" class="hidden h-full min-h-0 flex-col">
+                <header class="flex h-20 shrink-0 items-center justify-between border-b border-border/50 bg-card/80 px-4 backdrop-blur-xl sm:px-6">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <button type="button" onclick="closeMobileChat()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground md:hidden">
+                            <i data-lucide="arrow-left" class="h-5 w-5"></i>
                         </button>
-                    </div>
-                   
-                    <button class="h-10 w-10 flex items-center justify-center rounded-2xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all">
-                        <i data-lucide="layout-grid" class="h-5 w-5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Messages Stream -->
-            <div class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 scrollbar-hide flex flex-col scroll-smooth" id="messagesList">
-                <!-- Messages will be injected here via JS -->
-            </div>
-
-            <!-- Typing Indicator (Absolute below header) -->
-            <div id="typingIndicator" class="hidden absolute left-8 top-20 z-10 px-4 py-2 bg-secondary/80 backdrop-blur-md rounded-2xl border border-border/30 text-[11px] font-bold text-muted-foreground animate-in slide-in-from-top-2 duration-300">
-                <span class="flex items-center gap-2">
-                    <span class="flex gap-0.5">
-                        <span class="h-1.5 w-1.5 rounded-full bg-primary animate-bounce delay-75"></span>
-                        <span class="h-1.5 w-1.5 rounded-full bg-primary animate-bounce delay-150"></span>
-                        <span class="h-1.5 w-1.5 rounded-full bg-primary animate-bounce delay-300"></span>
-                    </span>
-                    bir şeyler yazıyor...
-                </span>
-            </div>
-
-            <!-- Input Area -->
-            <div class="p-4 sm:p-6 pb-6 bg-background/50 backdrop-blur-xl shrink-0">
-                <div class="max-w-4xl mx-auto">
-                    <div class="bg-secondary/40 backdrop-blur-md rounded-[2rem] border border-border/40 p-1.5 flex items-end gap-2 focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary/40 transition-all shadow-2xl shadow-black/10">
-                        <div class="flex items-center px-1 mb-1">
-                            <button class="h-10 w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
-                                <i data-lucide="plus-circle" class="h-5 w-5"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="flex-1 min-w-0">
-                            <textarea id="messageInput" rows="1" placeholder="Mesajinizi buraya bırakın..." onkeypress="handleEnterKeyPress(event)" oninput="autoResizeTextarea(this)" class="w-full bg-transparent px-3 py-3 text-sm sm:text-[15px] outline-none resize-none max-h-40 min-h-[44px] overflow-y-auto block font-medium placeholder:text-muted-foreground/60 transition-all"></textarea>
-                        </div>
-                        
-                        <div class="flex items-center gap-1.5 px-1 mb-1">
-                             <button class="h-10 w-10 flex items-center justify-center rounded-full text-muted-foreground hover:text-yellow-500 transition-all">
-                                <i data-lucide="sticky-note" class="h-5 w-5"></i>
-                            </button>
-                            <button onclick="sendMessage()" class="h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20">
-                                <i data-lucide="send" class="h-5 w-5 ml-0.5"></i>
-                            </button>
+                        <img id="activeAvatar" src="https://ui-avatars.com/api/?name=Kartist&background=random" class="h-12 w-12 rounded-2xl object-cover" alt="Sohbet" />
+                        <div class="min-w-0">
+                            <p id="activeName" class="truncate text-base font-black">Sohbet</p>
+                            <p id="activeStatus" class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-500"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Aktif</p>
                         </div>
                     </div>
-                    <p class="text-[10px] text-center mt-3 text-muted-foreground/50 font-bold uppercase tracking-widest">Kartist Güvenli Mesajlaşma</p>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="hidden h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition hover:text-primary sm:flex" title="Sesli arama"><i data-lucide="phone" class="h-4 w-4"></i></button>
+                        <button type="button" class="hidden h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition hover:text-accent sm:flex" title="Görüntülü arama"><i data-lucide="video" class="h-4 w-4"></i></button>
+                        <button type="button" onclick="showChatInfo()" class="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-muted-foreground transition hover:text-foreground" title="Sohbet bilgisi"><i data-lucide="info" class="h-4 w-4"></i></button>
+                    </div>
+                </header>
+
+                <div id="typingIndicator" class="hidden border-b border-border/40 bg-secondary/30 px-6 py-2 text-xs font-bold text-muted-foreground">
+                    <span class="inline-flex items-center gap-2"><span class="h-2 w-2 animate-pulse rounded-full bg-primary"></span> Yazıyor...</span>
                 </div>
-            </div>
-        </div>
+
+                <div id="messagesList" class="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-8"></div>
+
+                <footer class="shrink-0 border-t border-border/50 bg-card/80 p-3 backdrop-blur-xl sm:p-5">
+                    <form id="messageForm" onsubmit="sendMessage(event)" class="mx-auto flex max-w-4xl items-end gap-2 rounded-2xl border border-border/60 bg-background p-2 shadow-2xl shadow-black/5">
+                        <input id="messageImage" name="gorsel" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="hidden" onchange="previewAttachment()" />
+                        <button type="button" onclick="document.getElementById('messageImage').click()" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-secondary hover:text-primary" title="Görsel ekle"><i data-lucide="image-plus" class="h-5 w-5"></i></button>
+                        <div class="min-w-0 flex-1">
+                            <div id="attachmentPreview" class="mb-2 hidden items-center justify-between rounded-xl bg-secondary px-3 py-2 text-xs font-bold text-muted-foreground"></div>
+                            <textarea id="messageInput" name="mesaj" rows="1" placeholder="Mesaj yaz..." oninput="autoResizeTextarea(this)" onkeydown="handleMessageKey(event)" class="block max-h-36 min-h-11 w-full resize-none bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted-foreground"></textarea>
+                        </div>
+                        <button id="sendButton" type="submit" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50" title="Gönder"><i data-lucide="send" class="h-5 w-5"></i></button>
+                    </form>
+                    <p class="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Kartist güvenli mesajlaşma</p>
+                </footer>
+            </section>
+        </main>
     </div>
 </div>
 
+<div id="chatToast" class="pointer-events-none fixed bottom-5 left-1/2 z-[80] hidden -translate-x-1/2 rounded-xl bg-foreground px-4 py-3 text-sm font-bold text-background shadow-2xl"></div>
+
 @section Scripts {
-    <script>
-        var currentConversationId = null;
-        var myUserId = @(ViewBag.CurrentUserId ?? 0);
-        
-        // Ensure textarea resizes dynamically
-        function autoResizeTextarea(el) {
-            el.style.height = 'auto';
-            el.style.height = (el.scrollHeight) + 'px';
+<script>
+    var currentConversationId = null;
+    var myUserId = @(ViewBag.CurrentUserId ?? 0);
+    var pollTimer = null;
+    var activeFilter = 'all';
+
+    function csrfToken() {
+        return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
+    function htmlEscape(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function mediaUrl(url) {
+        if (!url) return '';
+        if (window.normalizeMediaUrl) return window.normalizeMediaUrl(url);
+        return url;
+    }
+
+    function showToast(message) {
+        var toast = document.getElementById('chatToast');
+        toast.textContent = message || 'İşlem tamamlandı.';
+        toast.classList.remove('hidden');
+        setTimeout(function() { toast.classList.add('hidden'); }, 2400);
+    }
+
+    function autoResizeTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 144) + 'px';
+    }
+
+    function handleMessageKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(e);
         }
-        
-        function handleEnterKeyPress(e) {
-            if(e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
+    }
+
+    function setConversationFilter(filter) {
+        activeFilter = filter;
+        document.querySelectorAll('.dm-filter').forEach(function(btn) {
+            var isActive = btn.dataset.filter === filter;
+            btn.className = 'dm-filter rounded-lg px-3 py-2 ' + (isActive ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground');
+        });
+        filterConversations();
+    }
+
+    function filterConversations() {
+        var q = (document.getElementById('conversationSearch')?.value || '').toLowerCase();
+        document.querySelectorAll('.conv-item').forEach(function(item) {
+            var haystack = ((item.dataset.name || '') + ' ' + (item.dataset.handle || '') + ' ' + (item.dataset.last || '')).toLowerCase();
+            var filterOk = activeFilter === 'all' || (activeFilter === 'unread' && item.dataset.unread === '1') || (activeFilter === 'online' && item.dataset.online === '1');
+            item.style.display = filterOk && haystack.includes(q) ? 'flex' : 'none';
+        });
+    }
+
+    function openNewChat() {
+        document.getElementById('conversationSearch')?.focus();
+        setConversationFilter('all');
+        showToast('Sol listeden bir kullanıcı seçerek sohbeti başlat.');
+    }
+
+    function closeMobileChat() {
+        document.getElementById('conversationsPane').classList.remove('-translate-x-full');
+    }
+
+    function showChatInfo() {
+        if (!currentConversationId) return;
+        showToast('Profil, arama ve medya galerisi için altyapı hazır.');
+    }
+
+    function formatTime(value) {
+        if (!value) return '';
+        var d = new Date(value);
+        if (isNaN(d.getTime())) return String(value);
+        return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function selectConversation(id) {
+        currentConversationId = id;
+        if (pollTimer) clearInterval(pollTimer);
+
+        if (window.innerWidth < 768) {
+            document.getElementById('conversationsPane').classList.add('-translate-x-full');
         }
-        
-        function searchConversations() {
-            var input = document.getElementById('searchInput');
-            if (!input) return;
-            var filter = input.value.toLowerCase();
-            var items = document.getElementsByClassName('conv-item');
-            
-            for (var i = 0; i < items.length; i++) {
-                var nameEl = items[i].querySelector('.font-bold');
-                if (!nameEl) continue;
-                var name = nameEl.textContent;
-                if (name.toLowerCase().indexOf(filter) > -1) {
-                    items[i].style.display = 'flex';
-                } else {
-                    items[i].style.display = 'none';
-                }
-            }
+
+        document.querySelectorAll('.conv-item').forEach(function(item) {
+            item.classList.remove('border-primary/60', 'bg-secondary/70', 'ring-2', 'ring-primary/10');
+        });
+        var selected = document.getElementById('conv-' + id);
+        if (selected) {
+            selected.classList.add('border-primary/60', 'bg-secondary/70', 'ring-2', 'ring-primary/10');
+            selected.dataset.unread = '0';
+            selected.querySelector('.unread-badge')?.remove();
+            selected.querySelector('.conv-preview')?.classList.remove('font-bold', 'text-foreground');
         }
-        
-        function selectConversation(id) {
-            currentConversationId = id;
-            
-            // Handle Mobile View Transitions
-            if (window.innerWidth < 768) { // md breakpoint
-                document.getElementById('conversationsContainer').classList.add('-translate-x-full');
-            }
-            
-            // Highlight selected in sidebar
-            var items = document.getElementsByClassName('conv-item');
-            for (var i = 0; i < items.length; i++) {
-                items[i].classList.remove('bg-secondary/50', 'bg-secondary/40', 'border-primary/30', 'ring-2', 'ring-primary/20');
-            }
-            var selectedConv = document.getElementById('conv-' + id);
-            
-            if (selectedConv) {
-                selectedConv.classList.add('bg-secondary/40', 'ring-1', 'ring-primary/20');
 
-                // Grab header info BEFORE we modify classes
-                var nameEl = selectedConv.querySelector('.font-bold') || selectedConv.querySelector('span');
-                var avatarEl = selectedConv.querySelector('img');
-                var headerName = nameEl ? nameEl.textContent.trim() : "Kullanici " + id;
-                var headerAvatar = avatarEl ? avatarEl.src : "https://ui-avatars.com/api/?name=U&background=random";
+        document.getElementById('emptyChatState').classList.add('hidden');
+        document.getElementById('activeChat').classList.remove('hidden');
+        document.getElementById('activeChat').classList.add('flex');
+        document.getElementById('messagesList').innerHTML = '<div class="flex h-full items-center justify-center text-muted-foreground"><i data-lucide="loader-2" class="h-8 w-8 animate-spin"></i></div>';
+        if (window.lucide) lucide.createIcons();
 
-                // Remove unread indicators when clicking
-                var unreadBadge = selectedConv.querySelector('.rounded-lg.bg-primary');
-                if (unreadBadge) {
-                   unreadBadge.remove();
-                   selectedConv.classList.remove('bg-primary/5');
-                   var boldName = selectedConv.querySelector('.font-bold');
-                   if (boldName) boldName.classList.replace('font-bold', 'font-semibold');
-                   var semiboldMsg = selectedConv.querySelector('.font-semibold:not(.font-bold)');
-                   if (semiboldMsg) { semiboldMsg.classList.remove('font-semibold'); semiboldMsg.classList.add('text-muted-foreground/80'); }
-                }
+        loadMessages(id, true);
+        pollTimer = setInterval(function() { loadMessages(id, false); }, 3500);
+    }
 
-                document.getElementById('activeChatName').textContent = headerName;
-                document.getElementById('activeChatAvatar').src = headerAvatar;
-            }
-            
-            // Swap empty state with active chat
-            document.getElementById('emptyChatState').style.display = 'none';
-            document.getElementById('activeChatContainer').style.display = 'flex';
-            document.getElementById('activeChatContainer').classList.remove('hidden');
-            
-            var messagesList = document.getElementById('messagesList');
-            messagesList.innerHTML = '<div class="h-full flex items-center justify-center"><i data-lucide="loader-2" class="h-8 w-8 text-primary animate-spin opacity-50"></i></div>';
-            lucide.createIcons();
-
-            // Mock Typing indicator logic
-            setTimeout(() => {
-                document.getElementById('typingIndicator').classList.remove('hidden');
-                setTimeout(() => {
-                   document.getElementById('typingIndicator').classList.add('hidden');
-                }, 3000);
-            }, 1000);
-
-            fetch('/Social/GetMesajlar?hedefId=' + id)
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    myUserId = data.myId || myUserId;
-                    if (data.hedef) {
-                        document.getElementById('activeChatName').textContent = data.hedef.AdSoyad || headerName;
-                        if (data.hedef.ProfilResmi) document.getElementById('activeChatAvatar').src = data.hedef.ProfilResmi;
-                    }
-                    renderMessages(data.success ? data.mesajlar : []);
-                })
-                .catch(function() {
+    function loadMessages(id, animate) {
+        fetch('/Social/GetMesajlar?hedefId=' + encodeURIComponent(id), { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) {
+                    showToast(data.message || 'Sohbet açılamadı.');
                     renderMessages([]);
-                });
-        }
-        
-        function closeMobileChat() {
-            document.getElementById('conversationsContainer').classList.remove('-translate-x-full');
-        }
-        
-        function formatMsgTime(dateStr) {
-            if (!dateStr) return '';
-            var d = new Date(dateStr);
-            if (isNaN(d.getTime())) return dateStr;
-            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    return;
+                }
+                myUserId = data.myId || myUserId;
+                var hedef = data.hedef || {};
+                document.getElementById('activeName').textContent = hedef.AdSoyad || hedef.adSoyad || 'Kullanıcı';
+                document.getElementById('activeAvatar').src = mediaUrl(hedef.ProfilResmi || hedef.profilResmi) || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(hedef.AdSoyad || hedef.adSoyad || 'Kartist') + '&background=random');
+                renderMessages(data.mesajlar || [], animate);
+            })
+            .catch(function() {
+                showToast('Bağlantı hatası oluştu.');
+                renderMessages([]);
+            });
+    }
+
+    function renderMessages(messages, animate) {
+        var wrap = document.getElementById('messagesList');
+        if (!wrap) return;
+        var html = '<div class="mb-6 flex justify-center"><span class="rounded-full border border-border/50 bg-secondary/50 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sohbet başlangıcı</span></div>';
+
+        if (!messages.length) {
+            html += '<div class="flex h-[70%] flex-col items-center justify-center text-center text-muted-foreground"><i data-lucide="sparkles" class="mb-4 h-12 w-12 opacity-40"></i><p class="text-xs font-black uppercase tracking-widest">Henüz mesaj yok</p><p class="mt-2 text-sm">İlk mesajı gönder ve sohbeti başlat.</p></div>';
+        } else {
+            html += messages.map(function(m, index) {
+                var senderId = m.GonderenId ?? m.gonderenId;
+                var isMine = Number(senderId) === Number(myUserId);
+                var text = htmlEscape(m.Mesaj ?? m.mesaj ?? '');
+                var image = mediaUrl(m.GorselUrl ?? m.gorselUrl);
+                var time = formatTime(m.Tarih ?? m.tarih);
+                var imgHtml = image ? '<a href="' + htmlEscape(image) + '" target="_blank" class="mb-2 block overflow-hidden rounded-2xl border border-white/10"><img src="' + htmlEscape(image) + '" class="max-h-72 w-full object-cover" alt="Mesaj görseli" /></a>' : '';
+                var delay = animate ? 'style="animation-delay:' + Math.min(index * 45, 320) + 'ms"' : '';
+                if (isMine) {
+                    return '<div class="mb-4 flex justify-end animate-in fade-in slide-in-from-bottom-2" ' + delay + '><div class="max-w-[86%] sm:max-w-[70%]"><div class="rounded-3xl rounded-tr-md bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/10">' + imgHtml + '<p class="break-words text-sm font-medium leading-relaxed">' + text + '</p></div><div class="mt-1 flex items-center justify-end gap-1 text-[10px] font-bold text-muted-foreground">' + htmlEscape(time) + '<i data-lucide="check-check" class="h-3 w-3 text-primary"></i></div></div></div>';
+                }
+                return '<div class="mb-4 flex justify-start gap-2 animate-in fade-in slide-in-from-bottom-2" ' + delay + '><img src="' + htmlEscape(document.getElementById('activeAvatar').src) + '" class="mt-auto h-8 w-8 rounded-xl object-cover" /><div class="max-w-[86%] sm:max-w-[70%]"><div class="rounded-3xl rounded-tl-md border border-border/50 bg-secondary px-4 py-3">' + imgHtml + '<p class="break-words text-sm font-medium leading-relaxed">' + text + '</p></div><div class="mt-1 text-[10px] font-bold text-muted-foreground">' + htmlEscape(time) + '</div></div></div>';
+            }).join('');
         }
 
-        function renderMessages(mesajlar) {
-            var messagesList = document.getElementById('messagesList');
-            var messagesHtml = '';
-            
-            // Date Divider
-            messagesHtml += `
-                <div class="flex justify-center my-6">
-                    <span class="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 bg-secondary/40 rounded-full text-muted-foreground/60 border border-border/20 backdrop-blur-sm">Sohbet Başlangıcı</span>
-                </div>
-            `;
-            
-            if (mesajlar && mesajlar.length > 0) {
-                messagesHtml += mesajlar.map(function(m, index) {
-                    var isMine = (m.GonderenId == myUserId);
-                    var txt = (m.Mesaj || m.mesaj || '');
-                    var time = formatMsgTime(m.Tarih || m.createdAt);
-                    
-                    if (isMine) {
-                        return `
-                            <div class="flex gap-2 justify-end animate-in slide-in-from-bottom-2 fade-in duration-500" style="animation-fill-mode: both; animation-delay: ${index * 80}ms;">
-                                <div class="flex flex-col items-end gap-1.5 max-w-[85%] sm:max-w-[70%] group/msg">
-                                    <div class="relative rounded-3xl rounded-tr-md bg-gradient-to-br from-primary to-primary/90 px-4 py-2.5 sm:px-5 sm:py-3 shadow-lg shadow-primary/10 text-primary-foreground border border-white/10 group-hover/msg:scale-[1.01] transition-transform">
-                                        <p class="text-sm sm:text-[15px] leading-relaxed break-words font-medium">${txt}</p>
-                                    </div>
-                                    <span class="text-[10px] text-muted-foreground/60 font-bold flex items-center gap-1.5 px-1">
-                                        ${time} <i data-lucide="check-check" class="h-3 w-3 text-primary"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        return `
-                            <div class="flex gap-3 animate-in slide-in-from-bottom-2 fade-in duration-500" style="animation-fill-mode: both; animation-delay: ${index * 80}ms;">
-                                <div class="shrink-0 mt-auto pb-5">
-                                    <img src="${document.getElementById('activeChatAvatar').src}" class="h-8 w-8 sm:h-9 sm:w-9 rounded-2xl object-cover ring-2 ring-primary/5 shadow-sm" />
-                                </div>
-                                <div class="flex flex-col items-start gap-1.5 max-w-[85%] sm:max-w-[70%] group/msg">
-                                    <div class="rounded-3xl rounded-tl-md bg-secondary/80 backdrop-blur-md px-4 py-2.5 sm:px-5 sm:py-3 shadow-md border border-border/30 group-hover/msg:scale-[1.01] transition-transform">
-                                        <p class="text-sm sm:text-[15px] leading-relaxed break-words text-foreground font-medium">${txt}</p>
-                                    </div>
-                                    <span class="text-[10px] text-muted-foreground/60 font-bold px-1">${time}</span>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }).join('');
-            } else {
-                messagesHtml += `
-                    <div class="flex flex-col items-center justify-center p-12 text-center text-muted-foreground/40 h-full">
-                        <i data-lucide="sparkles" class="h-12 w-12 mb-4 opacity-20"></i>
-                        <p class="text-xs font-bold uppercase tracking-widest">Henüz mesaj yok</p>
-                    </div>
-                `;
+        wrap.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function previewAttachment() {
+        var input = document.getElementById('messageImage');
+        var preview = document.getElementById('attachmentPreview');
+        if (!input.files || !input.files.length) {
+            preview.classList.add('hidden');
+            preview.innerHTML = '';
+            return;
+        }
+        preview.classList.remove('hidden');
+        preview.classList.add('flex');
+        preview.innerHTML = '<span class="truncate">' + htmlEscape(input.files[0].name) + '</span><button type="button" onclick="clearAttachment()" class="ml-3 text-foreground">Kaldır</button>';
+    }
+
+    function clearAttachment() {
+        document.getElementById('messageImage').value = '';
+        previewAttachment();
+    }
+
+    function sendMessage(e) {
+        if (e) e.preventDefault();
+        if (!currentConversationId) return;
+        var input = document.getElementById('messageInput');
+        var file = document.getElementById('messageImage');
+        var text = input.value.trim();
+        if (!text && (!file.files || !file.files.length)) return;
+
+        var btn = document.getElementById('sendButton');
+        btn.disabled = true;
+        var fd = new FormData();
+        fd.append('aliciId', currentConversationId);
+        fd.append('mesaj', text);
+        fd.append('__RequestVerificationToken', csrfToken());
+        if (file.files && file.files.length) fd.append('gorsel', file.files[0]);
+
+        fetch('/Social/MesajGonder', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'RequestVerificationToken': csrfToken() },
+            body: fd
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (!data.success) {
+                showToast(data.message || 'Mesaj gönderilemedi.');
+                return;
             }
-            
-            messagesList.innerHTML = messagesHtml;
-            lucide.createIcons();
-            
-            // Scroll to bottom
-            setTimeout(() => {
-                messagesList.scrollTop = messagesList.scrollHeight;
-            }, 100);
-        }
-        
-        function sendMessage() {
-            var input = document.getElementById('messageInput');
-            var message = input ? input.value.trim() : '';
-            
-            if (!message || !currentConversationId) return;
-            
-            var messagesList = document.getElementById('messagesList');
-            var timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            var messageHtml = `
-                <div class="flex gap-2 justify-end animate-in slide-in-from-bottom-4 fade-in duration-300">
-                    <div class="flex flex-col items-end gap-1.5 max-w-[85%] sm:max-w-[70%]">
-                        <div class="rounded-3xl rounded-tr-md bg-gradient-to-br from-primary to-primary/80 px-4 py-2.5 sm:px-5 sm:py-3 shadow-xl shadow-primary/20 text-primary-foreground border border-white/10">
-                            <p class="text-sm sm:text-[15px] leading-relaxed break-words font-medium">${message}</p>
-                        </div>
-                        <span class="text-[10px] text-muted-foreground/60 font-bold flex items-center gap-1.5 px-1">
-                            ${timeNow} <i data-lucide="check" class="h-3 w-3 animate-pulse"></i>
-                        </span>
-                    </div>
-                </div>
-            `;
-            
-            // Remove empty state if present
-            var emptyState = messagesList.querySelector('.flex-col.items-center');
-            if (emptyState) emptyState.remove();
-            
-            messagesList.insertAdjacentHTML('beforeend', messageHtml);
-            lucide.createIcons();
-            
-            // Reset Input
             input.value = '';
-            input.style.height = 'auto'; // reset textarea height
+            input.style.height = 'auto';
+            clearAttachment();
+            loadMessages(currentConversationId, true);
+            updateConversationPreview(currentConversationId, data.mesaj);
+        }).catch(function() {
+            showToast('Mesaj gönderilemedi.');
+        }).finally(function() {
+            btn.disabled = false;
             input.focus();
-            
-            // Scroll to bottom smoothly
-            messagesList.scrollTo({
-              top: messagesList.scrollHeight,
-              behavior: 'smooth'
-            });
-            
-            // Send to Backend
-            var token = document.querySelector('input[name="__RequestVerificationToken"]');
-            var tokenVal = token ? token.value : '';
-            fetch('/Social/MesajGonder', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': tokenVal },
-                body: 'aliciId=' + currentConversationId + '&mesaj=' + encodeURIComponent(message) + '&__RequestVerificationToken=' + encodeURIComponent(tokenVal)
-            })
-            .catch(function(err) { console.log('Mesaj API hatasi:', err); });
+        });
+    }
+
+    function updateConversationPreview(id, message) {
+        var item = document.getElementById('conv-' + id);
+        if (!item || !message) return;
+        var preview = item.querySelector('.conv-preview');
+        var time = item.querySelector('.conv-time');
+        var text = message.Mesaj || message.mesaj || 'Yeni mesaj';
+        item.dataset.last = text;
+        if (preview) preview.textContent = text;
+        if (time) time.textContent = formatTime(message.Tarih || message.tarih);
+        var list = document.getElementById('conversationList');
+        list.prepend(item);
+    }
+
+    window.addEventListener('beforeunload', function() {
+        if (pollTimer) clearInterval(pollTimer);
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) lucide.createIcons();
+        var first = document.querySelector('.conv-item');
+        if (first && window.innerWidth >= 768) {
+            var id = first.id.replace('conv-', '');
+            selectConversation(Number(id));
         }
-    </script>
+    });
+</script>
 }

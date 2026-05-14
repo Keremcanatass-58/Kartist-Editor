@@ -400,6 +400,107 @@ END
 
 -- ===== SPRINT 3: HİKAYE HIGHLIGHTS =====
 
+-- ===== DÜELLO SİSTEMİ =====
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('Duellolar') AND type = 'U')
+BEGIN
+    CREATE TABLE Duellolar (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        MeydanOkuyanId INT NOT NULL,
+        RakipId INT NOT NULL,
+        Kategori NVARCHAR(50) NOT NULL,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(500) NULL,
+        Durum NVARCHAR(20) NOT NULL DEFAULT 'bekliyor',
+        TasarimSuresiSaat INT NOT NULL DEFAULT 24,
+        OylamaSuresiSaat INT NOT NULL DEFAULT 48,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        KabulTarihi DATETIME NULL,
+        OylamaBaslangic DATETIME NULL,
+        BitisTarihi DATETIME NULL,
+        MeydanOkuyanTasarimUrl NVARCHAR(500) NULL,
+        RakipTasarimUrl NVARCHAR(500) NULL,
+        MeydanOkuyanOy INT NOT NULL DEFAULT 0,
+        RakipOy INT NOT NULL DEFAULT 0,
+        KazananId INT NULL,
+        FOREIGN KEY (MeydanOkuyanId) REFERENCES Kullanicilar(Id),
+        FOREIGN KEY (RakipId) REFERENCES Kullanicilar(Id)
+    );
+    CREATE INDEX IX_Duellolar_Durum ON Duellolar(Durum);
+    CREATE INDEX IX_Duellolar_MeydanOkuyan ON Duellolar(MeydanOkuyanId);
+    CREATE INDEX IX_Duellolar_Rakip ON Duellolar(RakipId);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('DuelloOylari') AND type = 'U')
+BEGIN
+    CREATE TABLE DuelloOylari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        DuelloId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Secenek INT NOT NULL,
+        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        FOREIGN KEY (DuelloId) REFERENCES Duellolar(Id) ON DELETE CASCADE,
+        FOREIGN KEY (KullaniciId) REFERENCES Kullanicilar(Id),
+        CONSTRAINT UQ_DuelloOy UNIQUE (DuelloId, KullaniciId)
+    );
+END
+
+-- ===== YARIŞMA SİSTEMİ =====
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('Yarismalar') AND type = 'U')
+BEGIN
+    CREATE TABLE Yarismalar (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(1000) NULL,
+        Tema NVARCHAR(100) NOT NULL,
+        Odul NVARCHAR(100) NOT NULL,
+        KapakUrl NVARCHAR(500) NOT NULL,
+        Durum NVARCHAR(20) NOT NULL DEFAULT 'active',
+        SonKatilimTarihi DATETIME NOT NULL,
+        OylamaBitisTarihi DATETIME NULL,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE()
+    );
+    CREATE INDEX IX_Yarismalar_Durum ON Yarismalar(Durum);
+
+    INSERT INTO Yarismalar (Baslik, Aciklama, Tema, Odul, KapakUrl, Durum, SonKatilimTarihi, OylamaBitisTarihi) VALUES
+    ('Gelecek Icin Tasarla', 'Surdurulebilirlik temali afis, sosyal medya veya arayuz tasarimi.', 'Sustainability', '10,000 TL + Premium', 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800', 'active', DATEADD(day, 5, GETUTCDATE()), DATEADD(day, 8, GETUTCDATE())),
+    ('AI x Design', 'Yapay zeka ve tasarimin kesisim noktasini anlatan etkileyici bir calisma.', 'AI', '15,000 TL + Davetiye', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800', 'voting', DATEADD(day, -1, GETUTCDATE()), DATEADD(day, 3, GETUTCDATE())),
+    ('Kartist Master Design Challenge #1', 'En iyi koyu tema deneyimini kim tasarlayacak?', 'Dark Mode', '5,000 TL', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800', 'ended', DATEADD(day, -10, GETUTCDATE()), DATEADD(day, -2, GETUTCDATE()));
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND type = 'U')
+BEGIN
+    CREATE TABLE YarismaKatilimlari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        YarismaId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(1000) NULL,
+        GorselUrl NVARCHAR(500) NOT NULL,
+        OySayisi INT NOT NULL DEFAULT 0,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        FOREIGN KEY (YarismaId) REFERENCES Yarismalar(Id) ON DELETE CASCADE,
+        FOREIGN KEY (KullaniciId) REFERENCES Kullanicilar(Id)
+    );
+    CREATE INDEX IX_YarismaKatilimlari_Yarisma ON YarismaKatilimlari(YarismaId, OySayisi DESC);
+END
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('YarismaOylari') AND type = 'U')
+BEGIN
+    CREATE TABLE YarismaOylari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        YarismaId INT NOT NULL,
+        KatilimId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        FOREIGN KEY (YarismaId) REFERENCES Yarismalar(Id) ON DELETE CASCADE,
+        FOREIGN KEY (KatilimId) REFERENCES YarismaKatilimlari(Id),
+        FOREIGN KEY (KullaniciId) REFERENCES Kullanicilar(Id),
+        CONSTRAINT UQ_YarismaOy UNIQUE (YarismaId, KullaniciId)
+    );
+END
+
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('HikayeHighlightlar') AND type = 'U')
 BEGIN
     CREATE TABLE HikayeHighlightlar (

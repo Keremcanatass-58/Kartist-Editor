@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.SqlClient;
+using Kartist.Services;
 using System.Net;
-using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,12 +18,14 @@ namespace Kartist.Controllers
         private readonly string _baglanti;
         private readonly IHubContext<AdminHub> _adminHub;
         private readonly IConfiguration _configuration;
+        private readonly IMailService _mailService;
 
-        public AccountController(IConfiguration config, IHubContext<AdminHub> adminHub)
+        public AccountController(IConfiguration config, IHubContext<AdminHub> adminHub, IMailService mailService)
         {
             _baglanti = config.GetConnectionString("DefaultConnection");
             _adminHub = adminHub;
             _configuration = config;
+            _mailService = mailService;
         }
 
         private string GetClientIp()
@@ -144,7 +146,7 @@ namespace Kartist.Controllers
                     try
                     {
                         string kodHtml = BuildIkiFaktorMailHtml(kod, email);
-                        MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
+                        await _mailService.GonderAsync(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                     }
                     catch (Exception ex)
                     {
@@ -245,7 +247,7 @@ namespace Kartist.Controllers
                                         </div>
                                     </div>
                                 </div>";
-                            MailGonder(email, "Kartist - Hesap Guvenlik Uyarisi", uyariHtml);
+                            await _mailService.GonderAsync(email, "Kartist - Hesap Guvenlik Uyarisi", uyariHtml);
                         }
                         catch { }
 
@@ -273,7 +275,7 @@ namespace Kartist.Controllers
                     try
                     {
                         string kodHtml = BuildIkiFaktorMailHtml(kod, email);
-                        MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
+                        await _mailService.GonderAsync(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                     }
                     catch (Exception ex)
                     {
@@ -408,7 +410,7 @@ namespace Kartist.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SifremiUnuttum(string email)
+        public async Task<IActionResult> SifremiUnuttum(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -470,7 +472,7 @@ namespace Kartist.Controllers
                             </div>
                         </div>";
 
-                    MailGonder(email.Trim(), "🔐 Kartist - Şifre Sıfırlama Talebi", emailSablonu);
+                    await _mailService.GonderAsync(email.Trim(), "🔐 Kartist - Şifre Sıfırlama Talebi", emailSablonu);
                 }
             }
             catch (Exception ex)
@@ -535,82 +537,6 @@ namespace Kartist.Controllers
 
             TempData["Basari"] = "Şifre güncellendi. Giriş yapabilirsin.";
             return RedirectToAction("Giris");
-        }
-        private void MailGonder(string toEmail, string subject, string body)
-        {
-            var emailSettings = _configuration.GetSection("EmailSettings");
-            var smtpSettings = _configuration.GetSection("Smtp");
-
-            bool emailSettingsHazir = !string.IsNullOrWhiteSpace(emailSettings["Mail"]) &&
-                                      !string.IsNullOrWhiteSpace(emailSettings["Password"]);
-            bool smtpSettingsHazir = !string.IsNullOrWhiteSpace(smtpSettings["User"]) &&
-                                     !string.IsNullOrWhiteSpace(smtpSettings["Pass"]);
-
-            string host;
-            int port;
-            string gonderenMail;
-            string kullanici;
-            string uygulamaSifresi;
-            string gonderenAd;
-            bool enableSsl;
-
-            if (emailSettingsHazir)
-            {
-                host = emailSettings["Host"] ?? "smtp.gmail.com";
-                port = int.TryParse(emailSettings["Port"], out var p) ? p : 587;
-                gonderenMail = emailSettings["Mail"]!;
-                kullanici = emailSettings["Mail"]!;
-                uygulamaSifresi = emailSettings["Password"]!;
-                gonderenAd = smtpSettings["FromName"] ?? "Kartist";
-                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
-            }
-            else if (smtpSettingsHazir)
-            {
-                host = smtpSettings["Host"] ?? "smtp.gmail.com";
-                port = int.TryParse(smtpSettings["Port"], out var p) ? p : 587;
-                gonderenMail = smtpSettings["From"] ?? smtpSettings["User"]!;
-                kullanici = smtpSettings["User"]!;
-                uygulamaSifresi = smtpSettings["Pass"]!;
-                gonderenAd = smtpSettings["FromName"] ?? "Kartist";
-                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
-            }
-            else
-            {
-                throw new Exception("SMTP ayarlari eksik. appsettings.json icinde EmailSettings veya Smtp alanlarini doldurun.");
-            }
-
-            if (string.IsNullOrWhiteSpace(gonderenMail) || string.IsNullOrWhiteSpace(kullanici) || string.IsNullOrWhiteSpace(uygulamaSifresi))
-            {
-                throw new Exception("SMTP ayarlari eksik. appsettings.json icinde EmailSettings/Smtp alanlarini doldurun.");
-            }
-
-            try
-            {
-                using (var smtp = new SmtpClient(host, port))
-                {
-                    smtp.EnableSsl = enableSsl;
-                    smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-                    smtp.UseDefaultCredentials = false;
-                    smtp.Credentials = new NetworkCredential(kullanici, uygulamaSifresi);
-
-                    var mail = new MailMessage
-                    {
-                        From = new MailAddress(gonderenMail, gonderenAd),
-                        Subject = subject,
-                        Body = body,
-                        IsBodyHtml = true,
-                        BodyEncoding = Encoding.UTF8,
-                        SubjectEncoding = Encoding.UTF8
-                    };
-
-                    mail.To.Add(toEmail);
-                    smtp.Send(mail);
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("SMTP Hatasi: " + ex.Message);
-            }
         }
 
         private string BuildIkiFaktorMailHtml(string kod, string email)
@@ -724,7 +650,7 @@ namespace Kartist.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult IkiFactorKoduTekrarGonder(string email)
+        public async Task<IActionResult> IkiFactorKoduTekrarGonder(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 return Json(new { success = false, message = "E-posta bilgisi bulunamadi." });
@@ -771,7 +697,7 @@ namespace Kartist.Controllers
                 try
                 {
                     string kodHtml = BuildIkiFaktorMailHtml(kod, email);
-                    MailGonder(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
+                    await _mailService.GonderAsync(email, "Kartist - Iki Faktorlu Giris Kodunuz", kodHtml);
                 }
                 catch (Exception ex)
                 {

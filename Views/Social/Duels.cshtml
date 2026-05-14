@@ -1,4 +1,4 @@
-@{
+﻿@{
     Layout = "_SocialLayoutModern";
     ViewData["Title"] = "Duellolar";
 }
@@ -87,12 +87,20 @@
         {
             foreach (var duel in ViewBag.Duels)
             {
-                var isVoting = duel.Status == "voting";
+                var status = ((string)duel.Status) ?? "";
+                var isVoting = status == "oylama";
+                var isDesigning = status == "tasarim";
+                var isWaiting = status == "bekliyor";
+                var currentUserId = ViewBag.CurrentUserId as int? ?? 0;
+                var isChallenger = duel.MeydanOkuyanId == currentUserId;
+                var isOpponent = duel.RakipId == currentUserId;
+                var userDesignUploaded = (isChallenger && !string.IsNullOrEmpty((string)duel.ChallengerDesign)) || (isOpponent && !string.IsNullOrEmpty((string)duel.OpponentDesign));
                 var totalVotes = (duel.Votes1 ?? 0) + (duel.Votes2 ?? 0);
                 var p1 = totalVotes > 0 ? (duel.Votes1 * 100 / totalVotes) : 50;
                 var p2 = totalVotes > 0 ? (duel.Votes2 * 100 / totalVotes) : 50;
+                var statusText = isVoting ? "OYLAMA" : isDesigning ? "TASARIM ASAMASI" : isWaiting ? "DAVET BEKLIYOR" : status.ToUpper();
 
-                <div class="rounded-3xl glass-card p-6 lg:p-8 hover:border-accent/30 transition-colors">
+                <div class="duel-card rounded-3xl glass-card p-6 lg:p-8 hover:border-accent/30 transition-colors" data-status="@status">
                     <!-- Duel Header -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-border/50">
                         <div class="flex items-center gap-3">
@@ -101,7 +109,7 @@
                                     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75"></span>
                                     <span class="relative inline-flex h-2 w-2 rounded-full bg-accent"></span>
                                 </span>
-                                @(isVoting ? "OYLAMA" : duel.Status.ToUpper())
+                                @statusText
                             </span>
                             <span class="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
                                 <i data-lucide="clock" class="h-4 w-4"></i> @(duel.TimeLeft) kaldi
@@ -145,9 +153,18 @@
                                 </div>
                             </div>
                             
-                            <button onclick="voteDuel(@(duel.Id), 1)" class="w-full rounded-xl bg-primary/10 hover:bg-primary py-3 font-bold text-primary hover:text-primary-foreground transition-all">
-                                @(duel.ChallengerName) Icin Oy Ver
-                            </button>
+                            @if (isVoting)
+                            {
+                                <button onclick="voteDuel(@(duel.Id), 1)" class="w-full rounded-xl bg-primary/10 hover:bg-primary py-3 font-bold text-primary hover:text-primary-foreground transition-all">
+                                    @(duel.ChallengerName) Icin Oy Ver
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="w-full rounded-xl bg-secondary/70 py-3 text-center text-sm font-bold text-muted-foreground">
+                                    @(string.IsNullOrEmpty((string)duel.ChallengerDesign) ? "Tasarim bekleniyor" : "Tasarim yuklendi")
+                                </div>
+                            }
                         </div>
                         
                         <!-- Opponent -->
@@ -173,9 +190,18 @@
                                 </div>
                             </div>
                             
-                            <button onclick="voteDuel(@(duel.Id), 2)" class="w-full rounded-xl bg-accent/10 hover:bg-accent py-3 font-bold text-accent hover:text-accent-foreground transition-all">
-                                @(duel.OpponentName) Icin Oy Ver
-                            </button>
+                            @if (isVoting)
+                            {
+                                <button onclick="voteDuel(@(duel.Id), 2)" class="w-full rounded-xl bg-accent/10 hover:bg-accent py-3 font-bold text-accent hover:text-accent-foreground transition-all">
+                                    @(duel.OpponentName) Icin Oy Ver
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="w-full rounded-xl bg-secondary/70 py-3 text-center text-sm font-bold text-muted-foreground">
+                                    @(string.IsNullOrEmpty((string)duel.OpponentDesign) ? "Tasarim bekleniyor" : "Tasarim yuklendi")
+                                </div>
+                            }
                         </div>
                     </div>
                     
@@ -184,6 +210,46 @@
                         <div id="p1-bar-@duel.Id" class="h-full bg-primary transition-all duration-1000 ease-out" style="width: @(p1)%"></div>
                         <div id="p2-bar-@duel.Id" class="h-full bg-accent transition-all duration-1000 ease-out" style="width: @(p2)%"></div>
                     </div>
+
+                    @if (isWaiting && isOpponent)
+                    {
+                        <div class="mt-6 rounded-2xl border border-accent/30 bg-accent/10 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <p class="font-bold">Sana meydan okundu.</p>
+                                <p class="text-sm text-muted-foreground">Kabul edersen tasarim asamasi baslar; iki taraf tasarimini yukleyince oylama acilir.</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="duelAction('/Social/DuelloKabulEt', @duel.Id)" class="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground">Kabul Et</button>
+                                <button type="button" onclick="duelAction('/Social/DuelloReddet', @duel.Id)" class="rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-secondary-foreground">Reddet</button>
+                            </div>
+                        </div>
+                    }
+                    else if (isWaiting)
+                    {
+                        <div class="mt-6 rounded-2xl border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
+                            Meydan okuma gonderildi. Rakip kabul edince tasarim yukleme asamasi baslayacak.
+                        </div>
+                    }
+                    else if (isDesigning && (isChallenger || isOpponent))
+                    {
+                        <div class="mt-6 rounded-2xl border border-border bg-secondary/40 p-4">
+                            @if (userDesignUploaded)
+                            {
+                                <p class="text-sm font-bold text-accent">Tasarimin yuklendi. Rakibin tasarimi bekleniyor.</p>
+                            }
+                            else
+                            {
+                                <form onsubmit="uploadDuelDesign(event, @duel.Id)" class="flex flex-col md:flex-row md:items-center gap-3">
+                                    <div class="flex-1">
+                                        <label class="text-sm font-bold">Duel tasarimini yukle</label>
+                                        <p class="text-xs text-muted-foreground">JPEG, PNG, GIF veya WEBP desteklenir.</p>
+                                    </div>
+                                    <input type="file" name="tasarim" accept="image/png,image/jpeg,image/gif,image/webp" required class="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+                                    <button type="submit" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">Yukle</button>
+                                </form>
+                            }
+                        </div>
+                    }
                 </div>
             }
         }
@@ -219,6 +285,7 @@
     <script>
         function filterDuels(filter) {
             var buttons = ['all', 'voting', 'designing', 'waiting'];
+            var statusMap = { voting: 'oylama', designing: 'tasarim', waiting: 'bekliyor' };
             for (var i = 0; i < buttons.length; i++) {
                 var btn = document.getElementById('duel-' + buttons[i]);
                 if (!btn) continue;
@@ -228,12 +295,30 @@
                     btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80';
                 }
             }
+            document.querySelectorAll('.duel-card').forEach(function(card) {
+                var show = filter === 'all' || card.dataset.status === statusMap[filter];
+                card.classList.toggle('hidden', !show);
+            });
+        }
+
+        function csrfToken() {
+            return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        }
+
+        function showDuelToast(message, tone) {
+            var toast = document.createElement('div');
+            toast.className = 'fixed top-4 left-[50%] translate-x-[-50%] z-[60] px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-2 ' + (tone === 'error' ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground');
+            toast.style.animation = 'slideInFromTop 0.4s ease-out';
+            toast.innerHTML = '<i data-lucide="' + (tone === 'error' ? 'alert-triangle' : 'zap') + '" class="h-5 w-5"></i> ' + message;
+            document.body.appendChild(toast);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 3000);
         }
         
         function voteDuel(duelId, option) {
             fetch('/Social/VoteDuel/' + duelId + '?option=' + option, { 
                 method: 'POST',
-                headers: { 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || '' }
+                headers: { 'RequestVerificationToken': csrfToken() }
             }).then(function(r) { return r.json(); }).then(function(data) { 
                 if (data.success) {
                     document.getElementById('p1-bar-' + duelId).style.width = data.p1 + '%';
@@ -281,18 +366,63 @@
         function submitDuelRequest(event) {
             event.preventDefault();
             var btn = event.target.querySelector('button[type="submit"]');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Gönderiliyor...'; }
-            setTimeout(function() {
-                closeCreateDuelModal();
-                var toast = document.createElement('div');
-                toast.className = 'fixed top-4 left-[50%] translate-x-[-50%] z-[60] bg-primary text-primary-foreground px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-2';
-                toast.style.animation = 'slideInFromTop 0.4s ease-out';
-                toast.innerHTML = '<i data-lucide="zap" class="h-5 w-5"></i> Meydan okuma rakibe iletildi!';
-                document.body.appendChild(toast);
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-                setTimeout(function() { toast.style.transition = 'opacity 0.5s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 500); }, 3000);
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
-            }, 800);
+            var formData = new FormData(event.target);
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> Gonderiliyor...'; }
+
+            fetch('/Social/DuelloOlustur', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': csrfToken() },
+                body: formData
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    closeCreateDuelModal();
+                    showDuelToast(data.message || 'Meydan okuma rakibe iletildi!');
+                    setTimeout(function() { window.location.reload(); }, 900);
+                } else {
+                    showDuelToast(data.message || 'Duel olusturulamadi.', 'error');
+                }
+            }).catch(function() {
+                showDuelToast('Baglanti hatasi olustu.', 'error');
+            }).finally(function() {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i data-lucide="zap" class="h-4 w-4"></i> Silahlari Cek!'; if (typeof lucide !== 'undefined') lucide.createIcons(); }
+            });
+        }
+
+        function duelAction(url, duelId) {
+            var body = new URLSearchParams();
+            body.append('duelloId', duelId);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'RequestVerificationToken': csrfToken()
+                },
+                body: body.toString()
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                showDuelToast(data.message || 'Islem tamamlandi.', data.success ? undefined : 'error');
+                if (data.success) setTimeout(function() { window.location.reload(); }, 900);
+            }).catch(function() { showDuelToast('Baglanti hatasi olustu.', 'error'); });
+        }
+
+        function uploadDuelDesign(event, duelId) {
+            event.preventDefault();
+            var form = event.target;
+            var formData = new FormData(form);
+            formData.append('duelloId', duelId);
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) { btn.disabled = true; btn.textContent = 'Yukleniyor...'; }
+            fetch('/Social/DuelloTasarimYukle', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': csrfToken() },
+                body: formData
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                showDuelToast(data.message || 'Tasarim yuklendi.', data.success ? undefined : 'error');
+                if (data.success) setTimeout(function() { window.location.reload(); }, 900);
+            }).catch(function() {
+                showDuelToast('Yukleme sirasinda hata olustu.', 'error');
+            }).finally(function() {
+                if (btn) { btn.disabled = false; btn.textContent = 'Yukle'; }
+            });
         }
     </script>
 }
@@ -306,7 +436,7 @@
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold flex items-center gap-2">
                         <i data-lucide="swords" class="h-6 w-6 text-accent"></i>
-                        Düello Başlat
+                        Duello Baslat
                     </h2>
                     <button type="button" onclick="closeCreateDuelModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
                         <i data-lucide="x" class="h-4 w-4"></i>
@@ -315,13 +445,13 @@
 
                 <form onsubmit="submitDuelRequest(event)" class="space-y-6">
                     <div class="min-w-0">
-                        <label class="text-sm font-medium mb-3 block">Hedef Seçimi (Rakip)</label>
+                        <label class="text-sm font-medium mb-3 block">Hedef Secimi (Rakip)</label>
                         @if (ViewBag.Rakipler != null && ((IEnumerable<dynamic>)ViewBag.Rakipler).Any())
                         {
-                            <div class="-mx-6 px-6 flex gap-4 overflow-x-auto pb-2 snap-x hide-scrollbar">
+                            <div class="grid max-h-56 grid-cols-2 gap-3 overflow-y-auto pr-2 sm:grid-cols-3">
                                 @foreach (var r in ViewBag.Rakipler)
                                 {
-                                    <label class="cursor-pointer snap-start flex-shrink-0 text-center">
+                                    <label class="cursor-pointer text-center">
                                         <input type="radio" name="opponent" required class="peer sr-only" value="@r.Id" />
                                         <div class="rounded-2xl border-2 border-transparent peer-checked:border-accent p-2 transition-all group opacity-50 peer-checked:opacity-100 hover:opacity-100">
                                             <img src="@r.ProfilResmi" class="h-16 w-16 rounded-full object-cover shadow-lg group-hover:scale-110 transition-transform" />
@@ -334,33 +464,33 @@
                         }
                         else
                         {
-                            <p class="text-sm text-muted-foreground py-4 text-center">Henüz rakip bulunmuyor.</p>
+                            <p class="text-sm text-muted-foreground py-4 text-center">Henuz rakip bulunmuyor.</p>
                         }
                     </div>
 
                     <div>
-                        <label class="text-sm font-medium mb-1.5 block">Düello Kategorisi</label>
+                        <label class="text-sm font-medium mb-1.5 block">Duello Kategorisi</label>
                         <div class="relative">
                             <select name="category" required class="w-full rounded-xl border border-border bg-card text-foreground px-4 py-3 pr-10 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer" style="color-scheme: dark;">
-                                <option value="" class="bg-card text-muted-foreground">Bir kategori seç...</option>
-                                <option value="ui" class="bg-card text-foreground">🎨 UI/UX Tasarımı</option>
-                                <option value="logo" class="bg-card text-foreground">✏️ Logo / Branding</option>
-                                <option value="illustration" class="bg-card text-foreground">🖌️ İllüstrasyon</option>
-                                <option value="3d" class="bg-card text-foreground">🧊 3D Modelleme</option>
-                                <option value="motion" class="bg-card text-foreground">🎬 Motion Design</option>
-                                <option value="typography" class="bg-card text-foreground">🔤 Tipografi</option>
+                                <option value="" class="bg-card text-muted-foreground">Bir kategori sec...</option>
+                                <option value="ui" class="bg-card text-foreground">UI/UX Tasarimi</option>
+                                <option value="logo" class="bg-card text-foreground">Logo / Branding</option>
+                                <option value="illustration" class="bg-card text-foreground">Illustrasyon</option>
+                                <option value="3d" class="bg-card text-foreground">3D Modelleme</option>
+                                <option value="motion" class="bg-card text-foreground">Motion Design</option>
+                                <option value="typography" class="bg-card text-foreground">Tipografi</option>
                             </select>
                             <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"></i>
                         </div>
                     </div>
 
                     <div>
-                        <label class="text-sm font-medium mb-1.5 block">İddianı Yaz (Meydan Okuma)</label>
-                        <textarea name="challenge" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none" placeholder="Senin tasarımın benimkinin yanından bile geçemez..."></textarea>
+                        <label class="text-sm font-medium mb-1.5 block">Iddiani Yaz (Meydan Okuma)</label>
+                        <textarea name="challenge" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-none" placeholder="Senin tasarimin benimkinin yanindan bile gecemez..."></textarea>
                     </div>
 
                     <button type="submit" class="w-full rounded-xl bg-accent py-3.5 text-sm font-bold text-accent-foreground transition-all hover:opacity-90 pink-glow flex items-center justify-center gap-2">
-                        <i data-lucide="zap" class="h-4 w-4"></i> Silahları Çek!
+                        <i data-lucide="zap" class="h-4 w-4"></i> Silahlari Cek!
                     </button>
                 </form>
             </div>

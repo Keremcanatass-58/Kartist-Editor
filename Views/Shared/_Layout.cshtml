@@ -641,8 +641,10 @@
 
         function mailGonder() {
             var btn = document.querySelector('.btn-submit');
-            var email = document.querySelector('input[type=email]').value;
-            var mesaj = document.querySelector('textarea').value;
+            var modal = document.getElementById('contactModal');
+            var email = modal.querySelector('input[type=email]').value;
+            var konu = modal.querySelector('input[type=text]').value;
+            var mesaj = modal.querySelector('textarea').value;
 
             if (!email || !mesaj) {
                 Swal.fire({ title: 'Eksik Bilgi', text: 'Lütfen alanları doldurun.', icon: 'warning', background: '#1e1e1e', color: '#fff', confirmButtonColor: '#c6ff00' });
@@ -655,6 +657,7 @@
 
             var fd = new FormData();
             fd.append("email", email);
+            fd.append("konu", konu);
             fd.append("mesaj", mesaj);
             fd.append("__RequestVerificationToken", getCSRFToken());
 
@@ -667,8 +670,9 @@
                             background: '#1e1e1e', color: '#fff', iconColor: '#c6ff00', confirmButtonColor: '#c6ff00', confirmButtonText: '<span style="color:black; font-weight:bold;">Süper!</span>'
                         }).then(() => {
                             toggleContact();
-                            document.querySelector('input[type=email]').value = "";
-                            document.querySelector('textarea').value = "";
+                            modal.querySelector('input[type=email]').value = "";
+                            modal.querySelector('input[type=text]').value = "";
+                            modal.querySelector('textarea').value = "";
                         });
                     } else {
                         Swal.fire({ title: 'Hata!', text: d.message, icon: 'error', background: '#1e1e1e', color: '#fff', confirmButtonColor: '#ff4444' });

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Net;
-using System.Net.Mail;
 using System.Security.Claims;
 
 namespace Kartist.Controllers
@@ -16,18 +15,27 @@ namespace Kartist.Controllers
         private readonly IConfiguration _configuration;
         private readonly IAiPromptService _aiPromptService;
         private readonly IAiImageService _aiImageService;
+        private readonly IMailService _mailService;
 
-        public HomeController(IConfiguration config, IAiPromptService aiPromptService, IAiImageService aiImageService)
+        public HomeController(IConfiguration config, IAiPromptService aiPromptService, IAiImageService aiImageService, IMailService mailService)
         {
             _configuration = config;
             _aiPromptService = aiPromptService;
             _aiImageService = aiImageService;
+            _mailService = mailService;
             _baglantiCumlesi = config.GetConnectionString("DefaultConnection");
         }
 
         private string GetUserEmail()
         {
             return User.Identity.IsAuthenticated ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value : null;
+        }
+
+        private string GetClientIp()
+        {
+            var ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(ip)) return ip.Split(',')[0].Trim();
+            return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         }
         public IActionResult Index()
         {
@@ -388,7 +396,7 @@ namespace Kartist.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Iletisim(string email, string mesaj)
+        public async Task<IActionResult> Iletisim(string email, string konu, string mesaj)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(mesaj))
             {
@@ -397,7 +405,8 @@ namespace Kartist.Controllers
 
             string emailGuvenli = WebUtility.HtmlEncode(email);
             string mesajGuvenli = WebUtility.HtmlEncode(mesaj);
-            string subjectGuvenli = email.Replace("\r", "").Replace("\n", "").Trim();
+            string konuHam = string.IsNullOrWhiteSpace(konu) ? "Genel İletişim" : konu;
+            string subjectGuvenli = konuHam.Replace("\r", "").Replace("\n", "").Trim();
             if (subjectGuvenli.Length > 80) subjectGuvenli = subjectGuvenli[..80];
 
             // --- YENİ EFSANE TASARIM ---
@@ -473,9 +482,9 @@ namespace Kartist.Controllers
 
                                                 <tr>
                                                     <td style='background-color:#0a0a0c; padding:20px; text-align:center; border-top:1px solid #222;'>
-                                                        <p style='margin:0; font-size:12px; color:#444;'>
-                                                            Bu mesaj <strong>Kartist Web Sitesi</strong> üzerinden gönderilmiştir.<br>
-                                                            IP Adresi: {HttpContext.Connection.RemoteIpAddress}
+                                                        <p style='margin:0; font-size:12px; color:#888;'>
+                                                            Bu mesaj <strong style='color:#aaa;'>Kartist Web Sitesi</strong> üzerinden gönderilmiştir.<br>
+                                                            IP Adresi: <strong style='color:#c6ff00;'>{GetClientIp()}</strong> — {DateTime.Now:dd.MM.yyyy HH:mm}
                                                         </p>
                                                     </td>
                                                 </tr>
@@ -504,7 +513,7 @@ namespace Kartist.Controllers
                     return Json(new { success = false, message = "İletişim adresi yapılandırılmamış." });
                 }
 
-                MailGonder(contactInbox, "Yeni İletişim Mesajı: " + subjectGuvenli, emailSablonu);
+                await _mailService.GonderAsync(contactInbox, "Yeni İletişim Mesajı: " + subjectGuvenli, emailSablonu);
                 return Json(new { success = true, message = "Mesajın başarıyla iletildi!" });
             }
             catch (Exception ex)
@@ -513,64 +522,6 @@ namespace Kartist.Controllers
             }
         }
 
-        private void MailGonder(string toEmail, string subject, string body)
-        {
-            var emailSettings = _configuration.GetSection("EmailSettings");
-            var smtpSettings = _configuration.GetSection("Smtp");
-
-            bool emailSettingsHazir = !string.IsNullOrWhiteSpace(emailSettings["Mail"]) &&
-                                      !string.IsNullOrWhiteSpace(emailSettings["Password"]);
-            bool smtpSettingsHazir = !string.IsNullOrWhiteSpace(smtpSettings["User"]) &&
-                                     !string.IsNullOrWhiteSpace(smtpSettings["Pass"]);
-
-            string host, gonderenMail, kullanici, uygulamaSifresi, gonderenAd;
-            int port;
-            bool enableSsl;
-
-            if (emailSettingsHazir)
-            {
-                host = emailSettings["Host"] ?? "smtp.gmail.com";
-                port = int.TryParse(emailSettings["Port"], out var p) ? p : 587;
-                gonderenMail = emailSettings["Mail"]!;
-                kullanici = emailSettings["Mail"]!;
-                uygulamaSifresi = emailSettings["Password"]!;
-                gonderenAd = smtpSettings["FromName"] ?? "Kartist İletişim";
-                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
-            }
-            else if (smtpSettingsHazir)
-            {
-                host = smtpSettings["Host"] ?? "smtp.gmail.com";
-                port = int.TryParse(smtpSettings["Port"], out var p) ? p : 587;
-                gonderenMail = smtpSettings["From"] ?? smtpSettings["User"]!;
-                kullanici = smtpSettings["User"]!;
-                uygulamaSifresi = smtpSettings["Pass"]!;
-                gonderenAd = smtpSettings["FromName"] ?? "Kartist İletişim";
-                enableSsl = !bool.TryParse(smtpSettings["EnableSsl"], out var sslValue) || sslValue;
-            }
-            else
-            {
-                throw new Exception("SMTP ayarlari eksik. appsettings.json icinde EmailSettings veya Smtp alanlarini doldurun.");
-            }
-
-            using (var smtp = new SmtpClient(host, port))
-            {
-                smtp.EnableSsl = enableSsl;
-                smtp.DeliveryMethod = SmtpDeliveryMethod.Network;
-                smtp.UseDefaultCredentials = false;
-                smtp.Credentials = new NetworkCredential(kullanici, uygulamaSifresi);
-
-                var mail = new MailMessage
-                {
-                    From = new MailAddress(gonderenMail, gonderenAd),
-                    Subject = subject,
-                    Body = body,
-                    IsBodyHtml = true
-                };
-
-                mail.To.Add(toEmail);
-                smtp.Send(mail);
-            }
-        }
 
         public IActionResult Rehber() { return View(); }
         public IActionResult Kurumsal() { return View(); }
@@ -868,7 +819,7 @@ namespace Kartist.Controllers
                 prompt = Helpers.InputValidator.SanitizeHtml(prompt);
                 
                 var generatedText = await _aiPromptService.GenerateTextAsync(kategori ?? "Genel", prompt);
-                
+
                 if (string.IsNullOrEmpty(generatedText))
                 {
                     return Json(new { success = false, message = "Metin uretilemedi." });
