@@ -540,14 +540,12 @@ gitGraph
 | `11e07f4` | **Replace literal '??' fallback in design save toast messages** | Razor `??` null-coalescing operatörü literal string'e çevrilmiş, kullanıcıya "Tasarım kaydedildi: ??" gibi mesaj gösteriliyordu. Tüm fallback'ler doğru Türkçe metinlere bağlandı. |
 | `be9313c` | **Dedupe font dropdown and confirm before AI clears canvas** | Font seçim listesi aynı fontu birden fazla gösteriyordu (set-based dedup ile temizlendi). AI ile yeni tasarım üretildiğinde mevcut canvas önce kullanıcı onayıyla temizleniyor — kazara veri kaybı önlendi. |
 | `f554b69` | **Add Gemini and Pexels AI providers and refresh CI workflow** | Provider chain genişletildi: **Gemini** (`gemini-2.0-flash`, OpenAI-compatible endpoint) prompt için, **Pexels** search-API'si görsel için yeni varsayılan oldu. `Ai:GeminiEndpoint` / `Ai:GeminiModel` / `Pexels:ApiKey` opsiyonları eklendi. CI workflow'u yeni provider'larla uyumlu hale getirildi. |
-| `4e75c06` | **Add README screenshot gallery and AI asistanı guidance docs** | README'ye 15 görselli kategorize galeri (`docs/screenshots/`), hero görseli ve nav'a `Galeri` linki eklendi. `dokümantasyon` (AI asistanı proje rehberi) ve `notlar` (Sprint 4 audit notları) commit'lendi. |
-| `9602ccb` | **Ignore AI asistanı workspace, Playwright cache, and manual deploys** | `.gitignore`'a `.local/`, `.playwright-mcp/`, `node_modules/`, `manual-publish/` eklendi. Repo hijyeni: 35 gereksiz PNG / log / yedek görünüm temizlendi. |
 
 **Sprint 5 sonuç metrikleri:**
 - 🛡️ **4 yeni güvenlik düzeltmesi** — sosyal akış XSS'i, 2FA hijack, uploads RCE/XSS yüzeyi, account enumeration
 - 🤖 **2 yeni AI sağlayıcısı** (Gemini + Pexels) — provider chain 3 → 5
 - 🎨 **4 editör UX bug'ı** düzeltildi (Backspace, font dedup, AI confirm, `??` literal)
-- 📸 **15 ekran görüntülü README galerisi** + `dokümantasyon` + `notlar`
+- 📸 **15 ekran görüntülü README galerisi**
 - 🧹 **35 gereksiz dosya temizliği** ve `.gitignore` modernizasyonu
 
 ---
@@ -900,7 +898,6 @@ Fabric.js editörü ve bazı 3rd-party kütüphaneler (Tailwind CDN) inline styl
 |-------|----------|
 | 📄 [KARTIST v2.0 - Vize Proje Raporu.pdf](KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf) | Vize sınavı için hazırlanmış kapsamlı proje raporu (Türkçe akademik format). |
 | 📁 `docs/` | Sprint raporları ve sunum dosyaları. |
-| 🛡️ `notlar` | Sprint 4 güvenlik denetim notları (jüri öncesi internal). |
 
 ---
 
