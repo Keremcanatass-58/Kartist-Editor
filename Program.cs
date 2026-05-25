@@ -16,6 +16,8 @@ builder.Services.Configure<DeploymentOptions>(builder.Configuration.GetSection("
 builder.Services.AddScoped<IAiPromptService, AiPromptService>();
 builder.Services.AddScoped<IAiImageService, AiImageService>();
 builder.Services.AddScoped<AiModerationService>();
+builder.Services.AddScoped<AiJuryService>();
+builder.Services.AddHostedService<YarismaLifecycleService>();
 builder.Services.AddScoped<Kartist.Data.Repositories.ISocialRepository, Kartist.Data.Repositories.SocialRepository>();
 builder.Services.AddScoped<Kartist.Services.Business.ISocialService, Kartist.Services.Business.SocialService>();
 builder.Services.AddSingleton<IMailService, MailService>();
@@ -82,7 +84,7 @@ var app = builder.Build();
 var autoSchema = builder.Configuration.GetValue<bool>("Database:AutoSchema", true);
 if (autoSchema)
 {
-    Kartist.Data.DatabaseInitializer.Initialize(builder.Configuration.GetConnectionString("DefaultConnection"));
+    Kartist.Data.DatabaseInitializer.Initialize(builder.Configuration.GetConnectionString("DefaultConnection"), builder.Configuration);
 }
 
 if (!app.Environment.IsDevelopment())

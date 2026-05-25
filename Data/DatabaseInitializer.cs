@@ -1,14 +1,17 @@
 using System;
+using Kartist.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Data.SqlClient;
 
 namespace Kartist.Data
 {
     public static class DatabaseInitializer
     {
-        public static void Initialize(string connectionString)
+        public static void Initialize(string connectionString, IConfiguration configuration = null)
         {
             EnsureSchema(connectionString);
             SeedBeautifulData(connectionString);
+            EnsureBootstrapAdmin(connectionString, configuration);
         }
 
         private static void EnsureSchema(string connectionString)
@@ -39,6 +42,18 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicil
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'UyelikBitisTarihi')
     ALTER TABLE Kullanicilar ADD UyelikBitisTarihi DATETIME NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Kullanicilar') AND name = 'Yetki')
+    ALTER TABLE Kullanicilar ADD Yetki NVARCHAR(50) NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('Yoneticiler') AND type = 'U')
+BEGIN
+    CREATE TABLE Yoneticiler (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        KullaniciAdi NVARCHAR(100) NOT NULL UNIQUE,
+        Sifre NVARCHAR(255) NOT NULL
+    );
+END
 
 
 
@@ -486,6 +501,30 @@ BEGIN
     CREATE INDEX IX_YarismaKatilimlari_Yarisma ON YarismaKatilimlari(YarismaId, OySayisi DESC);
 END
 
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiSkor')
+    ALTER TABLE YarismaKatilimlari ADD AiSkor INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiYorum')
+    ALTER TABLE YarismaKatilimlari ADD AiYorum NVARCHAR(1000) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiSaglayici')
+    ALTER TABLE YarismaKatilimlari ADD AiSaglayici NVARCHAR(50) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'IsWinner')
+    ALTER TABLE YarismaKatilimlari ADD IsWinner BIT NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_YarismaKatilim_UserPerYarisma' AND object_id = OBJECT_ID('YarismaKatilimlari'))
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM YarismaKatilimlari
+        WHERE YarismaId IS NOT NULL AND KullaniciId IS NOT NULL
+        GROUP BY YarismaId, KullaniciId
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        CREATE UNIQUE INDEX UQ_YarismaKatilim_UserPerYarisma
+            ON YarismaKatilimlari(YarismaId, KullaniciId)
+            WHERE YarismaId IS NOT NULL AND KullaniciId IS NOT NULL;
+    END
+END
+
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('YarismaOylari') AND type = 'U')
 BEGIN
     CREATE TABLE YarismaOylari (
@@ -556,8 +595,6 @@ IF OBJECT_ID('SosyalGonderiler', 'U') IS NOT NULL DELETE FROM SosyalGonderiler;
 IF OBJECT_ID('SosyalGonderiler', 'U') IS NOT NULL DBCC CHECKIDENT ('SosyalGonderiler', RESEED, 0);
 IF OBJECT_ID('SosyalYorumlar', 'U') IS NOT NULL DBCC CHECKIDENT ('SosyalYorumlar', RESEED, 0);
 IF OBJECT_ID('Hashtagler', 'U') IS NOT NULL DBCC CHECKIDENT ('Hashtagler', RESEED, 0);
-
-DELETE FROM Kullanicilar WHERE Email IN ('aix@kartist.com', 'luna@kartist.com', 'cypher@kartist.com');
 ";
 
             const string createBots = @"
@@ -572,6 +609,33 @@ IF NOT EXISTS (SELECT 1 FROM Kullanicilar WHERE Email = 'luna@kartist.com')
 IF NOT EXISTS (SELECT 1 FROM Kullanicilar WHERE Email = 'cypher@kartist.com')
     INSERT INTO Kullanicilar (AdSoyad, Email, Sifre, ProfilResmi, Seviye, UyelikTipi, Biyografi, KapakResmi) 
     VALUES ('Cypher Dev', 'cypher@kartist.com', 'seeded', 'https://picsum.photos/seed/cypher/200/200', 18, 'Pro', 'Code is poetry. C#, TS, and creative coding.', 'https://picsum.photos/seed/cyphercover/1500/500');
+
+UPDATE Kullanicilar
+SET AdSoyad = 'AiX Designer',
+    ProfilResmi = 'https://picsum.photos/seed/aix/200/200',
+    Seviye = 25,
+    UyelikTipi = 'Pro',
+    Biyografi = 'Neo-brutalism and dynamic interactions. Crafting the web of tomorrow.',
+    KapakResmi = 'https://picsum.photos/seed/aixcover/1500/500'
+WHERE Email = 'aix@kartist.com';
+
+UPDATE Kullanicilar
+SET AdSoyad = 'Luna Creative',
+    ProfilResmi = 'https://picsum.photos/seed/luna/200/200',
+    Seviye = 42,
+    UyelikTipi = 'Free',
+    Biyografi = 'Exploring digital landscapes. Digital art enthusiast.',
+    KapakResmi = 'https://picsum.photos/seed/lunacover/1500/500'
+WHERE Email = 'luna@kartist.com';
+
+UPDATE Kullanicilar
+SET AdSoyad = 'Cypher Dev',
+    ProfilResmi = 'https://picsum.photos/seed/cypher/200/200',
+    Seviye = 18,
+    UyelikTipi = 'Pro',
+    Biyografi = 'Code is poetry. C#, TS, and creative coding.',
+    KapakResmi = 'https://picsum.photos/seed/cyphercover/1500/500'
+WHERE Email = 'cypher@kartist.com';
 ";
 
             const string createPosts = @"
@@ -611,11 +675,66 @@ VALUES
                 using var postsCmd = new SqlCommand(createPosts, connection);
                 postsCmd.ExecuteNonQuery();
 
+                SeedSablonlar(connection);
+
                 Console.WriteLine("Beautiful Seed Data initialized successfully.");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Seeding failed: {ex.Message}");
+            }
+        }
+
+        private static void SeedSablonlar(SqlConnection connection)
+        {
+            const string seedSql = @"
+IF NOT EXISTS (SELECT 1 FROM Sablonlar)
+BEGIN
+    INSERT INTO Sablonlar (Baslik, ResimUrl, Kategori, Fiyat, OnayDurumu, JsonVerisi, Varsayilan) VALUES
+        ('Modern Doğum Günü', 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600', 'Doğum Günü', 49.90, 'Onaylandi', NULL, 1),
+        ('Şık Düğün Davetiyesi', 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600', 'Düğün', 79.90, 'Onaylandi', NULL, 1),
+        ('Kurumsal Kartvizit', 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600', 'Kurumsal', 39.90, 'Onaylandi', NULL, 1),
+        ('Teknoloji Banner', 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600', 'Teknoloji', 59.90, 'Onaylandi', NULL, 1),
+        ('Sağlık Kliniği Afişi', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600', 'Sağlık', 44.90, 'Onaylandi', NULL, 1),
+        ('Eğitim Sertifikası', 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600', 'Eğitim', 29.90, 'Onaylandi', NULL, 1),
+        ('Sanat Galerisi Davetiyesi', 'https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=600', 'Sanat', 54.90, 'Onaylandi', NULL, 1),
+        ('Seyahat Broşürü', 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600', 'Seyahat', 64.90, 'Onaylandi', NULL, 1),
+        ('Yemek Menü Tasarımı', 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600', 'Yemek', 49.90, 'Onaylandi', NULL, 1),
+        ('Moda Lookbook', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600', 'Moda', 69.90, 'Onaylandi', NULL, 1),
+        ('Minimalist Posta Kartı', 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=600', 'Genel', 24.90, 'Onaylandi', NULL, 0),
+        ('Vintage Davetiye', 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600', 'Düğün', 84.90, 'Onaylandi', NULL, 0);
+END";
+            using var cmd = new SqlCommand(seedSql, connection);
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void EnsureBootstrapAdmin(string connectionString, IConfiguration configuration)
+        {
+            if (string.IsNullOrWhiteSpace(connectionString) || configuration == null) return;
+
+            var username = configuration["Admin:Bootstrap:Username"];
+            var password = configuration["Admin:Bootstrap:Password"];
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password)) return;
+
+            var hash = PasswordHasher.HashPassword(password);
+            const string sql = @"
+IF EXISTS (SELECT 1 FROM Yoneticiler WHERE KullaniciAdi = @KullaniciAdi)
+    UPDATE Yoneticiler SET Sifre = @Sifre WHERE KullaniciAdi = @KullaniciAdi;
+ELSE
+    INSERT INTO Yoneticiler (KullaniciAdi, Sifre) VALUES (@KullaniciAdi, @Sifre);";
+
+            try
+            {
+                using var connection = new SqlConnection(connectionString);
+                connection.Open();
+                using var command = new SqlCommand(sql, connection);
+                command.Parameters.AddWithValue("@KullaniciAdi", username);
+                command.Parameters.AddWithValue("@Sifre", hash);
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Admin bootstrap failed: {ex.Message}");
             }
         }
     }
