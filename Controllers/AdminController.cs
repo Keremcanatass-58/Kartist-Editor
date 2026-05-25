@@ -44,6 +44,80 @@ namespace Kartist.Controllers
         private bool AdminYetkili() =>
             HttpContext.Session.GetString("AdminOturumu") != null || AdminKontrol();
 
+        private void EnsureYarismaSchema(SqlConnection db)
+        {
+            db.Execute(@"
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('Yarismalar') AND type = 'U')
+BEGIN
+    CREATE TABLE Yarismalar (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(1000) NULL,
+        Tema NVARCHAR(100) NOT NULL,
+        Odul NVARCHAR(100) NOT NULL,
+        KapakUrl NVARCHAR(500) NOT NULL,
+        Durum NVARCHAR(20) NOT NULL DEFAULT 'active',
+        SonKatilimTarihi DATETIME NOT NULL,
+        OylamaBitisTarihi DATETIME NULL,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE()
+    );
+END
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Baslik')
+    ALTER TABLE Yarismalar ADD Baslik NVARCHAR(200) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Aciklama')
+    ALTER TABLE Yarismalar ADD Aciklama NVARCHAR(1000) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Tema')
+    ALTER TABLE Yarismalar ADD Tema NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Odul')
+    ALTER TABLE Yarismalar ADD Odul NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'KapakUrl')
+    ALTER TABLE Yarismalar ADD KapakUrl NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Durum')
+    ALTER TABLE Yarismalar ADD Durum NVARCHAR(20) NOT NULL DEFAULT 'active';
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'SonKatilimTarihi')
+    ALTER TABLE Yarismalar ADD SonKatilimTarihi DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'OylamaBitisTarihi')
+    ALTER TABLE Yarismalar ADD OylamaBitisTarihi DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'OlusturmaTarihi')
+    ALTER TABLE Yarismalar ADD OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE();
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'StartDate' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN StartDate DATETIME NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'EndDate' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN EndDate DATETIME NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'VotingEndDate' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN VotingEndDate DATETIME NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Status' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN Status INT NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'CreatedById' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN CreatedById INT NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'CreatedAt' AND is_nullable = 0)
+    ALTER TABLE Yarismalar ALTER COLUMN CreatedAt DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND type = 'U')
+BEGIN
+    CREATE TABLE YarismaKatilimlari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        YarismaId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Baslik NVARCHAR(200) NOT NULL,
+        Aciklama NVARCHAR(1000) NULL,
+        GorselUrl NVARCHAR(500) NOT NULL,
+        OySayisi INT NOT NULL DEFAULT 0,
+        OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE()
+    );
+END
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID('YarismaOylari') AND type = 'U')
+BEGIN
+    CREATE TABLE YarismaOylari (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        YarismaId INT NOT NULL,
+        KatilimId INT NOT NULL,
+        KullaniciId INT NOT NULL,
+        Tarih DATETIME NOT NULL DEFAULT GETUTCDATE(),
+        CONSTRAINT UQ_YarismaOy UNIQUE (YarismaId, KullaniciId)
+    );
+END");
+        }
+
         public IActionResult Login()
         {
             if (HttpContext.Session.GetString("AdminOturumu") != null) return RedirectToAction("Panel");
@@ -83,6 +157,7 @@ namespace Kartist.Controllers
             using (var db = new SqlConnection(_baglanti))
             {
                 const int timeout = 3;
+                EnsureYarismaSchema(db);
 
                 ViewBag.ToplamUye = db.ExecuteScalar<int>(
                     "SELECT COUNT(1) FROM Kullanicilar", commandTimeout: timeout);
@@ -101,6 +176,15 @@ namespace Kartist.Controllers
                 ViewBag.SonUyeler = db.Query<dynamic>(
                     "SELECT TOP 50 Id, AdSoyad, Email, KalanKredi, UyelikTipi FROM Kullanicilar ORDER BY Id DESC",
                     commandTimeout: timeout).ToList();
+
+                ViewBag.Yarismalar = db.Query<dynamic>(@"
+                    SELECT TOP 20 y.Id, y.Baslik, y.Tema, y.Odul, y.Durum,
+                           y.SonKatilimTarihi, y.OylamaBitisTarihi,
+                           COUNT(k.Id) AS KatilimciSayisi
+                    FROM Yarismalar y
+                    LEFT JOIN YarismaKatilimlari k ON k.YarismaId = y.Id
+                    GROUP BY y.Id, y.Baslik, y.Tema, y.Odul, y.Durum, y.SonKatilimTarihi, y.OylamaBitisTarihi, y.OlusturmaTarihi
+                    ORDER BY y.OlusturmaTarihi DESC", commandTimeout: timeout).ToList();
 
                 var aktifKartlar = db.Query<Sablon>(
                     "SELECT TOP 60 Id, Baslik, Kategori, Fiyat, ResimUrl, OnayDurumu FROM Sablonlar WHERE OnayDurumu = 'Onaylandi' OR OnayDurumu IS NULL ORDER BY Id DESC",
@@ -202,6 +286,104 @@ namespace Kartist.Controllers
             {
                 db.Execute("DELETE FROM Sablonlar WHERE Id = @id", new { id }, commandTimeout: 3);
             }
+            return RedirectToAction("Panel");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult YarismaOlustur(string baslik, string aciklama, string tema, string odul, string kapakUrl, DateTime sonKatilimTarihi, DateTime? oylamaBitisTarihi, string durum)
+        {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
+            if (string.IsNullOrWhiteSpace(baslik) || string.IsNullOrWhiteSpace(tema) || string.IsNullOrWhiteSpace(odul))
+            {
+                TempData["AdminHata"] = "Yarışma başlığı, tema ve ödül alanları zorunludur.";
+                return RedirectToAction("Panel");
+            }
+
+            var izinliDurumlar = new[] { "active", "voting", "ended" };
+            durum = izinliDurumlar.Contains(durum) ? durum : "active";
+            var oylamaBitis = oylamaBitisTarihi ?? sonKatilimTarihi.AddDays(3);
+
+            if (durum == "active" && sonKatilimTarihi <= DateTime.Now)
+            {
+                TempData["AdminHata"] = "Aktif yarışma için son katılım tarihi gelecekte olmalıdır.";
+                return RedirectToAction("Panel");
+            }
+
+            if (oylamaBitis <= sonKatilimTarihi)
+            {
+                TempData["AdminHata"] = "Oylama bitiş tarihi son katılım tarihinden sonra olmalıdır.";
+                return RedirectToAction("Panel");
+            }
+
+            var temizBaslik = InputValidator.SanitizeHtml(baslik.Trim());
+            var temizAciklama = InputValidator.SanitizeHtml(aciklama ?? "");
+            var temizTema = InputValidator.SanitizeHtml(tema.Trim());
+            var temizOdul = InputValidator.SanitizeHtml(odul.Trim());
+            var temizKapak = string.IsNullOrWhiteSpace(kapakUrl)
+                ? "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1200"
+                : InputValidator.SanitizeHtml(kapakUrl.Trim());
+
+            using (var db = new SqlConnection(_baglanti))
+            {
+                EnsureYarismaSchema(db);
+                db.Execute(@"
+                    INSERT INTO Yarismalar (Baslik, Aciklama, Tema, Odul, KapakUrl, Durum, SonKatilimTarihi, OylamaBitisTarihi)
+                    VALUES (@Baslik, @Aciklama, @Tema, @Odul, @KapakUrl, @Durum, @SonKatilimTarihi, @OylamaBitisTarihi)",
+                    new
+                    {
+                        Baslik = temizBaslik,
+                        Aciklama = temizAciklama,
+                        Tema = temizTema,
+                        Odul = temizOdul,
+                        KapakUrl = temizKapak,
+                        Durum = durum,
+                        SonKatilimTarihi = sonKatilimTarihi,
+                        OylamaBitisTarihi = oylamaBitis
+                    },
+                    commandTimeout: 3);
+            }
+
+            TempData["AdminMesaj"] = "Yarışma oluşturuldu.";
+            return RedirectToAction("Panel");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult YarismaDurumDegistir(int id, string durum)
+        {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
+            var izinliDurumlar = new[] { "active", "voting", "ended" };
+            if (!izinliDurumlar.Contains(durum)) return RedirectToAction("Panel");
+
+            using (var db = new SqlConnection(_baglanti))
+            {
+                EnsureYarismaSchema(db);
+                db.Execute("UPDATE Yarismalar SET Durum = @durum WHERE Id = @id",
+                    new { id, durum }, commandTimeout: 3);
+            }
+
+            TempData["AdminMesaj"] = "Yarışma durumu güncellendi.";
+            return RedirectToAction("Panel");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult YarismaSil(int id)
+        {
+            if (!AdminYetkili()) return RedirectToAction("Login");
+
+            using (var db = new SqlConnection(_baglanti))
+            {
+                EnsureYarismaSchema(db);
+                db.Execute("DELETE FROM YarismaOylari WHERE YarismaId = @id", new { id }, commandTimeout: 3);
+                db.Execute("DELETE FROM YarismaKatilimlari WHERE YarismaId = @id", new { id }, commandTimeout: 3);
+                db.Execute("DELETE FROM Yarismalar WHERE Id = @id", new { id }, commandTimeout: 3);
+            }
+
+            TempData["AdminMesaj"] = "Yarışma silindi.";
             return RedirectToAction("Panel");
         }
 
