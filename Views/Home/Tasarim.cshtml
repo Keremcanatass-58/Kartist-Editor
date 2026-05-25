@@ -3893,16 +3893,23 @@
 
 		function addText(txt, size, weight) {
 			loadGoogleFont('Poppins');
-			var t = new fabric.IText(txt, {
-				left: 100,
+			var canvasW = canvas.getWidth();
+			var boxWidth = Math.max(180, Math.min(canvasW - 80, 600));
+			var t = new fabric.Textbox(txt, {
+				left: 40,
 				top: 100,
+				width: boxWidth,
 				fontFamily: 'Poppins',
 				fill: '#333',
 				fontSize: size,
-				fontWeight: weight
+				fontWeight: weight,
+				textAlign: 'left',
+				splitByGrapheme: false,
+				lockScalingFlip: true
 			});
 			canvas.add(t);
 			canvas.setActiveObject(t);
+			canvas.renderAll();
 		}
 
         // --- GELİŞMİŞ ŞEKİL EKLEME SİSTEMİ (addShape) ---
