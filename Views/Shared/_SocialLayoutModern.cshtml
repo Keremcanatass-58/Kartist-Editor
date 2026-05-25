@@ -435,6 +435,13 @@
                             </a>
                         </li>
                         <li>
+                            @{ var isIlhamPanosu = Context.Request.Path == "/Social/IlhamPanosu"; }
+                            <a href="/Social/IlhamPanosu" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isIlhamPanosu ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
+                                <i data-lucide="bookmark-check" class="h-5 w-5"></i>
+                                Ilham Panosu
+                            </a>
+                        </li>
+                        <li>
                             @{ var isLiderlik = Context.Request.Path == "/Social/Liderlik"; }
                             <a href="/Social/Liderlik" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all @(isLiderlik ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground")">
                                 <i data-lucide="crown" class="h-5 w-5"></i>

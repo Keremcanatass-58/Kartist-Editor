@@ -12,18 +12,21 @@ namespace Kartist.Controllers
         private readonly string _conn;
         private readonly IConfiguration _config;
         private readonly Kartist.Services.AiModerationService _aiModerator;
+        private readonly Kartist.Services.AiJuryService _aiJury;
         private readonly Microsoft.AspNetCore.SignalR.IHubContext<Kartist.Hubs.NotificationHub> _hubContext;
         private readonly Kartist.Services.Business.ISocialService _socialService;
 
         public SocialController(
-            IConfiguration config, 
+            IConfiguration config,
             Kartist.Services.AiModerationService aiModerator,
+            Kartist.Services.AiJuryService aiJury,
             Microsoft.AspNetCore.SignalR.IHubContext<Kartist.Hubs.NotificationHub> hubContext,
             Kartist.Services.Business.ISocialService socialService)
         {
             _config = config;
             _conn = config.GetConnectionString("DefaultConnection");
             _aiModerator = aiModerator;
+            _aiJury = aiJury;
             _hubContext = hubContext;
             _socialService = socialService;
         }
@@ -109,6 +112,60 @@ namespace Kartist.Controllers
             };
 
             return View(posts);
+        }
+
+        public IActionResult IlhamPanosu()
+        {
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Giris", "Account");
+
+            using var db = new SqlConnection(_conn);
+            string email = GetEmail();
+            int userId = GetUserId(db, email);
+
+            ViewBag.SavedCount = db.ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM Kaydedilenler WHERE KullaniciId = @uid",
+                new { uid = userId });
+            ViewBag.CreatorCount = db.ExecuteScalar<int>(@"
+                SELECT COUNT(DISTINCT g.KullaniciId)
+                FROM Kaydedilenler kd
+                JOIN SosyalGonderiler g ON kd.GonderiId = g.Id
+                WHERE kd.KullaniciId = @uid",
+                new { uid = userId });
+            ViewBag.WeeklySavedCount = db.ExecuteScalar<int>(@"
+                SELECT COUNT(*)
+                FROM Kaydedilenler
+                WHERE KullaniciId = @uid AND Tarih >= DATEADD(day, -7, GETUTCDATE())",
+                new { uid = userId });
+            ViewBag.TopCreator = db.QueryFirstOrDefault(@"
+                SELECT TOP 1 k.AdSoyad, COUNT(*) AS KayitSayisi
+                FROM Kaydedilenler kd
+                JOIN SosyalGonderiler g ON kd.GonderiId = g.Id
+                JOIN Kullanicilar k ON g.KullaniciId = k.Id
+                WHERE kd.KullaniciId = @uid
+                GROUP BY k.AdSoyad
+                ORDER BY COUNT(*) DESC, k.AdSoyad",
+                new { uid = userId });
+
+            var kaydedilenler = db.Query(@"
+                SELECT TOP 60 kd.Id AS KayitId, kd.Tarih AS KaydetmeTarihi,
+                       g.Id, g.Icerik AS Title,
+                       ISNULL(NULLIF(g.GorselUrl, ''), '/img/default-design.svg') AS ImageUrl,
+                       g.BegeniSayisi AS Likes,
+                       g.YorumSayisi AS Comments,
+                       g.GoruntulemeSayisi AS Views,
+                       g.OlusturmaTarihi AS CreatedAt,
+                       k.Id AS KullaniciId,
+                       k.AdSoyad AS UserName,
+                       ISNULL(NULLIF(k.ProfilResmi, ''), '/img/default-user.png') AS UserAvatar,
+                       REPLACE(k.Email, '@gmail.com', '') AS UserHandle
+                FROM Kaydedilenler kd
+                JOIN SosyalGonderiler g ON kd.GonderiId = g.Id
+                JOIN Kullanicilar k ON g.KullaniciId = k.Id
+                WHERE kd.KullaniciId = @uid
+                ORDER BY kd.Tarih DESC",
+                new { uid = userId }).ToList();
+
+            return View(kaydedilenler);
         }
 
         // ===== TRENDING =====
@@ -230,13 +287,13 @@ namespace Kartist.Controllers
         public IActionResult DuelloOlustur(int opponent, string category, string challenge)
         {
             if (!User.Identity.IsAuthenticated)
-                return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
+                return Json(new { success = false, message = "Giriş yapmalısınız." });
 
             using var db = new SqlConnection(_conn);
             EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
             if (userId == 0) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
-            if (userId == opponent) return Json(new { success = false, message = "Kendinize dÃ¼ello atamazsÄ±nÄ±z." });
+            if (userId == opponent) return Json(new { success = false, message = "Kendinize düello atamazsınız." });
 
             var rakipVarMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Kullanicilar WHERE Id = @id", new { id = opponent });
             if (rakipVarMi == 0) return Json(new { success = false, message = "Rakip bulunamadÃ„Â±." });
@@ -247,14 +304,14 @@ namespace Kartist.Controllers
                   AND ((MeydanOkuyanId = @uid AND RakipId = @rid) OR (MeydanOkuyanId = @rid AND RakipId = @uid))",
                 new { uid = userId, rid = opponent });
             if (aktifDuello > 0)
-                return Json(new { success = false, message = "Bu rakiple zaten aktif bir dÃ¼ellonuz var." });
+                return Json(new { success = false, message = "Bu rakiple zaten aktif bir düellonuz var." });
 
             var kategoriBasliklari = new Dictionary<string, string> {
-                {"ui", "UI/UX TasarÄ±m DÃ¼ellosu"}, {"logo", "Logo & Branding DÃ¼ellosu"},
-                {"illustration", "Ä°llÃ¼strasyon DÃ¼ellosu"}, {"3d", "3D Modelleme DÃ¼ellosu"},
-                {"motion", "Motion Design DÃ¼ellosu"}, {"typography", "Tipografi DÃ¼ellosu"}
+                {"ui", "UI/UX Tasarım Düellosu"}, {"logo", "Logo & Branding Düellosu"},
+                {"illustration", "İllüstrasyon Düellosu"}, {"3d", "3D Modelleme Düellosu"},
+                {"motion", "Motion Design Düellosu"}, {"typography", "Tipografi Düellosu"}
             };
-            string baslik = kategoriBasliklari.GetValueOrDefault(category ?? "", "TasarÄ±m DÃ¼ellosu");
+            string baslik = kategoriBasliklari.GetValueOrDefault(category ?? "", "Tasarım Düellosu");
 
             var temizAciklama = Kartist.Helpers.InputValidator.SanitizeHtml(challenge ?? "");
 
@@ -263,17 +320,17 @@ namespace Kartist.Controllers
                          SELECT CAST(SCOPE_IDENTITY() as int);",
                 new { uid = userId, rid = opponent, kat = category ?? "ui", baslik, aciklama = temizAciklama });
 
-            KazanXP(db, userId, 20, "duello_baslat", "DÃ¼ello baÅŸlattÄ±");
+            KazanXP(db, userId, 20, "duello_baslat", "Düello başlattı");
 
             var rakipEmail = db.ExecuteScalar<string>("SELECT Email FROM Kullanicilar WHERE Id = @id", new { id = opponent });
             if (!string.IsNullOrEmpty(rakipEmail))
             {
                 db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, GonderenId)
                              VALUES (@kid, 'duello', @mesaj, @gid)",
-                    new { kid = opponent, mesaj = "sana dÃ¼ello daveti gÃ¶nderdi!", gid = userId });
+                    new { kid = opponent, mesaj = "sana düello daveti gönderdi!", gid = userId });
             }
 
-            return Json(new { success = true, message = "DÃ¼ello daveti gÃ¶nderildi!" });
+            return Json(new { success = true, message = "Düello daveti gönderildi!" });
         }
 
         [HttpPost]
@@ -281,21 +338,21 @@ namespace Kartist.Controllers
         public IActionResult DuelloKabulEt(int duelloId)
         {
             if (!User.Identity.IsAuthenticated)
-                return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
+                return Json(new { success = false, message = "Giriş yapmalısınız." });
 
             using var db = new SqlConnection(_conn);
             EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
-            if (duello == null) return Json(new { success = false, message = "DÃ¼ello bulunamadÄ±." });
-            if ((string)duello.Durum != "bekliyor") return Json(new { success = false, message = "Bu dÃ¼ello artÄ±k kabul edilemez." });
-            if ((int)duello.RakipId != userId) return Json(new { success = false, message = "Bu dÃ¼ello size gÃ¶nderilmedi." });
+            if (duello == null) return Json(new { success = false, message = "Düello bulunamadı." });
+            if ((string)duello.Durum != "bekliyor") return Json(new { success = false, message = "Bu düello artık kabul edilemez." });
+            if ((int)duello.RakipId != userId) return Json(new { success = false, message = "Bu düello size gönderilmedi." });
 
             db.Execute("UPDATE Duellolar SET Durum = 'tasarim', KabulTarihi = GETUTCDATE() WHERE Id = @id", new { id = duelloId });
-            KazanXP(db, userId, 10, "duello_kabul", "DÃ¼ello kabul etti");
+            KazanXP(db, userId, 10, "duello_kabul", "Düello kabul etti");
 
-            return Json(new { success = true, message = "DÃ¼ello kabul edildi! TasarÄ±mÄ±nÄ±zÄ± yÃ¼kleyin." });
+            return Json(new { success = true, message = "Düello kabul edildi! Tasarımınızı yükleyin." });
         }
 
         [HttpPost]
@@ -303,19 +360,19 @@ namespace Kartist.Controllers
         public IActionResult DuelloReddet(int duelloId)
         {
             if (!User.Identity.IsAuthenticated)
-                return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
+                return Json(new { success = false, message = "Giriş yapmalısınız." });
 
             using var db = new SqlConnection(_conn);
             EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
-            if (duello == null) return Json(new { success = false, message = "DÃ¼ello bulunamadÄ±." });
-            if ((string)duello.Durum != "bekliyor") return Json(new { success = false, message = "Bu dÃ¼ello artÄ±k reddedilemez." });
-            if ((int)duello.RakipId != userId) return Json(new { success = false, message = "Bu dÃ¼ello size gÃ¶nderilmedi." });
+            if (duello == null) return Json(new { success = false, message = "Düello bulunamadı." });
+            if ((string)duello.Durum != "bekliyor") return Json(new { success = false, message = "Bu düello artık reddedilemez." });
+            if ((int)duello.RakipId != userId) return Json(new { success = false, message = "Bu düello size gönderilmedi." });
 
             db.Execute("UPDATE Duellolar SET Durum = 'reddedildi', BitisTarihi = GETUTCDATE() WHERE Id = @id", new { id = duelloId });
-            return Json(new { success = true, message = "DÃ¼ello reddedildi." });
+            return Json(new { success = true, message = "Düello reddedildi." });
         }
 
         [HttpPost]
@@ -323,22 +380,22 @@ namespace Kartist.Controllers
         public async Task<IActionResult> DuelloTasarimYukle(int duelloId, IFormFile tasarim)
         {
             if (!User.Identity.IsAuthenticated)
-                return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
+                return Json(new { success = false, message = "Giriş yapmalısınız." });
 
             using var db = new SqlConnection(_conn);
             EnsureDuelloTables(db);
             int userId = GetUserId(db, GetEmail());
 
             var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id = duelloId });
-            if (duello == null) return Json(new { success = false, message = "DÃ¼ello bulunamadÄ±." });
-            if ((string)duello.Durum != "tasarim") return Json(new { success = false, message = "Bu dÃ¼ello tasarÄ±m aÅŸamasÄ±nda deÄŸil." });
+            if (duello == null) return Json(new { success = false, message = "Düello bulunamadı." });
+            if ((string)duello.Durum != "tasarim") return Json(new { success = false, message = "Bu düello tasarım aşamasında değil." });
 
             bool isMeydanOkuyan = (int)duello.MeydanOkuyanId == userId;
             bool isRakip = (int)duello.RakipId == userId;
-            if (!isMeydanOkuyan && !isRakip) return Json(new { success = false, message = "Bu dÃ¼ellonun katÄ±lÄ±mcÄ±sÄ± deÄŸilsiniz." });
+            if (!isMeydanOkuyan && !isRakip) return Json(new { success = false, message = "Bu düellonun katılımcısı değilsiniz." });
 
             if (tasarim == null || tasarim.Length == 0)
-                return Json(new { success = false, message = "Dosya seÃ§ilmedi." });
+                return Json(new { success = false, message = "Dosya seçilmedi." });
 
             if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(tasarim, 10 * 1024 * 1024, out var ext, out var err))
                 return Json(new { success = false, message = err });
@@ -363,8 +420,8 @@ namespace Kartist.Controllers
                 db.Execute("UPDATE Duellolar SET Durum = 'oylama', OylamaBaslangic = GETUTCDATE() WHERE Id = @id", new { id = duelloId });
             }
 
-            KazanXP(db, userId, 30, "duello_tasarim", "DÃ¼ello tasarÄ±mÄ± yÃ¼kledi");
-            return Json(new { success = true, message = "TasarÄ±mÄ±nÄ±z yÃ¼klendi!" });
+            KazanXP(db, userId, 30, "duello_tasarim", "Düello tasarımı yükledi");
+            return Json(new { success = true, message = "Tasarımınız yüklendi!" });
         }
 
         [HttpPost]
@@ -372,7 +429,7 @@ namespace Kartist.Controllers
         public IActionResult VoteDuel(int id, int option)
         {
             if (!User.Identity.IsAuthenticated)
-                return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±nÄ±z." });
+                return Json(new { success = false, message = "Giriş yapmalısınız." });
 
             try
             {
@@ -382,15 +439,15 @@ namespace Kartist.Controllers
                 if (userId == 0) return Json(new { success = false, message = "Kullanıcı bulunamadı." });
 
                 var duello = db.QueryFirstOrDefault("SELECT * FROM Duellolar WHERE Id = @id", new { id });
-                if (duello == null) return Json(new { success = false, message = "DÃ¼ello bulunamadÄ±." });
-                if ((string)duello.Durum != "oylama") return Json(new { success = false, message = "Bu dÃ¼ello oylama aÅŸamasÄ±nda deÄŸil." });
+                if (duello == null) return Json(new { success = false, message = "Düello bulunamadı." });
+                if ((string)duello.Durum != "oylama") return Json(new { success = false, message = "Bu düello oylama aşamasında değil." });
                 if ((int)duello.MeydanOkuyanId == userId || (int)duello.RakipId == userId)
-                    return Json(new { success = false, message = "Kendi dÃ¼ellonuza oy veremezsiniz." });
+                    return Json(new { success = false, message = "Kendi düellonuza oy veremezsiniz." });
 
                 var mevcutOy = db.ExecuteScalar<int>(
                     "SELECT COUNT(*) FROM DuelloOylari WHERE DuelloId = @did AND KullaniciId = @uid",
                     new { did = id, uid = userId });
-                if (mevcutOy > 0) return Json(new { success = false, message = "Bu dÃ¼elloya zaten oy verdiniz." });
+                if (mevcutOy > 0) return Json(new { success = false, message = "Bu düelloya zaten oy verdiniz." });
 
                 db.Execute("INSERT INTO DuelloOylari (DuelloId, KullaniciId, Secenek) VALUES (@did, @uid, @s)",
                     new { did = id, uid = userId, s = option });
@@ -543,7 +600,7 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
                     int? kazanan = v1 > v2 ? (int)d.MeydanOkuyanId : v2 > v1 ? (int)d.RakipId : (int?)null;
                     db.Execute("UPDATE Duellolar SET Durum = 'bitti', BitisTarihi = GETUTCDATE(), KazananId = @k WHERE Id = @id",
                         new { k = kazanan, id = (int)d.Id });
-                    if (kazanan.HasValue) KazanXP(db, kazanan.Value, 100, "duello_kazanan", "DÃ¼ello kazandÄ±!");
+                    if (kazanan.HasValue) KazanXP(db, kazanan.Value, 100, "duello_kazanan", "Düello kazandı!");
                 }
             }
             catch { }
@@ -687,14 +744,22 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
         {
             using var db = new SqlConnection(_conn);
             EnsureYarismaTables(db);
-            string email = GetEmail() ?? "test@test.com";
-            int userId = GetUserId(db, email);
-            if (userId == 0) userId = 1;
-            
-            var user = db.QueryFirstOrDefault("SELECT Seviye as Level, ToplamXP as XP FROM Kullanicilar WHERE Id = @id", new { id = userId });
-            ViewBag.UserLevel = user?.Level ?? 1;
-            ViewBag.UserXP = user?.XP ?? 0;
-            ViewBag.UserMaxXP = ((user?.Level ?? 1) + 1) * 200;
+            string email = GetEmail();
+            int userId = string.IsNullOrEmpty(email) ? 0 : GetUserId(db, email);
+
+            if (userId > 0)
+            {
+                var user = db.QueryFirstOrDefault("SELECT Seviye as Level, ToplamXP as XP FROM Kullanicilar WHERE Id = @id", new { id = userId });
+                ViewBag.UserLevel = user?.Level ?? 1;
+                ViewBag.UserXP = user?.XP ?? 0;
+                ViewBag.UserMaxXP = ((user?.Level ?? 1) + 1) * 200;
+            }
+            else
+            {
+                ViewBag.UserLevel = 1;
+                ViewBag.UserXP = 0;
+                ViewBag.UserMaxXP = 200;
+            }
 
             YarismaDurumlariniGuncelle(db);
 
@@ -727,7 +792,21 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
                 JOIN Yarismalar y ON y.Id = k.YarismaId
                 JOIN Kullanicilar u ON u.Id = k.KullaniciId
                 ORDER BY k.OySayisi DESC, k.OlusturmaTarihi DESC").ToList();
-            
+
+            // Kazanan = bittiği yarışmada en çok oy alan katılım
+            ViewBag.RecentWinners = db.Query(@"
+                SELECT TOP 4 y.Id AS YarismaId, y.Baslik AS YarismaBaslik, y.Odul,
+                       y.OylamaBitisTarihi,
+                       k.GorselUrl AS TasarimGorseli, k.OySayisi,
+                       u.AdSoyad AS KazananAdi,
+                       ISNULL(NULLIF(u.ProfilResmi,''), '/img/default-user.png') AS ProfilResmi
+                FROM Yarismalar y
+                INNER JOIN YarismaKatilimlari k ON k.YarismaId = y.Id
+                INNER JOIN Kullanicilar u ON u.Id = k.KullaniciId
+                WHERE y.Durum = 'ended'
+                  AND k.OySayisi = (SELECT MAX(OySayisi) FROM YarismaKatilimlari WHERE YarismaId = y.Id)
+                ORDER BY y.OylamaBitisTarihi DESC").ToList();
+
             return View();
         }
 
@@ -789,6 +868,21 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKat
     ALTER TABLE YarismaKatilimlari ADD OySayisi INT NOT NULL DEFAULT 0;
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'OlusturmaTarihi')
     ALTER TABLE YarismaKatilimlari ADD OlusturmaTarihi DATETIME NOT NULL DEFAULT GETUTCDATE();
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiSkor')
+    ALTER TABLE YarismaKatilimlari ADD AiSkor INT NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiYorum')
+    ALTER TABLE YarismaKatilimlari ADD AiYorum NVARCHAR(1000) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'AiSaglayici')
+    ALTER TABLE YarismaKatilimlari ADD AiSaglayici NVARCHAR(50) NULL;
+-- Legacy NOT NULL kolonlarını nullable yap (eski şema artığı, yeni kod artık kullanmıyor)
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'CompetitionId' AND is_nullable = 0)
+    ALTER TABLE YarismaKatilimlari ALTER COLUMN CompetitionId INT NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'SubmittedAt' AND is_nullable = 0)
+    ALTER TABLE YarismaKatilimlari ALTER COLUMN SubmittedAt DATETIME NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'IsWinner')
+    ALTER TABLE YarismaKatilimlari ADD IsWinner BIT NULL;
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'IsWinner' AND is_nullable = 0)
+    ALTER TABLE YarismaKatilimlari ALTER COLUMN IsWinner BIT NULL;
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Baslik')
     ALTER TABLE Yarismalar ADD Baslik NVARCHAR(200) NULL;
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Aciklama')
@@ -833,6 +927,18 @@ IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') A
     ALTER TABLE Yarismalar ALTER COLUMN Theme NVARCHAR(100) NULL;
 IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Yarismalar') AND name = 'Prize' AND is_nullable = 0)
     ALTER TABLE Yarismalar ALTER COLUMN Prize NVARCHAR(100) NULL;
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'UQ_YarismaKatilim_UserPerYarisma' AND object_id = OBJECT_ID('YarismaKatilimlari'))
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM YarismaKatilimlari
+        WHERE YarismaId IS NOT NULL AND KullaniciId IS NOT NULL
+        GROUP BY YarismaId, KullaniciId
+        HAVING COUNT(*) > 1
+    )
+    BEGIN
+        EXEC('CREATE UNIQUE INDEX UQ_YarismaKatilim_UserPerYarisma ON YarismaKatilimlari(YarismaId, KullaniciId) WHERE YarismaId IS NOT NULL AND KullaniciId IS NOT NULL');
+    END
+END
 ");
             db.Execute(@"
 UPDATE Yarismalar
@@ -852,13 +958,33 @@ BEGIN
     ('Gelecek Icin Tasarla', 'Surdurulebilirlik temali afis, sosyal medya veya arayuz tasarimi.', 'Sustainability', '10,000 TL + Premium', 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800', 'active', DATEADD(day, 5, GETUTCDATE()), DATEADD(day, 8, GETUTCDATE()), 'Gelecek Icin Tasarla', DATEADD(day, 5, GETUTCDATE()), @seedUserId),
     ('AI x Design', 'Yapay zeka ve tasarimin kesisim noktasini anlatan etkileyici bir calisma.', 'AI', '15,000 TL + Davetiye', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800', 'voting', DATEADD(day, -1, GETUTCDATE()), DATEADD(day, 3, GETUTCDATE()), 'AI x Design', DATEADD(day, 3, GETUTCDATE()), @seedUserId),
     ('Kartist Master Design Challenge #1', 'En iyi koyu tema deneyimini kim tasarlayacak?', 'Dark Mode', '5,000 TL', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800', 'ended', DATEADD(day, -10, GETUTCDATE()), DATEADD(day, -2, GETUTCDATE()), 'Kartist Master Design Challenge #1', DATEADD(day, -2, GETUTCDATE()), @seedUserId);
+END
+
+-- DEMO REFRESH: aktif yarışma kalmadıysa seed yarışmalarını yeniden canlandır
+IF NOT EXISTS (SELECT 1 FROM Yarismalar WHERE Durum = 'active')
+BEGIN
+    UPDATE Yarismalar
+       SET Durum = 'active',
+           SonKatilimTarihi = DATEADD(day, 7, GETUTCDATE()),
+           OylamaBitisTarihi = DATEADD(day, 10, GETUTCDATE())
+     WHERE Baslik = 'Gelecek Icin Tasarla';
+END
+IF NOT EXISTS (SELECT 1 FROM Yarismalar WHERE Durum = 'voting')
+BEGIN
+    UPDATE Yarismalar
+       SET Durum = 'voting',
+           SonKatilimTarihi = DATEADD(day, -1, GETUTCDATE()),
+           OylamaBitisTarihi = DATEADD(day, 3, GETUTCDATE())
+     WHERE Baslik = 'AI x Design';
 END");
         }
 
         private void YarismaDurumlariniGuncelle(SqlConnection db)
         {
+            // active → voting: katilim bitti, oylama açılıyor (kazanan dokunulmaz, lifecycle ile uyumlu)
             db.Execute("UPDATE Yarismalar SET Durum = 'voting' WHERE Durum = 'active' AND SonKatilimTarihi < GETUTCDATE()");
-            db.Execute("UPDATE Yarismalar SET Durum = 'ended' WHERE Durum = 'voting' AND OylamaBitisTarihi IS NOT NULL AND OylamaBitisTarihi < GETUTCDATE()");
+            // voting → ended geçişini burada yapmıyoruz: YarismaLifecycleService kazananı tespit edip
+            // XP/rozet/feed postu/bildirim ekledikten sonra Durum'u 'ended' olarak işaretliyor.
         }
 
         [HttpPost]
@@ -870,11 +996,18 @@ END");
             EnsureYarismaTables(db);
 
             var yarisma = db.QueryFirstOrDefault("SELECT * FROM Yarismalar WHERE Id = @id", new { id = yarismaId });
-            if (yarisma == null) return Json(new { success = false, message = "YarÄ±ÅŸma bulunamadÄ±." });
-            if ((string)yarisma.Durum != "active") return Json(new { success = false, message = "Bu yarÄ±ÅŸma katÄ±lÄ±ma kapalÄ±." });
+            if (yarisma == null) return Json(new { success = false, message = "Yarışma bulunamadı." });
+            if ((string)yarisma.Durum != "active") return Json(new { success = false, message = "Bu yarışma katılıma kapalı." });
 
-            if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM YarismaKatilimlari WHERE YarismaId = @yid AND KullaniciId = @uid", new { yid = yarismaId, uid = CurrentUserId }) > 0)
-                return Json(new { success = false, message = "Bu yarÄ±ÅŸmaya zaten katÄ±ldÄ±n." });
+            var legacyCompetitionIdVar = db.ExecuteScalar<int>(
+                "SELECT COUNT(*) FROM sys.columns WHERE object_id = OBJECT_ID('YarismaKatilimlari') AND name = 'CompetitionId'") > 0;
+            var eskiKatilimSql = legacyCompetitionIdVar
+                ? @"SELECT COUNT(*) FROM YarismaKatilimlari
+                    WHERE KullaniciId = @uid AND (YarismaId = @yid OR CompetitionId = @yid)"
+                : @"SELECT COUNT(*) FROM YarismaKatilimlari
+                    WHERE KullaniciId = @uid AND YarismaId = @yid";
+            if (db.ExecuteScalar<int>(eskiKatilimSql, new { yid = yarismaId, uid = CurrentUserId }) > 0)
+                return Json(new { success = false, message = "Bu yarışmaya zaten katıldın." });
 
             if (!Kartist.Helpers.FileUploadValidator.TryValidateImage(tasarim, 10 * 1024 * 1024, out var ext, out var err))
                 return Json(new { success = false, message = err });
@@ -888,12 +1021,49 @@ END");
 
             var gorselUrl = $"/uploads/competitions/{fileName}";
             var temizAciklama = Kartist.Helpers.InputValidator.SanitizeHtml(aciklama ?? "");
-            db.Execute(@"INSERT INTO YarismaKatilimlari (YarismaId, KullaniciId, Baslik, Aciklama, GorselUrl)
-                         VALUES (@yid, @uid, @baslik, @aciklama, @url)",
-                new { yid = yarismaId, uid = CurrentUserId, baslik = string.IsNullOrWhiteSpace(baslik) ? (string)yarisma.Baslik : baslik, aciklama = temizAciklama, url = gorselUrl });
+            var temizBaslik = string.IsNullOrWhiteSpace(baslik) ? (string)yarisma.Baslik : baslik;
 
-            KazanXP(db, CurrentUserId, 60, "yarisma_katilim", "YarÄ±ÅŸmaya katÄ±ldÄ±");
-            return Json(new { success = true, message = "TasarÄ±mÄ±n yarÄ±ÅŸmaya eklendi!" });
+            int katilimId;
+            try
+            {
+                if (legacyCompetitionIdVar)
+                {
+                    katilimId = db.ExecuteScalar<int>(@"INSERT INTO YarismaKatilimlari
+                                (CompetitionId, YarismaId, KullaniciId, Title, Description, ImageUrl, SubmittedAt, IsWinner, Baslik, Aciklama, GorselUrl)
+                             VALUES
+                                (@yid, @yid, @uid, @baslik, @aciklama, @url, GETUTCDATE(), 0, @baslik, @aciklama, @url);
+                             SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                        new { yid = yarismaId, uid = CurrentUserId, baslik = temizBaslik, aciklama = temizAciklama, url = gorselUrl });
+                }
+                else
+                {
+                    katilimId = db.ExecuteScalar<int>(@"INSERT INTO YarismaKatilimlari (YarismaId, KullaniciId, Baslik, Aciklama, GorselUrl)
+                             VALUES (@yid, @uid, @baslik, @aciklama, @url);
+                             SELECT CAST(SCOPE_IDENTITY() AS INT);",
+                        new { yid = yarismaId, uid = CurrentUserId, baslik = temizBaslik, aciklama = temizAciklama, url = gorselUrl });
+                }
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+            {
+                return Json(new { success = false, message = "Bu yarışmaya zaten katıldın." });
+            }
+
+            KazanXP(db, CurrentUserId, 60, "yarisma_katilim", "Yarışmaya katıldı");
+
+            // AI Jüri değerlendirmesi
+            var verdict = await _aiJury.DegerlendirAsync((string)yarisma.Tema ?? "", temizBaslik, temizAciklama);
+            db.Execute(@"UPDATE YarismaKatilimlari
+                         SET AiSkor = @s, AiYorum = @y, AiSaglayici = @p
+                         WHERE Id = @id",
+                new { s = verdict.Skor, y = verdict.Yorum, p = verdict.SaglayiciAdi, id = katilimId });
+
+            return Json(new
+            {
+                success = true,
+                message = $"Tasarımın yarışmaya eklendi! AI Jüri: {verdict.Skor}/100",
+                aiSkor = verdict.Skor,
+                aiYorum = verdict.Yorum
+            });
         }
 
         [HttpGet]
@@ -903,6 +1073,7 @@ END");
             EnsureYarismaTables(db);
             var entries = db.Query(@"
                 SELECT k.Id, k.YarismaId, k.Baslik, k.Aciklama, k.GorselUrl, k.OySayisi,
+                       k.AiSkor, k.AiYorum, k.AiSaglayici,
                        u.AdSoyad as KullaniciAdi,
                        ISNULL(NULLIF(u.ProfilResmi,''), '/img/default-user.png') as ProfilResmi
                 FROM YarismaKatilimlari k
@@ -920,13 +1091,29 @@ END");
             using var db = new SqlConnection(_conn);
             EnsureYarismaTables(db);
             var durum = db.ExecuteScalar<string>("SELECT Durum FROM Yarismalar WHERE Id = @id", new { id = yarismaId });
-            if (durum != "voting") return Json(new { success = false, message = "Bu yarÄ±ÅŸma oylamada deÄŸil." });
-            if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM YarismaOylari WHERE YarismaId = @yid AND KullaniciId = @uid", new { yid = yarismaId, uid = CurrentUserId }) > 0)
-                return Json(new { success = false, message = "Bu yarÄ±ÅŸmada zaten oy kullandÄ±n." });
+            if (durum != "voting") return Json(new { success = false, message = "Bu yarışma oylamada değil." });
 
-            db.Execute("INSERT INTO YarismaOylari (YarismaId, KatilimId, KullaniciId) VALUES (@yid, @kid, @uid)", new { yid = yarismaId, kid = katilimId, uid = CurrentUserId });
+            var katilim = db.QueryFirstOrDefault(
+                "SELECT YarismaId, KullaniciId FROM YarismaKatilimlari WHERE Id = @id",
+                new { id = katilimId });
+            if (katilim == null || (int)katilim.YarismaId != yarismaId)
+                return Json(new { success = false, message = "Geçersiz katılım." });
+            if ((int)katilim.KullaniciId == CurrentUserId)
+                return Json(new { success = false, message = "Kendi tasarımına oy veremezsin." });
+
+            if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM YarismaOylari WHERE YarismaId = @yid AND KullaniciId = @uid", new { yid = yarismaId, uid = CurrentUserId }) > 0)
+                return Json(new { success = false, message = "Bu yarışmada zaten oy kullandın." });
+
+            try
+            {
+                db.Execute("INSERT INTO YarismaOylari (YarismaId, KatilimId, KullaniciId) VALUES (@yid, @kid, @uid)", new { yid = yarismaId, kid = katilimId, uid = CurrentUserId });
+            }
+            catch (SqlException ex) when (ex.Number == 2601 || ex.Number == 2627)
+            {
+                return Json(new { success = false, message = "Bu yarışmada zaten oy kullandın." });
+            }
             db.Execute("UPDATE YarismaKatilimlari SET OySayisi = OySayisi + 1 WHERE Id = @id", new { id = katilimId });
-            KazanXP(db, CurrentUserId, 10, "yarisma_oy", "YarÄ±ÅŸma oyu kullandÄ±");
+            KazanXP(db, CurrentUserId, 10, "yarisma_oy", "Yarışma oyu kullandı");
             var oy = db.ExecuteScalar<int>("SELECT OySayisi FROM YarismaKatilimlari WHERE Id = @id", new { id = katilimId });
             return Json(new { success = true, votes = oy, message = "Oyun kaydedildi!" });
         }
@@ -1103,11 +1290,11 @@ END");
             return View(design);
         }
 
-        // ===== GÃ–NDERÄ° OLUÅTUR =====
+        // ===== GÖNDERİ OLUÅTUR =====
         [HttpPost]
         public async Task<IActionResult> GonderiOlustur(string icerik, IFormFile gorsel, IFormFile onceSonraGorsel, string kodSinipet)
         {
-            if (CurrentUserId == 0) return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±n." });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             string webRootPath = System.IO.Directory.GetCurrentDirectory() + "/wwwroot";
             
@@ -1117,7 +1304,7 @@ END");
             {
                 // Gamification triggers after successful creation
                 using var db = new SqlConnection(_conn);
-                KazanXP(db, CurrentUserId, 50, "gonderi", "Yeni gÃ¶nderi paylaÅŸtÄ±n");
+                KazanXP(db, CurrentUserId, 50, "gonderi", "Yeni gönderi paylaştın");
                 GunlukGorevIlerle(db, CurrentUserId, "gonderi");
                 RozetKontrol(db, CurrentUserId);
             }
@@ -1125,33 +1312,33 @@ END");
             return Json(result);
         }
 
-        // ===== GÃ–NDERÄ° SÄ°L =====
+        // ===== GÖNDERİ SİL =====
         [HttpPost]
         public async Task<IActionResult> GonderiSil(int gonderiId)
         {
-            if (CurrentUserId == 0) return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±n." });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
             
             string webRootPath = System.IO.Directory.GetCurrentDirectory() + "/wwwroot";
             var result = await _socialService.DeletePostAsync(gonderiId, CurrentUserId, webRootPath);
             return Json(result);
         }
 
-        // ===== GÃ–NDERÄ° DÃœZENLE =====
+        // ===== GÖNDERİ DÜZENLE =====
         [HttpPost]
         public async Task<IActionResult> GonderiDuzenle(int gonderiId, string icerik)
         {
-            if (CurrentUserId == 0) return Json(new { success = false, message = "GiriÅŸ yapmalÄ±sÄ±n." });
+            if (CurrentUserId == 0) return Json(new { success = false, message = "Giriş yapmalısın." });
 
             var result = await _socialService.EditPostAsync(gonderiId, CurrentUserId, icerik);
             return Json(result);
         }
 
-        // (Eski duplicate Repost metodu kaldÄ±rÄ±ldÄ± - gÃ¼ncel versiyon aÅŸaÄŸÄ±da Sprint 2 bÃ¶lÃ¼mÃ¼nde)
+        // (Eski duplicate Repost metodu kaldırıldı - güncel versiyon aşağıda Sprint 2 bölümünde)
 
-        // Hikaye metodlarÄ± aÅŸaÄŸÄ±da tanÄ±mlÄ± olduÄŸu iÃ§in burasÄ± silindi.
+        // Hikaye metodları aşağıda tanımlı olduğu için burası silindi.
 
-        // ===== BEÄENÄ° =====
-        // ===== BEÄENÄ° =====
+        // ===== BEÄENİ =====
+        // ===== BEÄENİ =====
         [HttpPost]
         public async Task<IActionResult> Begen(int gonderiId)
         {
@@ -1169,7 +1356,7 @@ END");
                 {
                     using var db = new SqlConnection(_conn);
                     var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = CurrentUserId });
-                    string msg = $"{ad} gÃ¶nderini beÄŸendi â¤ï¸";
+                    string msg = $"{ad} gönderini beğendi â¤ï¸";
                     
                     db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
                                  VALUES (@kid, 'begeni', @msg, @gid, @sid)",
@@ -1202,7 +1389,7 @@ END");
             
             if (result.success)
             {
-                // Bildirim gÃ¶nder (Gonderi Sahibine)
+                // Bildirim gönder (Gonderi Sahibine)
                 using var db = new SqlConnection(_conn);
                 var gonderiSahibiID = db.ExecuteScalar<int>("SELECT KullaniciId FROM SosyalGonderiler WHERE Id = @gid", new { gid = gonderiId });
                 
@@ -1210,7 +1397,7 @@ END");
                 {
                     var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = CurrentUserId });
                     var email = db.ExecuteScalar<string>("SELECT Email FROM Kullanicilar WHERE Id = @id", new { id = gonderiSahibiID });
-                    string msg = $"{ad} gÃ¶nderine yorum yaptÄ± ğŸ’¬";
+                    string msg = $"{ad} gönderine yorum yaptı ğŸ’¬";
                     
                     db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
                                  VALUES (@kid, 'yorum', @msg, @gid, @sid)",
@@ -1247,7 +1434,7 @@ END");
             return Json(result);
         }
 
-        // ===== TAKÄ°P =====
+        // ===== TAKİP =====
         [HttpPost]
         public IActionResult TakipEt(int hedefId)
         {
@@ -1273,7 +1460,7 @@ END");
                 var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = userId });
                 db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, GonderenId)
                              VALUES (@kid, 'takip', @msg, @sid)",
-                    new { kid = hedefId, msg = $"{ad} seni takip etmeye baÅŸladÄ± ğŸ””", sid = userId });
+                    new { kid = hedefId, msg = $"{ad} seni takip etmeye başladı ğŸ””", sid = userId });
 
                 KazanXP(db, userId, 10, "takip");
                 GunlukGorevIlerle(db, userId, "takip");
@@ -1283,7 +1470,7 @@ END");
             }
         }
 
-        // ===== SOSYAL PROFÄ°L =====
+        // ===== SOSYAL PROFİL =====
         public IActionResult Profil(string id)
         {
             if (!User.Identity.IsAuthenticated) return RedirectToAction("Giris", "Account");
@@ -1406,7 +1593,7 @@ END");
             return Json(new { success = true, user, gonderiler = gonderiler.ToList(), rozetler, benimProfilim = (myId == id) });
         }
 
-        // ===== HÄ°KAYELER =====
+        // ===== HİKAYELER =====
         [HttpPost]
         public async Task<IActionResult> HikayeOlustur(IFormFile gorsel)
         {
@@ -1441,7 +1628,7 @@ END");
             int userId = GetUserId(db, email);
             if (userId == 0) userId = 1;
 
-            // SÃ¼resi dolmuÅŸ hikayeleri sil
+            // Süresi dolmuş hikayeleri sil
             db.Execute("DELETE FROM Hikayeler WHERE BitisTarihi < GETUTCDATE()");
 
             var hikayeler = db.Query(@"
@@ -1495,7 +1682,7 @@ END");
                        (SELECT TOP 1
                             CASE
                                 WHEN CAST(Tarih AS DATE) = CAST(GETDATE() AS DATE) THEN FORMAT(Tarih, 'HH:mm')
-                                WHEN CAST(Tarih AS DATE) = CAST(DATEADD(DAY,-1,GETDATE()) AS DATE) THEN 'DÃ¼n'
+                                WHEN CAST(Tarih AS DATE) = CAST(DATEADD(DAY,-1,GETDATE()) AS DATE) THEN 'Dün'
                                 ELSE FORMAT(Tarih, 'dd.MM')
                             END
                         FROM DirektMesajlar
@@ -1516,7 +1703,7 @@ END");
             return View();
         }
 
-        // ===== DÄ°REKT MESAJ (ESKI) =====
+        // ===== DİREKT MESAJ (ESKI) =====
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         public IActionResult Mesajlar()
         {
@@ -1642,9 +1829,9 @@ END");
             var varMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM DirektMesajlar WHERE GonderenId = @ben AND AliciId = @o AND Tip = 'Collab' AND BaglantiliId = @gid",
                 new { ben = userId, o = hedefId, gid = gonderiId });
             
-            if (varMi > 0) return Json(new { success = false, message = "Zaten iÅŸ birliÄŸi talebi gÃ¶nderilmiÅŸ." });
+            if (varMi > 0) return Json(new { success = false, message = "Zaten iş birliği talebi gönderilmiş." });
 
-            string onYazi = "Selam! GÃ¶nderinle (TasarÄ±mÄ±nla) ilgili aklÄ±mda ÅŸahane bir Collab (Ä°ÅŸ BirliÄŸi) fikri var. Birlikte Ã§alÄ±ÅŸmaya ne dersin?";
+            string onYazi = "Selam! Gönderinle (Tasarımınla) ilgili aklımda şahane bir Collab (İş Birliği) fikri var. Birlikte çalışmaya ne dersin?";
             
             db.Execute(@"INSERT INTO DirektMesajlar (GonderenId, AliciId, Mesaj, Tip, BaglantiliId) 
                          VALUES (@ben, @o, @msg, 'Collab', @gid)",
@@ -1653,12 +1840,12 @@ END");
             var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = userId });
             db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId)
                          VALUES (@kid, 'collab', @msg, @gid, @sid)",
-                new { kid = hedefId, msg = $"{ad} sana bir Ä°ÅŸ BirliÄŸi teklifi yolladÄ± âš¡", gid = gonderiId, sid = userId });
+                new { kid = hedefId, msg = $"{ad} sana bir İş Birliği teklifi yolladı âš¡", gid = gonderiId, sid = userId });
 
             return Json(new { success = true });
         }
 
-        // ===== BÄ°LDÄ°RÄ°MLER =====
+        // ===== BİLDİRİMLER =====
         [HttpGet]
         public IActionResult GetBildirimler()
         {
@@ -1780,7 +1967,7 @@ END");
             return Json(new { success = true, sonuclar });
         }
 
-        // ===== PROFIL GÃœNCELLE =====
+        // ===== PROFIL GÜNCELLE =====
         [HttpPost]
         public async Task<IActionResult> ProfilGuncelle(string biyografi, IFormFile profilResmi)
         {
@@ -1853,7 +2040,7 @@ END");
                     { "ilk_hikaye", hikayeSayisi >= 1 }
                 };
 
-                // Gece kuÅŸu kontrolÃ¼
+                // Gece kuşu kontrolü
                 var saat = DateTime.UtcNow.Hour;
                 if (saat >= 23 || saat < 2) kontroller["gece_kusu"] = true;
 
@@ -1880,7 +2067,7 @@ END");
             try
             {
                 var bugun = DateTime.UtcNow.Date;
-                // GÃ¶revleri oluÅŸtur (yoksa)
+                // Görevleri oluştur (yoksa)
                 var gorevVarMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM GunlukGorevler WHERE KullaniciId = @uid AND Tarih = @t",
                     new { uid = userId, t = bugun });
                 if (gorevVarMi == 0)
@@ -1894,14 +2081,14 @@ END");
                     WHERE KullaniciId = @uid AND Tarih = @t AND GorevTipi = @gt AND Tamamlandi = 0",
                     new { uid = userId, t = bugun, gt = gorevTipi });
 
-                // TamamlananlarÄ± iÅŸaretle ve XP ver
+                // Tamamlananları işaretle ve XP ver
                 var tamamlanan = db.Query(@"SELECT Id, XPOdulu FROM GunlukGorevler 
                     WHERE KullaniciId = @uid AND Tarih = @t AND Tamamlandi = 0 AND MevcutSayi >= HedefSayi",
                     new { uid = userId, t = bugun }).ToList();
                 foreach (var g in tamamlanan)
                 {
                     db.Execute("UPDATE GunlukGorevler SET Tamamlandi = 1 WHERE Id = @id", new { id = (int)g.Id });
-                    KazanXP(db, userId, (int)g.XPOdulu, "gorev", "GÃ¼nlÃ¼k gÃ¶rev tamamlandÄ±");
+                    KazanXP(db, userId, (int)g.XPOdulu, "gorev", "Günlük görev tamamlandı");
                 }
             }
             catch { }
@@ -1919,10 +2106,10 @@ END");
                 int userId = GetUserId(db, email);
                 var bugun = DateTime.UtcNow.Date;
 
-                // Son gÃ¶rÃ¼leni gÃ¼ncelle
+                // Son görüleni güncelle
                 db.Execute("UPDATE Kullanicilar SET SonGorulenTarihi = GETUTCDATE() WHERE Id = @uid", new { uid = userId });
 
-                // BugÃ¼n zaten giriÅŸ yaptÄ± mÄ±?
+                // Bugün zaten giriş yaptı mı?
                 var varMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM GirisKayitlari WHERE KullaniciId = @uid AND Tarih = @t",
                     new { uid = userId, t = bugun });
                 if (varMi > 0)
@@ -1943,7 +2130,7 @@ END");
                     db.Execute("UPDATE Kullanicilar SET Streak = 1 WHERE Id = @uid", new { uid = userId });
 
                 var yeniStreak = db.ExecuteScalar<int>("SELECT Streak FROM Kullanicilar WHERE Id = @uid", new { uid = userId });
-                KazanXP(db, userId, 10, "giris", "GÃ¼nlÃ¼k giriÅŸ");
+                KazanXP(db, userId, 10, "giris", "Günlük giriş");
                 RozetKontrol(db, userId);
 
                 return Json(new { success = true, streak = yeniStreak, alreadyLogged = false, xp = 10 });
@@ -1962,7 +2149,7 @@ END");
                 int userId = GetUserId(db, email);
                 var bugun = DateTime.UtcNow.Date;
 
-                // GÃ¶revleri oluÅŸtur (yoksa)
+                // Görevleri oluştur (yoksa)
                 var gorevVarMi = db.ExecuteScalar<int>("SELECT COUNT(*) FROM GunlukGorevler WHERE KullaniciId = @uid AND Tarih = @t",
                     new { uid = userId, t = bugun });
                 if (gorevVarMi == 0)
@@ -1999,7 +2186,7 @@ END");
             catch { return Json(new { success = true, stats = new { Seviye = 1, ToplamXP = 0, Streak = 0, RozetSayisi = 0 }, rozetler = new List<object>() }); }
         }
 
-        // ===== LÄ°DERLÄ°K =====
+        // ===== LİDERLİK =====
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         public IActionResult Liderlik()
         {
@@ -2033,7 +2220,7 @@ END");
         }
 
         // =====================================================
-        // ===== SPRINT 2: ZENGÄ°N ETKÄ°LEÅÄ°M =====
+        // ===== SPRINT 2: ZENGİN ETKİLEÅİM =====
         // =====================================================
 
         // ===== EMOJI REACTIONS =====
@@ -2149,7 +2336,7 @@ END");
             {
                 var ad = db.ExecuteScalar<string>("SELECT AdSoyad FROM Kullanicilar WHERE Id = @id", new { id = userId });
                 db.Execute(@"INSERT INTO Bildirimler (KullaniciId, Tip, Mesaj, BaglantiliId, GonderenId) VALUES (@kid, 'repost', @msg, @gid, @sid)",
-                    new { kid = gonderiSahibiId, msg = $"{ad} gÃ¶nderini paylaÅŸtÄ± ğŸ”", gid = gonderiId, sid = userId });
+                    new { kid = gonderiSahibiId, msg = $"{ad} gönderini paylaştı ğŸ”", gid = gonderiId, sid = userId });
             }
 
             KazanXP(db, userId, 10, "repost");
@@ -2175,7 +2362,7 @@ END");
                 db.Execute("INSERT INTO AnketSecenekler (GonderiId, Metin, Sira) VALUES (@gid, @m, @s)",
                     new { gid = gonderiId, m = Helpers.InputValidator.SanitizeHtml(secenekler[i]), s = i });
 
-            KazanXP(db, userId, 40, "anket", "Anket oluÅŸturuldu");
+            KazanXP(db, userId, 40, "anket", "Anket oluşturuldu");
             GunlukGorevIlerle(db, userId, "gonderi");
             return Json(new { success = true, id = gonderiId });
         }
@@ -2189,7 +2376,7 @@ END");
             using var db = new SqlConnection(_conn);
             int userId = GetUserId(db, email);
 
-            // AynÄ± ankette daha Ã¶nceden oy verilmiÅŸ mi kontrol et
+            // Aynı ankette daha önceden oy verilmiş mi kontrol et
             var gonderiId = db.ExecuteScalar<int>("SELECT GonderiId FROM AnketSecenekler WHERE Id = @id", new { id = secenekId });
             var oyVarMi = db.ExecuteScalar<int>(@"SELECT COUNT(*) FROM AnketOylari ao 
                 JOIN AnketSecenekler ase ON ao.SecenekId = ase.Id 
@@ -2216,7 +2403,7 @@ END");
             return Json(new { success = true, secenekler, oyVerdim = oyVerdimMi > 0 });
         }
 
-        // ===== GÃ–RÃœNTÃœLEME SAYACI =====
+        // ===== GÖRÜNTÜLEME SAYACI =====
         [HttpPost]
         public IActionResult GonderiGoruntule(int gonderiId)
         {
@@ -2229,7 +2416,7 @@ END");
             return Json(new { success = true });
         }
 
-        // ===== PROFÄ°L FOTOÄRAFI & KAPAK =====
+        // ===== PROFİL FOTOÄRAFI & KAPAK =====
         [HttpPost]
         public async Task<IActionResult> ProfilResmiYukle(IFormFile foto)
         {
@@ -2274,7 +2461,7 @@ END");
             return Json(new { success = true, url });
         }
 
-        // ===== GÃ–NDERÄ° SABÄ°TLE =====
+        // ===== GÖNDERİ SABİTLE =====
         [HttpPost]
         public IActionResult GonderiSabitle(int gonderiId)
         {
@@ -2283,13 +2470,13 @@ END");
 
             using var db = new SqlConnection(_conn);
             int userId = GetUserId(db, email);
-            // Ã–nce tÃ¼m sabitlemeleri kaldÄ±r
+            // Önce tüm sabitlemeleri kaldır
             db.Execute("UPDATE SosyalGonderiler SET Sabitlendi = 0 WHERE KullaniciId = @uid", new { uid = userId });
             db.Execute("UPDATE SosyalGonderiler SET Sabitlendi = 1 WHERE Id = @id AND KullaniciId = @uid", new { id = gonderiId, uid = userId });
             return Json(new { success = true });
         }
 
-        // ===== TÃœM ROZETLER =====
+        // ===== TÜM ROZETLER =====
         [HttpGet]
         public IActionResult GetTumRozetler()
         {
@@ -2308,7 +2495,7 @@ END");
             catch { return Json(new { success = true, rozetler = new List<object>() }); }
         }
 
-        // ===== DASHBOARD Ä°STATÄ°STÄ°KLERÄ° =====
+        // ===== DASHBOARD İSTATİSTİKLERİ =====
         [Microsoft.AspNetCore.Authorization.AllowAnonymous]
         public IActionResult Istatistikler()
         {
@@ -2350,7 +2537,7 @@ END");
             }
             catch 
             {
-                return Json(new { success = false, message = "Analitik datalarÄ± getirilemedi." });
+                return Json(new { success = false, message = "Analitik dataları getirilemedi." });
             }
         }
 
@@ -2492,13 +2679,13 @@ END");
                 
                 if (string.IsNullOrWhiteSpace(title)) 
                 {
-                    TempData["ErrorMessage"] = "BaÅŸlÄ±k gerekli.";
+                    TempData["ErrorMessage"] = "Başlık gerekli.";
                     return Redirect(Request.Headers["Referer"].ToString() ?? "/Social/Feed");
                 }
                 
                 if (image == null || image.Length == 0) 
                 {
-                    TempData["ErrorMessage"] = "GÃ¶rsel gerekli.";
+                    TempData["ErrorMessage"] = "Görsel gerekli.";
                     return Redirect(Request.Headers["Referer"].ToString() ?? "/Social/Feed");
                 }
                 
@@ -2526,9 +2713,9 @@ END");
                     url = $"/uploads/posts/{fileName}"
                 });
                 
-                try { KazanXP(db, userId, 50, "gonderi", "Yeni gÃ¶nderi paylaÅŸtÄ±n"); } catch { }
+                try { KazanXP(db, userId, 50, "gonderi", "Yeni gönderi paylaştın"); } catch { }
                 
-                TempData["SuccessMessage"] = "GÃ¶nderi baÅŸarÄ±yla paylaÅŸÄ±ldÄ±!";
+                TempData["SuccessMessage"] = "Gönderi başarıyla paylaşıldı!";
                 return RedirectToAction("Feed");
             }
             catch (Exception ex)

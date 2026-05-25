@@ -166,13 +166,30 @@ namespace Kartist.Controllers
             }
         }
 
-        public IActionResult Tasarim(int id, int? kayitliId = null)
+        public IActionResult Tasarim(int id, int? kayitliId = null, int? yarismaId = null)
         {
             if (!User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Giris", "Account");
             }
             string email = GetUserEmail();
+
+            // ===== YARIŞMA CONTEXT =====
+            if (yarismaId.HasValue && yarismaId > 0)
+            {
+                using var db = new SqlConnection(_baglantiCumlesi);
+                var yarisma = db.QueryFirstOrDefault(@"
+                    SELECT Id, Baslik, Tema, Odul, Durum, KapakUrl
+                    FROM Yarismalar WHERE Id = @id", new { id = yarismaId.Value });
+                if (yarisma != null && (string)yarisma.Durum == "active")
+                {
+                    ViewBag.YarismaId = (int)yarisma.Id;
+                    ViewBag.YarismaBaslik = (string)yarisma.Baslik;
+                    ViewBag.YarismaTema = (string)yarisma.Tema;
+                    ViewBag.YarismaOdul = (string)yarisma.Odul;
+                    ViewBag.YarismaKapak = (string)yarisma.KapakUrl;
+                }
+            }
 
             Sablon secilenKart;
 

@@ -5850,6 +5850,102 @@
             }
         }
     </script>
+
+    @if (ViewBag.YarismaId != null)
+    {
+        <div id="yarismaContextChip" style="position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9000;background:linear-gradient(135deg,#c6ff00,#facc15);color:#000;padding:10px 22px;border-radius:30px;font-weight:800;font-size:13px;box-shadow:0 8px 24px rgba(198,255,0,0.4);display:flex;align-items:center;gap:10px;letter-spacing:0.3px">
+            <i class="fa-solid fa-trophy" style="font-size:14px"></i>
+            <span>YARIŞMA: @ViewBag.YarismaBaslik</span>
+            <span style="opacity:0.65;font-weight:600">— @ViewBag.YarismaTema</span>
+            <span style="opacity:0.65;font-weight:600">🏆 @ViewBag.YarismaOdul</span>
+        </div>
+        <button id="btnYarismayaGonder" onclick="yarismayaGonder()"
+                style="position:fixed;bottom:24px;right:24px;z-index:9000;background:linear-gradient(135deg,#c6ff00,#facc15);color:#000;border:none;padding:16px 24px;border-radius:30px;font-weight:800;font-size:15px;box-shadow:0 12px 32px rgba(198,255,0,0.45);cursor:pointer;display:flex;align-items:center;gap:10px;transition:transform 0.2s">
+            <i class="fa-solid fa-paper-plane"></i> Yarışmaya Gönder
+        </button>
+        <script>
+            async function yarismayaGonder() {
+                const btn = document.getElementById('btnYarismayaGonder');
+                const originalHtml = btn.innerHTML;
+                try {
+                    if (!window.canvas) { alert('Canvas henüz hazır değil, biraz bekleyin.'); return; }
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI değerlendiriyor...';
+
+                    const promptResult = await Swal.fire({
+                        title: 'Tasarımına bir not ekle',
+                        input: 'textarea',
+                        inputPlaceholder: 'Tasarımın için kısa bir hikaye yaz (opsiyonel)...',
+                        showCancelButton: true,
+                        confirmButtonText: 'Gönder',
+                        cancelButtonText: 'İptal',
+                        background: '#0a0a0c',
+                        color: '#fff',
+                        confirmButtonColor: '#c6ff00'
+                    });
+                    if (!promptResult.isConfirmed) {
+                        btn.disabled = false; btn.innerHTML = originalHtml; return;
+                    }
+                    const aciklama = (promptResult.value || '').trim();
+
+                    const dataUrl = window.canvas.toDataURL({ format: 'png', multiplier: 1.5 });
+                    const blob = (function(d) {
+                        const parts = d.split(',');
+                        const m = parts[0].match(/:(.*?);/);
+                        const mime = m ? m[1] : 'image/png';
+                        const bin = atob(parts[1]);
+                        const buf = new Uint8Array(bin.length);
+                        for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+                        return new Blob([buf], { type: mime });
+                    })(dataUrl);
+                    const file = new File([blob], 'yarisma-tasarim.png', { type: 'image/png' });
+
+                    const fd = new FormData();
+                    fd.append('yarismaId', '@ViewBag.YarismaId');
+                    fd.append('baslik', @Html.Raw("\"" + System.Web.HttpUtility.JavaScriptStringEncode((string)(ViewBag.YarismaBaslik ?? "Tasarım")) + "\""));
+                    fd.append('aciklama', aciklama);
+                    fd.append('tasarim', file);
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (token) fd.append('__RequestVerificationToken', token.value);
+
+                    const resp = await fetch('/Social/YarismaKatil', { method: 'POST', body: fd });
+                    const contentType = resp.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        const text = await resp.text();
+                        throw new Error('Sunucu JSON yerine hata döndürdü: ' + (text || '').slice(0, 180));
+                    }
+                    const data = await resp.json();
+
+                    if (!data.success) {
+                        await Swal.fire({ icon: 'error', title: 'Gönderim başarısız', text: data.message || 'Bir sorun oluştu.', background:'#0a0a0c', color:'#fff' });
+                        btn.disabled = false; btn.innerHTML = originalHtml; return;
+                    }
+
+                    const aiSkor = data.aiSkor != null ? data.aiSkor : null;
+                    const aiYorum = data.aiYorum || '';
+                    if (aiSkor != null) {
+                        const renk = aiSkor >= 80 ? '#22c55e' : aiSkor >= 60 ? '#facc15' : '#ef4444';
+                        await Swal.fire({
+                            title: 'AI Jüri Puanladı: ' + aiSkor + '/100',
+                            html: '<div style="font-size:14px;color:#bbb;line-height:1.5">' + (aiYorum.replace(/</g,'&lt;')) + '</div>',
+                            icon: aiSkor >= 60 ? 'success' : 'info',
+                            confirmButtonText: 'Yarışmalara Dön',
+                            confirmButtonColor: renk,
+                            background: '#0a0a0c',
+                            color: '#fff'
+                        });
+                    } else {
+                        await Swal.fire({ icon:'success', title:'Tasarım gönderildi!', text:data.message || '', background:'#0a0a0c', color:'#fff' });
+                    }
+                    window.location.href = '/Social/Competitions';
+                } catch (e) {
+                    console.error(e);
+                    await Swal.fire({ icon:'error', title:'Hata', text:e.message, background:'#0a0a0c', color:'#fff' });
+                    btn.disabled = false; btn.innerHTML = originalHtml;
+                }
+            }
+        </script>
+    }
 </body>
 </html>
 
