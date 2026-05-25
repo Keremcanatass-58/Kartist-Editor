@@ -344,7 +344,7 @@ namespace Kartist.Controllers
                              VALUES (@a, @e, @s, 'Normal', @kredi)",
                     new { a = adsoyad, e = email, s = hashedSifre, kredi = baslangicKredisi });
             }
-            TempData["Mesaj"] = "Kaydin basariyla olusturuldu! Simdi giris yapabilirsin. ??";
+            TempData["Mesaj"] = "Kaydın başarıyla oluşturuldu! Şimdi giriş yapabilirsin. 🎉";
             TempData["Tur"] = "success";
             return RedirectToAction("Giris");
 
