@@ -2648,82 +2648,81 @@
                 <div id="tabAI" class="tool-section">
                     <div class="panel-title">KARTIST AI STUDIO ⚡</div>
 
-                    <div class="ai-mode-tabs">
-                        <button class="ai-mode-tab active" onclick="switchAiMode('bg', this)"><i class="fa-solid fa-image"></i> Arkaplan</button>
-                        <button class="ai-mode-tab" onclick="switchAiMode('design', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> Tasarımcı</button>
+                    <!-- Stil chip'leri (her üç mod için ortak) -->
+                    <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">Görsel Tarzı</div>
+                    <div class="ai-style-grid">
+                        <div class="ai-style-card active" onclick="selectAiStyle('Standart', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #1e293b, #334155);">✨</div>
+                            <span>Standart</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Sulu Boya', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #f472b6, #38bdf8);">🎨</div>
+                            <span>Sulu Boya</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Cyberpunk', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">🌃</div>
+                            <span>Cyberpunk</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Anime', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #fbbf24, #f43f5e);">🌸</div>
+                            <span>Anime</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('3D Render', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #34d399, #3b82f6);">🧊</div>
+                            <span>3D Render</span>
+                        </div>
+                        <div class="ai-style-card" onclick="selectAiStyle('Gerçekçi', this)">
+                            <div class="ai-style-icon" style="background: linear-gradient(45deg, #9ca3af, #4b5563);">📸</div>
+                            <span>Gerçekçi</span>
+                        </div>
                     </div>
 
-                    <!-- BÖLÜM 1: AI ARKAPLAN -->
-                    <div id="aiModeBg" class="ai-mode-content">
-                        <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">Arkaplan Türü</div>
-                        <div class="ai-bg-type-grid">
-                            <button class="ai-bg-type active" data-type="pexels" onclick="selectAiBgType(this)">📷 Fotoğraf</button>
-                            <button class="ai-bg-type" data-type="gradient" onclick="selectAiBgType(this)">🎨 Gradient</button>
-                            <button class="ai-bg-type" data-type="pattern" onclick="selectAiBgType(this)">🔲 Desen</button>
-                        </div>
+                    <!-- Ana prompt (tüm üretim modları için ortak) -->
+                    <div style="font-size:0.75rem; color:#aaa; margin-top:14px; margin-bottom:6px; font-weight:600;">Ne tasarlamak istiyorsun?</div>
+                    <textarea id="aiMagicPrompt" class="sidebar-input" rows="3"
+                              placeholder="Örn: İstanbul'da gün batımı, romantik doğum günü, papatya buketi..."
+                              style="resize:vertical;"></textarea>
+                    <div style="font-size:0.65rem; color:#666; margin-top:4px;">
+                        İpucu: Konuyu Türkçe yaz — AI otomatik çevirip görsele dönüştürür.
+                    </div>
 
-                        <div style="font-size:0.75rem; color:#aaa; margin-top:12px; margin-bottom:6px; font-weight:600;">Ne tür arkaplan istersin?</div>
-                        <textarea id="aiBgPrompt" class="sidebar-input" rows="2" placeholder="Örn: Gün batımı, deniz manzarası, çiçekli bahçe..." style="resize:vertical;"></textarea>
+                    <!-- Birincil aksiyon: Tam tasarım üret -->
+                    <button onclick="aiMagicRun('design')" class="sidebar-btn" id="aiMagicBtn"
+                            style="margin-top:12px; display:flex; align-items:center; justify-content:center; gap:6px; font-weight:700;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> TAM TASARIMI ÜRET
+                    </button>
 
-                        <div id="aiBgPreview" style="display:none; margin-top:10px;">
-                            <div style="font-size:0.7rem; color:#888; margin-bottom:4px;">Önizleme</div>
-                            <div id="aiBgPreviewImg" style="width:100%; height:120px; border-radius:8px; background-size:cover; background-position:center; border:1px solid #333;"></div>
-                            <div style="display:flex; gap:6px; margin-top:8px;">
-                                <button onclick="applyAiBg()" class="sidebar-btn" style="flex:1; font-size:12px; padding:8px;">Uygula</button>
-                                <button onclick="generateAiBg()" class="sidebar-btn" style="flex:1; font-size:12px; padding:8px; background:transparent; border:1px solid #c6ff00; color:#c6ff00;">Yenile</button>
-                            </div>
-                        </div>
-
-                        <button onclick="generateAiBg()" class="sidebar-btn" id="aiBgBtn" style="margin-top:10px; display:flex; align-items:center; justify-content:center; gap:6px;">
-                            <i class="fa-solid fa-image"></i> ARKAPLAN OLUŞTUR
+                    <!-- İkincil aksiyonlar: parça parça üret -->
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px;">
+                        <button onclick="aiMagicRun('bg')" id="aiMagicBgBtn"
+                                style="background:transparent; border:1px solid #444; color:#ddd; padding:9px 6px; border-radius:8px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
+                            <i class="fa-solid fa-image"></i> Sadece Arkaplan
                         </button>
-
-                        <div style="font-size:0.7rem; color:#555; margin-top:8px; text-align:center;">Pexels üzerinden yüksek kaliteli görseller</div>
+                        <button onclick="aiMagicRun('text')" id="aiMagicTextBtn"
+                                style="background:transparent; border:1px solid #444; color:#ddd; padding:9px 6px; border-radius:8px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
+                            <i class="fa-solid fa-font"></i> Sadece Metin
+                        </button>
                     </div>
 
-                    <!-- BÖLÜM 2: AI TASARIMCI -->
-                    <div id="aiModeDesign" class="ai-mode-content" style="display:none;">
-                        <div style="font-size:0.75rem; color:#aaa; margin-bottom:8px; font-weight:600;">Görsel Tarzını Seç</div>
-                        <div class="ai-style-grid">
-                            <div class="ai-style-card active" onclick="selectAiStyle('Standart', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #1e293b, #334155);">✨</div>
-                                <span>Standart</span>
-                            </div>
-                            <div class="ai-style-card" onclick="selectAiStyle('Sulu Boya', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #f472b6, #38bdf8);">🎨</div>
-                                <span>Sulu Boya</span>
-                            </div>
-                            <div class="ai-style-card" onclick="selectAiStyle('Cyberpunk', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">🌃</div>
-                                <span>Cyberpunk</span>
-                            </div>
-                            <div class="ai-style-card" onclick="selectAiStyle('Anime', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #fbbf24, #f43f5e);">🌸</div>
-                                <span>Anime</span>
-                            </div>
-                            <div class="ai-style-card" onclick="selectAiStyle('3D Render', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #34d399, #3b82f6);">🧊</div>
-                                <span>3D Render</span>
-                            </div>
-                            <div class="ai-style-card" onclick="selectAiStyle('Gerçekçi', this)">
-                                <div class="ai-style-icon" style="background: linear-gradient(45deg, #9ca3af, #4b5563);">📸</div>
-                                <span>Gerçekçi</span>
-                            </div>
-                        </div>
-
-                        <div style="font-size:0.75rem; color:#aaa; margin-top:15px; margin-bottom:8px; font-weight:600;">Asistan ile Sohbet</div>
-                        <div class="ai-chat-window" id="aiChatWindow">
-                            <div class="ai-chat-message bot">
-                                Mükemmel bir tasarım için buradayım! Ne çizmemi veya nasıl bir arka plan oluşturmamı istersin?
-                            </div>
-                        </div>
-
-                        <div class="ai-input-area">
-                            <textarea id="aiMagicPrompt" placeholder="Örn: Annem için pembe ve romantik doğum günü..."></textarea>
-                            <button onclick="generateMagicDesign()" class="ai-magic-btn" id="aiMagicBtn" title="Tasarla">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <!-- Önizleme / sonuç paneli (gerektiğinde görünür) -->
+                    <div id="aiMagicResult" style="display:none; margin-top:12px; padding:10px; background:rgba(198,255,0,0.04); border:1px solid rgba(198,255,0,0.15); border-radius:8px;">
+                        <div id="aiMagicResultLabel" style="font-size:0.7rem; color:#888; margin-bottom:6px; font-weight:600;">Önizleme</div>
+                        <div id="aiMagicResultImage" style="display:none; width:100%; height:120px; border-radius:6px; background-size:cover; background-position:center; border:1px solid #333;"></div>
+                        <div id="aiMagicResultText" style="display:none; padding:10px 12px; background:#0f0f0f; border-radius:6px; color:#eee; font-size:13px; line-height:1.5; max-height:160px; overflow-y:auto; white-space:pre-wrap;"></div>
+                        <div style="display:flex; gap:6px; margin-top:8px;">
+                            <button onclick="aiMagicApply()" class="sidebar-btn" id="aiMagicApplyBtn"
+                                    style="flex:1; font-size:12px; padding:8px; font-weight:600;">
+                                Uygula
+                            </button>
+                            <button onclick="aiMagicRegenerate()" id="aiMagicRegenBtn"
+                                    style="flex:1; font-size:12px; padding:8px; background:transparent; border:1px solid #c6ff00; color:#c6ff00; border-radius:6px; cursor:pointer;">
+                                Tekrar Üret
                             </button>
                         </div>
+                    </div>
+
+                    <div id="aiMagicStatus" style="font-size:0.7rem; color:#555; margin-top:10px; text-align:center;">
+                        Pollinations + Pexels + Groq destekli.
                     </div>
                 </div>
 
@@ -4708,7 +4707,7 @@
             fd.append("prompt", prompt);
             fd.append("kategori", "genel");
             fd.append("style", activeAiStyle);
-            fd.append("history", JSON.ReferenceError ? "" : JSON.stringify(aiChatHistory));
+            fd.append("history", JSON.stringify(aiChatHistory));
             fd.append("__RequestVerificationToken", getCSRFToken());
 
             let apiResponse;
@@ -5167,6 +5166,170 @@
             const btnElFinish = document.getElementById("aiMagicBtn");
             if (btnElFinish) btnElFinish.disabled = false;
             if (typeof saveHistory === "function") saveHistory();
+        }
+
+        // ============================================================
+        // KARTIST AI STUDIO — Canva Magic-tarzı unified controller
+        // ============================================================
+        // Tek prompt + stil chip'leri ile üç moda erişim:
+        //   - design : KartTasarimOner -> tüm canvas
+        //   - bg     : FetchAiImageBase64 -> önizle, sonra arkaplan olarak uygula
+        //   - text   : AiMetinYaz -> önizle, sonra metin olarak ekle
+        let _aiMagicMode = null;            // son üretilen mod ('design'|'bg'|'text')
+        let _aiMagicLastResult = null;      // { type:'image', dataUrl } | { type:'text', text }
+
+        function _aiMagicGetPrompt() {
+            const el = document.getElementById('aiMagicPrompt');
+            return el ? el.value.trim() : '';
+        }
+
+        function _aiMagicShowPreview(type, payload) {
+            const box = document.getElementById('aiMagicResult');
+            const imgEl = document.getElementById('aiMagicResultImage');
+            const textEl = document.getElementById('aiMagicResultText');
+            if (!box || !imgEl || !textEl) return;
+            if (type === 'image') {
+                imgEl.style.backgroundImage = 'url("' + payload.replace(/"/g, '\\"') + '")';
+                imgEl.style.display = 'block';
+                textEl.style.display = 'none';
+                _aiMagicLastResult = { type: 'image', dataUrl: payload };
+                box.style.display = 'block';
+            } else if (type === 'text') {
+                textEl.textContent = payload;
+                textEl.style.display = 'block';
+                imgEl.style.display = 'none';
+                _aiMagicLastResult = { type: 'text', text: payload };
+                box.style.display = 'block';
+            } else {
+                imgEl.style.display = 'none';
+                textEl.style.display = 'none';
+                _aiMagicLastResult = null;
+                box.style.display = 'none';
+            }
+        }
+
+        const _aiMagicButtons = {
+            design: { id: 'aiMagicBtn',     idle: '<i class="fa-solid fa-wand-magic-sparkles"></i> TAM TASARIMI ÜRET', busy: '<i class="fa-solid fa-spinner fa-spin"></i> Üretiliyor...' },
+            bg:     { id: 'aiMagicBgBtn',   idle: '<i class="fa-solid fa-image"></i> Sadece Arkaplan',                 busy: '<i class="fa-solid fa-spinner fa-spin"></i> Arkaplan...' },
+            text:   { id: 'aiMagicTextBtn', idle: '<i class="fa-solid fa-font"></i> Sadece Metin',                     busy: '<i class="fa-solid fa-spinner fa-spin"></i> Metin...' }
+        };
+
+        function _aiMagicSetBusy(mode, busy) {
+            const info = _aiMagicButtons[mode];
+            if (!info) return;
+            const el = document.getElementById(info.id);
+            if (!el) return;
+            el.disabled = busy;
+            el.innerHTML = busy ? info.busy : info.idle;
+        }
+
+        async function aiMagicRun(mode) {
+            const prompt = _aiMagicGetPrompt();
+            if (!prompt) {
+                showToast('Önce ne istediğini buraya yaz.');
+                const promptEl = document.getElementById('aiMagicPrompt');
+                if (promptEl) promptEl.focus();
+                return;
+            }
+
+            _aiMagicMode = mode;
+            _aiMagicShowPreview(null, null);
+            _aiMagicSetBusy(mode, true);
+
+            try {
+                if (mode === 'design') {
+                    // generateMagicDesign canvas'ı doğrudan güncelliyor; preview yok.
+                    await generateMagicDesign();
+                } else if (mode === 'bg') {
+                    const data = await _aiMagicFetchImage(prompt);
+                    if (data && data.success && data.dataUrl) {
+                        _aiMagicShowPreview('image', data.dataUrl);
+                        showToast('Arkaplan hazır — "Uygula" ile tuvale koy.');
+                    } else {
+                        showToast((data && data.error) || 'Arkaplan üretilemedi.');
+                    }
+                } else if (mode === 'text') {
+                    const data = await _aiMagicFetchText(prompt);
+                    if (data && data.success && data.text) {
+                        _aiMagicShowPreview('text', data.text);
+                        showToast('Metin hazır — "Uygula" ile tuvale ekle.');
+                    } else {
+                        showToast((data && data.message) || 'Metin üretilemedi.');
+                    }
+                }
+            } catch (e) {
+                console.error('[AI Magic]', e);
+                showToast('Sunucuya ulaşılamadı.');
+            } finally {
+                _aiMagicSetBusy(mode, false);
+            }
+        }
+
+        async function _aiMagicFetchImage(prompt) {
+            const fd = new FormData();
+            fd.append('prompt', prompt);
+            fd.append('style', (typeof activeAiStyle !== 'undefined' && activeAiStyle) || 'Standart');
+            const token = getCSRFToken();
+            if (token) fd.append('__RequestVerificationToken', token);
+            const headers = {};
+            if (token) headers['RequestVerificationToken'] = token;
+            const res = await fetch('/Home/FetchAiImageBase64', { method: 'POST', headers, body: fd });
+            return await res.json();
+        }
+
+        async function _aiMagicFetchText(prompt) {
+            const style = (typeof activeAiStyle !== 'undefined' && activeAiStyle) || 'Standart';
+            const fd = new FormData();
+            fd.append('prompt', prompt + ' (Üslup: ' + style + ')');
+            fd.append('kategori', 'Genel');
+            const token = getCSRFToken();
+            if (token) fd.append('__RequestVerificationToken', token);
+            const headers = {};
+            if (token) headers['RequestVerificationToken'] = token;
+            const res = await fetch('/Home/AiMetinYaz', { method: 'POST', headers, body: fd });
+            return await res.json();
+        }
+
+        function aiMagicApply() {
+            if (!_aiMagicLastResult) {
+                showToast('Önce bir şey üret.');
+                return;
+            }
+            if (_aiMagicLastResult.type === 'image') {
+                _aiMagicApplyImageToCanvas(_aiMagicLastResult.dataUrl);
+                showToast('Arkaplan tuvale uygulandı.');
+            } else if (_aiMagicLastResult.type === 'text') {
+                if (typeof addText === 'function') {
+                    addText(_aiMagicLastResult.text, 24, 400);
+                    showToast('Metin tuvale eklendi.');
+                }
+            }
+        }
+
+        function _aiMagicApplyImageToCanvas(dataUrl) {
+            if (typeof canvas === 'undefined' || !canvas) return;
+            fabric.Image.fromURL(dataUrl, function(img) {
+                const cw = canvas.getWidth();
+                const ch = canvas.getHeight();
+                img.scaleToWidth(cw);
+                if (img.getScaledHeight() < ch) img.scaleToHeight(ch);
+                img.set({
+                    left: cw / 2, top: ch / 2,
+                    originX: 'center', originY: 'center',
+                    selectable: false, evented: false,
+                    name: 'ai-background'
+                });
+                canvas.getObjects()
+                    .filter(o => o.name === 'ai-background')
+                    .forEach(o => canvas.remove(o));
+                canvas.insertAt(img, 0);
+                canvas.renderAll();
+            }, { crossOrigin: 'anonymous' });
+        }
+
+        function aiMagicRegenerate() {
+            if (!_aiMagicMode) return;
+            aiMagicRun(_aiMagicMode);
         }
 
         // --- PAYLAŞ BUTONU ---

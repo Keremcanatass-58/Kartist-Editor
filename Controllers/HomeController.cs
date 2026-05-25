@@ -776,7 +776,7 @@ namespace Kartist.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> FetchAiImageBase64(string prompt)
+        public async Task<IActionResult> FetchAiImageBase64(string prompt, string style = null, bool skipTranslate = false)
         {
             try
             {
@@ -796,14 +796,42 @@ namespace Kartist.Controllers
                     return Json(new { success = false, error = "Prompt cok uzun (max 600 karakter).", provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
                 }
 
-                var result = await _aiImageService.GenerateImageAsync(prompt, HttpContext.RequestAborted);
+                // Pexels/Pollinations İngilizce çalışıyor; Türkçe prompt'larda relevance düşüyor.
+                // Türkçe karakter varsa önce AI ile İngilizce arama keyword'lerine çevir.
+                var imagePrompt = prompt;
+                bool translated = false;
+                if (!skipTranslate && ContainsTurkish(prompt))
+                {
+                    try
+                    {
+                        var rewritten = await _aiPromptService.RewriteImagePromptAsync(
+                            prompt, style ?? "photographic", HttpContext.RequestAborted);
+                        if (!string.IsNullOrWhiteSpace(rewritten))
+                        {
+                            imagePrompt = rewritten.Trim();
+                            translated = true;
+                        }
+                    }
+                    catch
+                    {
+                        // Çeviri başarısız olursa orijinal prompt'la devam et
+                    }
+                }
+
+                var result = await _aiImageService.GenerateImageAsync(imagePrompt, HttpContext.RequestAborted);
+                var warnings = result.Warnings ?? new List<string>();
+                if (translated)
+                {
+                    warnings.Add($"Prompt İngilizceye çevrildi: \"{imagePrompt}\"");
+                }
                 return Json(new
                 {
                     success = result.Success,
                     dataUrl = result.DataUrl,
                     provider = result.Provider,
                     revisedPrompt = result.RevisedPrompt,
-                    warnings = result.Warnings,
+                    translatedPrompt = translated ? imagePrompt : null,
+                    warnings,
                     error = result.Error
                 });
             }
@@ -811,6 +839,16 @@ namespace Kartist.Controllers
             {
                 return Json(new { success = false, error = "Sistem Hatasi: " + ex.Message, provider = _aiImageService.GetConfiguredProviderName(), revisedPrompt = string.Empty, warnings = Array.Empty<string>() });
             }
+        }
+
+        private static bool ContainsTurkish(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return false;
+            foreach (var ch in text)
+            {
+                if ("ıİğĞüÜşŞöÖçÇâÂîÎûÛ".IndexOf(ch) >= 0) return true;
+            }
+            return false;
         }
 
         [HttpPost]
