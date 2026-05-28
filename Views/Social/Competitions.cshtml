@@ -1,206 +1,242 @@
-﻿@{
+@{
     Layout = "_SocialLayoutModern";
     ViewData["Title"] = "Yarışmalar";
+
+    int aktif = (int)(ViewBag.ActiveCompetitions ?? 0);
+    int toplamKatilim = (int)(ViewBag.TotalParticipants ?? 0);
+    int toplamOy = (int)(ViewBag.TotalVotes ?? 0);
+    int ayKazanan = (int)(ViewBag.MonthlyWinners ?? 0);
+
+    var comps = ViewBag.Competitions as System.Collections.Generic.IEnumerable<dynamic>;
+    var topEntries = ViewBag.TopEntries as System.Collections.Generic.IEnumerable<dynamic>;
+    var winners = ViewBag.RecentWinners as System.Collections.Generic.IEnumerable<dynamic>;
+
+    bool hasComps = comps != null && System.Linq.Enumerable.Any(comps);
+    bool hasTop = topEntries != null && System.Linq.Enumerable.Any(System.Linq.Enumerable.Where(topEntries, e => (int)(e.OySayisi ?? 0) > 0));
+    bool hasWinners = winners != null && System.Linq.Enumerable.Any(winners);
 }
 
 <!-- Header -->
 <header class="sticky top-0 z-30 flex h-14 md:h-16 items-center justify-between border-b border-border bg-background/95 px-3 md:px-6 backdrop-blur">
-    <div class="flex items-center gap-3 md:gap-4">
+    <div class="flex items-center gap-3">
         <h1 class="text-lg md:text-xl font-bold">Yarışmalar</h1>
     </div>
+    <button onclick="openHowModal()" class="hidden sm:flex items-center gap-2 rounded-xl border border-border bg-secondary/60 px-4 py-2 text-sm font-semibold hover:bg-secondary transition-colors">
+        <i data-lucide="help-circle" class="h-4 w-4 text-primary"></i> Nasıl Çalışır?
+    </button>
 </header>
 
 <div class="p-3 md:p-6 text-foreground bg-background">
-    <!-- Hero Section -->
-    <div class="rounded-2xl md:rounded-3xl bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 p-4 md:p-8 relative overflow-hidden border border-yellow-500/10">
-        <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
-        <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl"></div>
-        
-        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
-            <div class="flex items-center gap-3 md:gap-4">
-                <div class="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-xl md:rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-500 shadow-xl shadow-yellow-500/20 shrink-0">
-                    <i data-lucide="trophy" class="h-6 w-6 md:h-8 md:w-8 text-white"></i>
+
+    <!-- ===== HERO ===== -->
+    <div class="rounded-2xl md:rounded-3xl bg-gradient-to-br from-amber-500/15 via-yellow-500/10 to-orange-500/15 p-5 md:p-8 relative overflow-hidden border border-yellow-500/15">
+        <div class="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-500/15 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -bottom-24 h-72 w-72 rounded-full bg-orange-500/15 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div class="flex items-center gap-4">
+                <div class="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-600 shadow-xl shadow-amber-500/25 shrink-0">
+                    <i data-lucide="trophy" class="h-7 w-7 md:h-8 md:w-8 text-white"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl md:text-3xl font-bold">Tasarım Yarışmaları</h1>
-                    <p class="text-muted-foreground text-sm md:text-base mt-0.5 md:mt-1">Yarışmaya katıl, yeteneğini sergile, ödüller kazan!</p>
+                    <h2 class="text-2xl md:text-3xl font-black tracking-tight">Tasarım Yarışmaları</h2>
+                    <p class="text-muted-foreground text-sm md:text-base mt-1">Tema seç, tasarla, AI jüriden puan al, topluluğun oyuyla kazan.</p>
                 </div>
             </div>
-            
-            <button class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 md:px-6 py-2.5 md:py-3 font-semibold text-primary-foreground transition-all hover:opacity-90 gold-glow whitespace-nowrap text-sm md:text-base">
-                <i data-lucide="sparkles" class="h-4 w-4 md:h-5 md:w-5"></i>
-                Nasil Calisir?
+            <button onclick="openHowModal()" class="sm:hidden flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground gold-glow">
+                <i data-lucide="help-circle" class="h-5 w-5"></i> Nasıl Çalışır?
             </button>
         </div>
 
-        <!-- Stats -->
-        <div class="mt-4 md:mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 relative z-10">
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2">
-                    <i data-lucide="target" class="h-4 w-4 text-yellow-500"></i>
-                    <span class="text-sm font-medium">Aktif Yarışma</span>
-                </div>
-                <p class="text-3xl font-bold">@(ViewBag.ActiveCompetitions ?? 2)</p>
+        <!-- Gerçek istatistikler -->
+        <div class="mt-6 md:mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 relative z-10">
+            <div class="glass-card rounded-2xl p-4 md:p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="zap" class="h-4 w-4 text-yellow-500"></i><span class="text-xs md:text-sm font-medium">Aktif Yarışma</span></div>
+                <p class="text-2xl md:text-3xl font-bold">@aktif</p>
             </div>
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2">
-                    <i data-lucide="users" class="h-4 w-4"></i>
-                    <span class="text-sm font-medium">Toplam Katilimci</span>
-                </div>
-                <p class="text-3xl font-bold">@(ViewBag.TotalParticipants ?? 323)</p>
+            <div class="glass-card rounded-2xl p-4 md:p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="users" class="h-4 w-4"></i><span class="text-xs md:text-sm font-medium">Toplam Katılım</span></div>
+                <p class="text-2xl md:text-3xl font-bold">@toplamKatilim</p>
             </div>
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2">
-                    <i data-lucide="award" class="h-4 w-4"></i>
-                    <span class="text-sm font-medium">Toplam Odul</span>
-                </div>
-                <p class="text-3xl font-bold text-accent">30<span class="text-xl">k TL</span></p>
+            <div class="glass-card rounded-2xl p-4 md:p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="heart" class="h-4 w-4 text-pink-400"></i><span class="text-xs md:text-sm font-medium">Toplam Oy</span></div>
+                <p class="text-2xl md:text-3xl font-bold text-accent">@toplamOy</p>
             </div>
-            <div class="glass-card rounded-xl p-5 border-white/5">
-                <div class="flex items-center gap-2 text-muted-foreground mb-2">
-                    <i data-lucide="medal" class="h-4 w-4"></i>
-                    <span class="text-sm font-medium">Bu Ay Kazananlar</span>
-                </div>
-                <p class="text-3xl font-bold text-primary">@(ViewBag.MonthlyWinners ?? 0)</p>
+            <div class="glass-card rounded-2xl p-4 md:p-5 border-white/5">
+                <div class="flex items-center gap-2 text-muted-foreground mb-2"><i data-lucide="medal" class="h-4 w-4"></i><span class="text-xs md:text-sm font-medium">Bu Ay Kazanan</span></div>
+                <p class="text-2xl md:text-3xl font-bold text-primary">@ayKazanan</p>
             </div>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="mt-8 flex flex-wrap gap-2" id="compFilters">
-        <button onclick="filterComps('all')" id="comp-all" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground gold-glow">
-            <i data-lucide="grid" class="h-4 w-4 inline-block mr-1"></i> Tumu
+    <!-- ===== FILTERS ===== -->
+    <div class="mt-7 md:mt-8 flex flex-wrap gap-2" id="compFilters">
+        <button onclick="filterComps('all')" id="comp-all" class="comp-filter rounded-xl px-5 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground gold-glow">
+            <i data-lucide="layout-grid" class="h-4 w-4 inline-block mr-1"></i> Tümü
         </button>
-        <button onclick="filterComps('active')" id="comp-active" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+        <button onclick="filterComps('active')" id="comp-active" class="comp-filter rounded-xl px-5 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
             <i data-lucide="zap" class="h-4 w-4 inline-block mr-1"></i> Aktif
         </button>
-        <button onclick="filterComps('voting')" id="comp-voting" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+        <button onclick="filterComps('voting')" id="comp-voting" class="comp-filter rounded-xl px-5 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
             <i data-lucide="bar-chart-2" class="h-4 w-4 inline-block mr-1"></i> Oylama
         </button>
-        <button onclick="filterComps('ended')" id="comp-ended" class="rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
+        <button onclick="filterComps('ended')" id="comp-ended" class="comp-filter rounded-xl px-5 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80">
             <i data-lucide="check-circle" class="h-4 w-4 inline-block mr-1"></i> Tamamlanan
         </button>
     </div>
 
-    <!-- Competitions Grid -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="competitionsGrid">
-        @if (ViewBag.Competitions != null)
+    <!-- ===== COMPETITION GRID ===== -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6" id="competitionsGrid">
+        @if (hasComps)
         {
-            foreach (var comp in ViewBag.Competitions)
+            foreach (var comp in comps)
             {
-                var isVoting = comp.Status == "voting";
-                var isEnded = comp.Status == "ended";
-                var joined = (comp.Joined ?? 0) == 1;
-                <div class="group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-xl hover:border-primary/50 flex flex-col" data-status="@comp.Status">
-                    <div class="relative aspect-[16/9] overflow-hidden shrink-0">
-                        <img src="@(comp.CoverImage)" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                string status = (string)(comp.Status ?? "active");
+                bool isVoting = status == "voting";
+                bool isEnded = status == "ended";
+                bool joined = (int)(comp.Joined ?? 0) == 1;
+                string title = (string)(comp.Title ?? "Yarışma");
+                string theme = (string)(comp.Theme ?? "Genel");
+                string prize = (string)(comp.Prize ?? "-");
+                string cover = (string)(comp.CoverImage ?? "");
+                string deadline = (string)(comp.Deadline ?? "");
+                int participants = (int)(comp.Participants ?? 0);
+                int compId = (int)comp.Id;
+                string titleJs = System.Web.HttpUtility.JavaScriptStringEncode(title);
+
+                <div class="comp-card group relative overflow-hidden rounded-2xl glass-card transition-all hover:-translate-y-1 hover:shadow-2xl hover:border-primary/40 flex flex-col" data-status="@status">
+                    <div class="relative aspect-[16/9] overflow-hidden shrink-0 bg-secondary">
+                        <img src="@cover" alt="@title" class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.style.display='none'" />
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
-                        
-                        <!-- Status Badge -->
-                        <div class="absolute left-4 top-4">
-                            @if(isVoting) {
-                                <div class="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground shadow-lg shadow-accent/20">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
-                                        <span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
-                                    </span>
-                                    OYLAMA
-                                </div>
-                            } else if (isEnded) {
-                                <div class="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold shadow-lg">
-                                    <i data-lucide="check-circle" class="h-3 w-3"></i>
-                                    TAMAMLANDI
-                                </div>
-                            } else {
-                                <div class="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20">
-                                    <span class="relative flex h-2 w-2">
-                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-card opacity-75"></span>
-                                        <span class="relative inline-flex h-2 w-2 rounded-full bg-card"></span>
-                                    </span>
-                                    AKTIF
-                                </div>
+
+                        <div class="absolute left-3 top-3">
+                            @if (isVoting)
+                            {
+                                <span class="flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-accent-foreground shadow-lg"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-white"></span></span> OYLAMA</span>
+                            }
+                            else if (isEnded)
+                            {
+                                <span class="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold shadow-lg"><i data-lucide="check-circle" class="h-3 w-3"></i> TAMAMLANDI</span>
+                            }
+                            else
+                            {
+                                <span class="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-lg"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-card opacity-75"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-card"></span></span> AKTİF</span>
                             }
                         </div>
-                        
-                        <!-- Theme & Title -->
-                        <div class="absolute bottom-0 left-0 right-0 p-5 translate-y-2 opacity-90 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                            <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md mb-2 inline-block shadow-sm">@(comp.Theme)</span>
-                            <h3 class="text-xl font-bold text-white line-clamp-2">@(comp.Title)</h3>
+
+                        <div class="absolute bottom-0 left-0 right-0 p-4">
+                            <span class="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-md mb-2 inline-block">@theme</span>
+                            <h3 class="text-lg md:text-xl font-bold text-white line-clamp-2 leading-tight">@title</h3>
                         </div>
                     </div>
-                    
-                    <div class="p-5 flex flex-col flex-1 bg-card">
-                        <div class="flex items-center justify-between mb-6">
+
+                    <div class="p-4 md:p-5 flex flex-col flex-1">
+                        <div class="flex items-center justify-between mb-4">
                             <div>
-                                <p class="text-xs text-muted-foreground font-medium mb-1">Odul Havuzu</p>
-                                <p class="font-bold text-primary text-lg flex items-center gap-1">
-                                    <i data-lucide="coins" class="h-4 w-4"></i> @(comp.Prize)
-                                </p>
+                                <p class="text-[11px] text-muted-foreground font-medium mb-0.5">Ödül</p>
+                                <p class="font-bold text-primary text-base flex items-center gap-1.5"><i data-lucide="gift" class="h-4 w-4"></i> @prize</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-xs text-muted-foreground font-medium mb-1">Katilimci</p>
-                                <p class="font-bold text-lg flex items-center gap-1 justify-end">
-                                    <i data-lucide="users" class="h-4 w-4 text-muted-foreground"></i> @(comp.Participants)
-                                </p>
+                                <p class="text-[11px] text-muted-foreground font-medium mb-0.5">Katılım</p>
+                                <p class="font-bold text-base flex items-center gap-1.5 justify-end"><i data-lucide="users" class="h-4 w-4 text-muted-foreground"></i> @participants</p>
                             </div>
                         </div>
-                        
-                        <div class="mt-auto pt-4 border-t border-border/50 flex flex-col gap-4">
-                            @if(!isEnded) {
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-sm font-medium @(isVoting ? "text-accent" : "text-muted-foreground")">
-                                        <i data-lucide="clock" class="h-4 w-4"></i>
-                                        <span>@(comp.Deadline) @(isVoting ? "sonuc" : "kaldi")</span>
-                                    </div>
-                                    <div class="flex -space-x-2">
-                                        <img src="https://ui-avatars.com/api/?name=A&background=random" class="h-6 w-6 rounded-full border border-card" />
-                                        <img src="https://ui-avatars.com/api/?name=B&background=random" class="h-6 w-6 rounded-full border border-card" />
-                                        <div class="flex h-6 w-6 items-center justify-center rounded-full border border-card bg-secondary text-[8px] font-bold">+@comp.Participants</div>
-                                    </div>
-                                </div>
-                            }
-                            
-                            @if (!isVoting && !isEnded && !joined)
+
+                        @if (!isEnded && !string.IsNullOrWhiteSpace(deadline))
+                        {
+                            <div class="flex items-center gap-2 text-sm font-medium mb-4 @(isVoting ? "text-accent" : "text-muted-foreground")">
+                                <i data-lucide="clock" class="h-4 w-4"></i>
+                                <span>@deadline @(isVoting ? "oylama bitiyor" : "kaldı")</span>
+                            </div>
+                        }
+
+                        <div class="mt-auto pt-3 border-t border-border/50 flex flex-col gap-2">
+                            @if (isVoting)
                             {
-                                <a href='/Home/Tasarim?id=0&yarismaId=@comp.Id' class="w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-primary via-yellow-400 to-primary text-primary-foreground hover:opacity-90 neon-glow">
+                                <button onclick="viewResults(@compId, '@titleJs', 'voting')" class="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-accent-foreground transition-all">
+                                    <i data-lucide="check-square" class="h-4 w-4"></i> Tasarımları Oyla
+                                </button>
+                            }
+                            else if (isEnded)
+                            {
+                                <button onclick="viewResults(@compId, '@titleJs', 'ended')" class="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-secondary text-foreground hover:bg-secondary/80 transition-all">
+                                    <i data-lucide="trophy" class="h-4 w-4 text-yellow-500"></i> Sonuçları Gör
+                                </button>
+                            }
+                            else if (joined)
+                            {
+                                <div class="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-green-500/15 text-green-400 border border-green-500/30">
+                                    <i data-lucide="check-circle" class="h-4 w-4"></i> Katıldın
+                                </div>
+                                <button onclick="viewResults(@compId, '@titleJs', 'active')" class="w-full rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                                    <i data-lucide="eye" class="h-3.5 w-3.5"></i> Katılımları gör
+                                </button>
+                            }
+                            else
+                            {
+                                <a href="/Home/Tasarim?id=0&yarismaId=@compId" class="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-primary via-yellow-400 to-primary text-primary-foreground hover:opacity-90 neon-glow transition-all">
                                     <i data-lucide="palette" class="h-4 w-4"></i> Stüdyoda Tasarla
                                 </a>
+                                <button onclick="joinCompetition(@compId, '@titleJs')" class="w-full rounded-xl py-2.5 text-xs font-semibold flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                                    <i data-lucide="upload" class="h-3.5 w-3.5"></i> Hazır görselim var, yükle
+                                </button>
                             }
-                            <button onclick='@(isEnded || isVoting ? $"viewResults({comp.Id}, \"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\", \"{comp.Status}\")" : $"joinCompetition({comp.Id}, \"{System.Web.HttpUtility.JavaScriptStringEncode(comp.Theme ?? "")} - {System.Web.HttpUtility.JavaScriptStringEncode(comp.Title ?? "")}\")")' class="w-full rounded-xl py-3 text-sm font-bold transition-all flex items-center justify-center gap-2 @(isVoting ? "bg-accent/10 border border-accent text-accent hover:bg-accent hover:text-accent-foreground pink-glow" : (isEnded ? "bg-secondary text-foreground hover:bg-secondary/80" : "bg-secondary border border-border text-foreground hover:bg-secondary/80"))">
-                                @if(isVoting) {
-                                    <i data-lucide="check-square" class="h-4 w-4"></i> @("Tasarımları Oyla")
-                                } else if(isEnded) {
-                                    <i data-lucide="trophy" class="h-4 w-4 text-yellow-500"></i> @("Sonuçları Gör")
-                                } else if(joined) {
-                                    <i data-lucide="check-circle" class="h-4 w-4"></i> @("Katildin")
-                                } else {
-                                    <i data-lucide="upload" class="h-4 w-4"></i> @("Hazır Görsel Yükle")
-                                }
-                            </button>
                         </div>
                     </div>
                 </div>
             }
         }
+        else
+        {
+            <div class="col-span-full rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-12 text-center">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary mb-4"><i data-lucide="trophy" class="h-8 w-8 text-muted-foreground"></i></div>
+                <h3 class="text-lg font-bold">Şu an aktif yarışma yok</h3>
+                <p class="mt-1 text-sm text-muted-foreground">Yeni yarışmalar açıldığında burada görünecek.</p>
+            </div>
+        }
     </div>
+    <p id="compEmptyFilter" class="hidden text-center text-sm text-muted-foreground py-10">Bu kategoride yarışma yok.</p>
 
-    <!-- Past Winners Section -->
-    <div class="mt-16 pt-8 border-t border-border/50">
-        <div class="flex items-center justify-between mb-8">
-            <h2 class="text-2xl font-bold flex items-center gap-2">
-                <i data-lucide="award" class="h-6 w-6 text-primary"></i>
-                Haftanin Kazananlari
+    <!-- ===== EN ÇOK OYLANANLAR ===== -->
+    @if (hasTop)
+    {
+        <div class="mt-12 md:mt-16">
+            <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2 mb-5">
+                <i data-lucide="flame" class="h-5 w-5 md:h-6 md:w-6 text-orange-400"></i> En Çok Oylanan Tasarımlar
             </h2>
-            <button class="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-                Tumunu Gor <i data-lucide="chevron-right" class="h-4 w-4"></i>
-            </button>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                @foreach (var e in System.Linq.Enumerable.Where(topEntries, x => (int)(x.OySayisi ?? 0) > 0))
+                {
+                    string eg = (string)(e.GorselUrl ?? "/img/default-design.svg");
+                    string eb = (string)(e.Baslik ?? "Tasarım");
+                    string eu = (string)(e.KullaniciAdi ?? "Anonim");
+                    string ep = (string)(e.ProfilResmi ?? "/img/default-user.png");
+                    string eyb = (string)(e.YarismaBaslik ?? "");
+                    int eoy = (int)(e.OySayisi ?? 0);
+                    <div class="group glass-card rounded-2xl overflow-hidden hover:border-primary/40 transition-all">
+                        <div class="aspect-square bg-black relative overflow-hidden">
+                            <img src="@eg" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.src='/img/default-design.svg'" />
+                            <span class="absolute top-2 right-2 rounded-full bg-pink-500 px-2 py-0.5 text-[10px] font-black text-white shadow-lg flex items-center gap-1"><i data-lucide="heart" class="h-3 w-3"></i> @eoy</span>
+                        </div>
+                        <div class="p-3">
+                            <p class="font-bold text-sm truncate">@eb</p>
+                            <div class="flex items-center gap-1.5 mt-1.5">
+                                <img src="@ep" class="h-5 w-5 rounded-full object-cover shrink-0" onerror="this.src='https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(eu))&background=random'" />
+                                <span class="text-xs text-muted-foreground truncate">@eu</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            @{
-                var winners = ViewBag.RecentWinners as System.Collections.Generic.IEnumerable<dynamic>;
-                var hasWinners = winners != null && System.Linq.Enumerable.Any(winners);
-            }
+    }
+
+    <!-- ===== SON KAZANANLAR ===== -->
+    <div class="mt-12 md:mt-16 pt-8 border-t border-border/50">
+        <h2 class="text-xl md:text-2xl font-bold flex items-center gap-2 mb-5">
+            <i data-lucide="award" class="h-5 w-5 md:h-6 md:w-6 text-primary"></i> Son Kazananlar
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             @if (hasWinners)
             {
                 foreach (var w in winners)
@@ -212,45 +248,34 @@
                         var fark = DateTime.UtcNow - bitis.Value;
                         if (fark.TotalDays < 1) zaman = "bugün";
                         else if (fark.TotalDays < 2) zaman = "dün";
-                        else if (fark.TotalDays < 7) zaman = $"{(int)fark.TotalDays} gun once";
-                        else zaman = $"{(int)(fark.TotalDays / 7)} hafta once";
+                        else if (fark.TotalDays < 7) zaman = $"{(int)fark.TotalDays} gün önce";
+                        else zaman = $"{(int)(fark.TotalDays / 7)} hafta önce";
                     }
-                    string ad = (string)w.KazananAdi ?? "Anonim";
-                    string profilResmi = (string)w.ProfilResmi ?? "/img/default-user.png";
-                    string tasarimGorseli = (string)w.TasarimGorseli ?? "/img/default-design.svg";
-                    string yarismaBaslik = (string)w.YarismaBaslik ?? "Yarışma";
-                    string odul = (string)w.Odul ?? "-";
-                    int oySayisi = (int)w.OySayisi;
-                    <div class="group glass-card rounded-2xl p-5 hover:border-primary/50 transition-all hover:shadow-lg relative overflow-hidden">
-                        <div class="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-primary/10 blur-2xl transition-all group-hover:bg-primary/20"></div>
-
-                        <div class="flex items-center gap-3 mb-4 relative z-10">
-                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg shadow-amber-500/20 text-white">
-                                <i data-lucide="trophy" class="h-5 w-5"></i>
-                            </div>
+                    string ad = (string)(w.KazananAdi ?? "Anonim");
+                    string profilResmi = (string)(w.ProfilResmi ?? "/img/default-user.png");
+                    string tasarimGorseli = (string)(w.TasarimGorseli ?? "/img/default-design.svg");
+                    string yarismaBaslik = (string)(w.YarismaBaslik ?? "Yarışma");
+                    string odul = (string)(w.Odul ?? "-");
+                    int oySayisi = (int)(w.OySayisi ?? 0);
+                    <div class="group glass-card rounded-2xl p-4 hover:border-primary/40 transition-all relative overflow-hidden">
+                        <div class="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-primary/10 blur-2xl group-hover:bg-primary/20 transition-all"></div>
+                        <div class="flex items-center gap-2.5 mb-3 relative z-10">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-lg text-white"><i data-lucide="crown" class="h-4 w-4"></i></div>
                             <div class="min-w-0">
                                 <p class="font-bold text-sm truncate">@yarismaBaslik</p>
-                                <p class="text-xs text-muted-foreground flex items-center gap-1">
-                                    <i data-lucide="calendar" class="h-3 w-3"></i> @zaman
-                                </p>
+                                <p class="text-xs text-muted-foreground flex items-center gap-1"><i data-lucide="calendar" class="h-3 w-3"></i> @zaman</p>
                             </div>
                         </div>
-
-                        <div class="rounded-xl overflow-hidden aspect-video relative mb-4 bg-black">
+                        <div class="rounded-xl overflow-hidden aspect-video relative mb-3 bg-black">
                             <img src="@tasarimGorseli" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.src='/img/default-design.svg'" />
-                            <span class="absolute top-2 right-2 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black text-black shadow-lg">@oySayisi oy</span>
+                            <span class="absolute top-2 right-2 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black text-black shadow-lg flex items-center gap-1"><i data-lucide="heart" class="h-3 w-3"></i> @oySayisi</span>
                         </div>
-
                         <div class="flex items-center justify-between relative z-10">
                             <div class="flex items-center gap-2 min-w-0 flex-1">
-                                <img src="@profilResmi" class="h-8 w-8 rounded-full shrink-0 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(ad))&background=random'" />
-                                <div class="truncate pr-2">
-                                    <p class="text-sm font-semibold truncate">@ad</p>
-                                </div>
+                                <img src="@profilResmi" class="h-7 w-7 rounded-full shrink-0 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=@(Uri.EscapeDataString(ad))&background=random'" />
+                                <p class="text-sm font-semibold truncate pr-2">@ad</p>
                             </div>
-                            <div class="shrink-0 text-right">
-                                <p class="text-sm font-bold text-primary">@odul</p>
-                            </div>
+                            <p class="text-sm font-bold text-primary shrink-0">@odul</p>
                         </div>
                     </div>
                 }
@@ -265,110 +290,155 @@
             }
         </div>
     </div>
-    <!-- Join Competition Modal -->
+
+    <!-- ===== JOIN MODAL ===== -->
     <div id="compJoinModal" class="fixed inset-0 z-50 hidden items-center justify-center">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCompModal()"></div>
         <div class="relative z-10 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl">
             <div class="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl pointer-events-none"></div>
             <div class="relative z-10">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold flex items-center gap-2">
-                        <i data-lucide="upload-cloud" class="h-6 w-6 text-primary"></i>
-                        Tasarımını Gönder
-                    </h2>
-                    <button type="button" onclick="closeCompModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors">
-                        <i data-lucide="x" class="h-4 w-4"></i>
-                    </button>
+                <div class="flex items-center justify-between mb-5">
+                    <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="upload-cloud" class="h-5 w-5 text-primary"></i> Tasarımını Gönder</h2>
+                    <button type="button" onclick="closeCompModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors"><i data-lucide="x" class="h-4 w-4"></i></button>
+                </div>
+
+                <div class="rounded-xl bg-secondary/50 border border-border px-4 py-2.5 mb-4 flex items-center gap-2">
+                    <i data-lucide="trophy" class="h-4 w-4 text-primary shrink-0"></i>
+                    <span class="text-sm font-semibold truncate" id="compNameDisplay">Yarışma</span>
                 </div>
 
                 <form onsubmit="submitCompetitionEntry(event)" enctype="multipart/form-data" class="space-y-4">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="compIdInput" name="yarismaId" />
                     <div>
-                        <label class="text-sm font-medium mb-1.5 block">Yarışma Teması</label>
-                        <input type="text" id="compThemeInput" name="baslik" readonly class="w-full rounded-xl border border-border bg-secondary/50 px-4 py-2.5 text-sm font-semibold opacity-80" />
+                        <label class="text-sm font-medium mb-1.5 block">Tasarımının adı</label>
+                        <input type="text" name="baslik" required maxlength="120" class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:border-primary focus:outline-none" placeholder="Örn: Minimal Sürdürülebilirlik Afişi" />
                     </div>
-
                     <div>
-                        <label class="text-sm font-medium mb-1.5 block">Açıklama & Etiketler</label>
-                        <textarea name="aciklama" rows="2" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none resize-none" placeholder="Tasarımın için kısa bir hikaye yaz..."></textarea>
+                        <label class="text-sm font-medium mb-1.5 block">Açıklama <span class="text-muted-foreground font-normal">(opsiyonel)</span></label>
+                        <textarea name="aciklama" rows="2" maxlength="1000" class="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:border-primary focus:outline-none resize-none" placeholder="Tasarımının hikâyesini kısaca anlat..."></textarea>
                     </div>
-
                     <div>
-                        <label class="text-sm font-medium mb-1.5 block">Çalışmanı Yükle</label>
-                        <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-8 text-center transition-colors hover:border-primary/50 relative overflow-hidden group">
-                            <input type="file" name="tasarim" required accept="image/png,image/jpeg,image/gif,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        <label class="text-sm font-medium mb-1.5 block">Çalışmanı yükle</label>
+                        <div class="rounded-2xl border-2 border-dashed border-border bg-secondary/30 p-7 text-center hover:border-primary/50 transition-colors relative overflow-hidden group">
+                            <input type="file" name="tasarim" required accept="image/png,image/jpeg,image/gif,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="compFilePicked(this)" />
                             <div class="relative z-0">
-                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-3 shadow-sm">
-                                    <i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i>
-                                </div>
-                                <p class="text-sm font-semibold mb-1">Dosya seç veya sürükle</p>
-                                <p class="text-xs text-muted-foreground">PNG, JPG veya WEBP (Max 5MB)</p>
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background mb-2 shadow-sm"><i data-lucide="image" class="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors"></i></div>
+                                <p class="text-sm font-semibold mb-0.5" id="compFileName">Dosya seç veya sürükle</p>
+                                <p class="text-xs text-muted-foreground">PNG, JPG, GIF veya WEBP · Maks 5MB</p>
                             </div>
                         </div>
                     </div>
-
-                    <button type="submit" class="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 neon-glow">
-                        Şimdi Katıl!
-                    </button>
+                    <button type="submit" class="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground hover:opacity-90 neon-glow transition-all">Gönder ve AI Jüriden Puan Al</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== RESULTS MODAL ===== -->
+    <div id="resultsModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onclick="closeResultsModal()"></div>
+        <div class="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 md:p-8 shadow-2xl">
+            <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/15 blur-3xl pointer-events-none"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold inline-block mb-1.5" id="resultsBadge">Yarışma</span>
+                        <h2 class="text-2xl md:text-3xl font-black" id="resultsTitle">Sonuçlar</h2>
+                    </div>
+                    <button onclick="closeResultsModal()" class="flex h-9 w-9 items-center justify-center rounded-full bg-secondary hover:bg-destructive hover:text-destructive-foreground transition-colors"><i data-lucide="x" class="h-5 w-5"></i></button>
+                </div>
+                <div id="resultsEntries" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== HOW IT WORKS MODAL ===== -->
+    <div id="howModal" class="fixed inset-0 z-[70] hidden items-center justify-center">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onclick="closeHowModal()"></div>
+        <div class="relative z-10 w-full max-w-md mx-4 rounded-3xl border border-border bg-card p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="help-circle" class="h-5 w-5 text-primary"></i> Nasıl Çalışır?</h2>
+                <button onclick="closeHowModal()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary transition-colors"><i data-lucide="x" class="h-4 w-4"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">1</div>
+                    <div><p class="font-semibold text-sm">Aktif yarışmaya katıl</p><p class="text-xs text-muted-foreground">Stüdyoda tasarla ya da hazır görselini yükle.</p></div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">2</div>
+                    <div><p class="font-semibold text-sm">AI jüri puanlar</p><p class="text-xs text-muted-foreground">Gönderin anında 100 üzerinden değerlendirilip yorum alır.</p></div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">3</div>
+                    <div><p class="font-semibold text-sm">Topluluk oylar</p><p class="text-xs text-muted-foreground">Katılım süresi bitince oylama açılır, herkes favorisine oy verir.</p></div>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">4</div>
+                    <div><p class="font-semibold text-sm">En çok oyu alan kazanır</p><p class="text-xs text-muted-foreground">Kazanan ödülü + XP ve rozet kazanır, "Son Kazananlar"da yer alır.</p></div>
+                </div>
+            </div>
+            <button onclick="closeHowModal()" class="w-full mt-6 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground hover:opacity-90 transition-all">Anladım</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function filterComps(filter) {
-            var buttons = ['all', 'active', 'voting', 'ended'];
-            for (var i = 0; i < buttons.length; i++) {
-                var btn = document.getElementById('comp-' + buttons[i]);
-                if (!btn) continue;
-                if (buttons[i] === filter) {
-                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-primary text-primary-foreground gold-glow';
-                } else {
-                    btn.className = 'rounded-xl px-6 py-2.5 text-sm font-bold transition-all bg-secondary text-secondary-foreground hover:bg-secondary/80';
-                }
-            }
-            
-            var comps = document.querySelectorAll('#competitionsGrid > div');
-            comps.forEach(function(comp) {
-                var status = comp.getAttribute('data-status');
-                if (filter === 'all' || status === filter) {
-                    comp.style.display = 'flex';
-                } else {
-                    comp.style.display = 'none';
-                }
-            });
-            console.log('Competition filter set:', filter);
-        }
-        
         function csrfToken() {
-            return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            var el = document.querySelector('input[name="__RequestVerificationToken"]');
+            return el ? el.value : '';
         }
-
+        function escapeHtml(text) { var d = document.createElement('div'); d.textContent = text || ''; return d.innerHTML; }
         function showCompToast(message, error) {
-            var toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[80] px-6 py-3 rounded-xl shadow-2xl font-bold text-sm ' + (error ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground');
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(function() { toast.style.transition = 'opacity .4s'; toast.style.opacity = '0'; setTimeout(function() { toast.remove(); }, 450); }, 2600);
+            var t = document.createElement('div');
+            t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[90] px-6 py-3 rounded-xl shadow-2xl font-bold text-sm ' + (error ? 'bg-red-600 text-white' : 'bg-primary text-primary-foreground');
+            t.textContent = message;
+            document.body.appendChild(t);
+            setTimeout(function () { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(function () { t.remove(); }, 450); }, 2600);
         }
 
-        function escapeHtml(text) {
-            var d = document.createElement('div');
-            d.textContent = text || '';
-            return d.innerHTML;
+        function filterComps(filter) {
+            ['all', 'active', 'voting', 'ended'].forEach(function (f) {
+                var btn = document.getElementById('comp-' + f);
+                if (!btn) return;
+                btn.className = 'comp-filter rounded-xl px-5 py-2.5 text-sm font-bold transition-all ' +
+                    (f === filter ? 'bg-primary text-primary-foreground gold-glow' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80');
+            });
+            var cards = document.querySelectorAll('#competitionsGrid > .comp-card');
+            var shown = 0;
+            cards.forEach(function (c) {
+                var match = (filter === 'all' || c.getAttribute('data-status') === filter);
+                c.style.display = match ? 'flex' : 'none';
+                if (match) shown++;
+            });
+            var empty = document.getElementById('compEmptyFilter');
+            if (empty) empty.classList.toggle('hidden', shown !== 0 || cards.length === 0);
         }
 
-        function joinCompetition(id, title) {
+        function openHowModal() { var m = document.getElementById('howModal'); m.classList.remove('hidden'); m.classList.add('flex'); document.body.style.overflow = 'hidden'; if (window.lucide) lucide.createIcons(); }
+        function closeHowModal() { var m = document.getElementById('howModal'); m.classList.add('hidden'); m.classList.remove('flex'); document.body.style.overflow = ''; }
+
+        function joinCompetition(id, name) {
             document.getElementById('compIdInput').value = id;
-            document.getElementById('compThemeInput').value = title;
-            var modal = document.getElementById('compJoinModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            var disp = document.getElementById('compNameDisplay');
+            if (disp) disp.textContent = name || 'Yarışma';
+            var m = document.getElementById('compJoinModal');
+            m.classList.remove('hidden'); m.classList.add('flex');
             document.body.style.overflow = 'hidden';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
+        }
+        function closeCompModal() {
+            var m = document.getElementById('compJoinModal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        function compFilePicked(input) {
+            var el = document.getElementById('compFileName');
+            if (el && input.files && input.files[0]) el.textContent = input.files[0].name;
         }
 
         function submitCompetitionEntry(event) {
@@ -377,167 +447,115 @@
             var btn = form.querySelector('button[type="submit"]');
             var data = new FormData(form);
             if (btn) { btn.disabled = true; btn.textContent = 'Yükleniyor...'; }
-
-            fetch('/Social/YarismaKatil', {
-                method: 'POST',
-                headers: { 'RequestVerificationToken': csrfToken() },
-                body: data
-            }).then(function(r) { return r.json(); }).then(function(data) {
-                if (!data.success) {
-                    showCompToast(data.message || 'İşlem tamamlandı.', true);
-                    return;
-                }
-                closeCompModal();
-                var aiSkor = data.aiSkor != null ? data.aiSkor : (data.AiSkor != null ? data.AiSkor : null);
-                var aiYorum = data.aiYorum || data.AiYorum || '';
-                if (aiSkor != null && typeof Swal !== 'undefined') {
-                    var renk = aiSkor >= 80 ? '#22c55e' : aiSkor >= 60 ? '#facc15' : '#ef4444';
-                    Swal.fire({
-                        title: 'AI Jüri Puanladı: ' + aiSkor + '/100',
-                        html: '<div style="font-size:14px;color:#bbb;line-height:1.5">' + escapeHtml(aiYorum) + '</div>',
-                        icon: aiSkor >= 60 ? 'success' : 'info',
-                        confirmButtonText: 'Harika!',
-                        confirmButtonColor: renk,
-                        background: '#0a0a0c',
-                        color: '#fff'
-                    }).then(function() { window.location.reload(); });
-                } else {
-                    showCompToast(data.message || 'Tasarım gönderildi.', false);
-                    setTimeout(function() { window.location.reload(); }, 1200);
-                }
-            }).catch(function() {
-                showCompToast('Bağlantı hatası oluştu.', true);
-            }).finally(function() {
-                if (btn) { btn.disabled = false; btn.textContent = 'Şimdi Katıl!'; }
-            });
-        }
-
-        function closeCompModal() {
-            var modal = document.getElementById('compJoinModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = '';
+            fetch('/Social/YarismaKatil', { method: 'POST', headers: { 'RequestVerificationToken': csrfToken() }, body: data })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.success) { showCompToast(data.message || 'İşlem tamamlanamadı.', true); return; }
+                    closeCompModal();
+                    var aiSkor = data.aiSkor != null ? data.aiSkor : (data.AiSkor != null ? data.AiSkor : null);
+                    var aiYorum = data.aiYorum || data.AiYorum || '';
+                    if (aiSkor != null && typeof Swal !== 'undefined') {
+                        var renk = aiSkor >= 80 ? '#22c55e' : aiSkor >= 60 ? '#facc15' : '#ef4444';
+                        Swal.fire({
+                            title: 'AI Jüri: ' + aiSkor + '/100',
+                            html: '<div style="font-size:14px;color:#bbb;line-height:1.5">' + escapeHtml(aiYorum) + '</div>',
+                            icon: aiSkor >= 60 ? 'success' : 'info',
+                            confirmButtonText: 'Harika!', confirmButtonColor: renk,
+                            background: '#0a0a0c', color: '#fff'
+                        }).then(function () { window.location.reload(); });
+                    } else {
+                        showCompToast(data.message || 'Tasarım gönderildi.', false);
+                        setTimeout(function () { window.location.reload(); }, 1200);
+                    }
+                })
+                .catch(function () { showCompToast('Bağlantı hatası oluştu.', true); })
+                .finally(function () { if (btn) { btn.disabled = false; btn.textContent = 'Gönder ve AI Jüriden Puan Al'; } });
         }
 
         function viewResults(id, title, status) {
-            var modal = document.getElementById('resultsModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            var m = document.getElementById('resultsModal');
+            m.classList.remove('hidden'); m.classList.add('flex');
             document.body.style.overflow = 'hidden';
-            var titleEl = document.getElementById('resultsTitle');
-            if (titleEl) titleEl.textContent = title || 'Yarışma Sonuçları';
+            var t = document.getElementById('resultsTitle');
+            if (t) t.textContent = title || 'Yarışma';
+            var b = document.getElementById('resultsBadge');
+            if (b) b.textContent = status === 'voting' ? 'Oylama Açık' : (status === 'ended' ? 'Sonuçlandı' : 'Katılımlar');
             loadCompetitionEntries(id, status || 'ended');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-            if (typeof confetti === 'function') {
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            }
+            if (window.lucide) lucide.createIcons();
+            if (status === 'ended' && typeof confetti === 'function') confetti({ particleCount: 110, spread: 75, origin: { y: 0.6 } });
         }
 
         function loadCompetitionEntries(id, status) {
             var wrap = document.getElementById('resultsEntries');
             if (!wrap) return;
-            wrap.innerHTML = '<div class="py-10 text-center text-muted-foreground">Tasarımlar yükleniyor...</div>';
+            wrap.innerHTML = '<div class="col-span-full py-10 text-center text-muted-foreground">Tasarımlar yükleniyor...</div>';
             fetch('/Social/YarismaKatilimlari?yarismaId=' + encodeURIComponent(id))
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (!data.success || !data.entries || data.entries.length === 0) {
-                        wrap.innerHTML = '<div class="rounded-2xl border border-border bg-secondary/40 p-8 text-center text-muted-foreground">Bu yarışmada henüz tasarım yok.</div>';
+                        wrap.innerHTML = '<div class="col-span-full rounded-2xl border border-border bg-secondary/40 p-8 text-center text-muted-foreground">Bu yarışmada henüz tasarım yok.</div>';
                         return;
                     }
-                    wrap.innerHTML = data.entries.map(function(e, index) {
-                        var canVote = status === 'voting';
+                    var canVote = status === 'voting';
+                    wrap.innerHTML = data.entries.map(function (e, index) {
                         var entryId = e.Id || e.id;
                         var aiSkor = e.AiSkor != null ? e.AiSkor : (e.aiSkor != null ? e.aiSkor : null);
                         var aiYorum = e.AiYorum || e.aiYorum || '';
-                        var aiSaglayici = e.AiSaglayici || e.aiSaglayici || 'AI';
                         var aiColor = aiSkor == null ? 'bg-secondary text-muted-foreground'
                             : (aiSkor >= 80 ? 'bg-green-500/20 text-green-300 border border-green-500/40'
-                            : aiSkor >= 60 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
-                            : 'bg-red-500/20 text-red-300 border border-red-500/40');
-                        var aiBadge = '<span class="rounded-full px-3 py-1 text-xs font-bold ' + aiColor + '" title="' + escapeHtml(aiSaglayici) + ' jüri puanı">' +
-                            '<i data-lucide="sparkles" class="h-3 w-3 inline-block mr-1"></i>' +
-                            (aiSkor == null ? 'AI: -' : 'AI: ' + aiSkor + '/100') + '</span>';
-                        var aiYorumHtml = aiYorum
-                            ? '<div class="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/40 pl-3">' +
-                              '<span class="font-semibold text-primary not-italic">AI Jüri:</span> ' + escapeHtml(aiYorum) + '</div>'
+                                : aiSkor >= 60 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40'
+                                    : 'bg-red-500/20 text-red-300 border border-red-500/40');
+                        var rank = index + 1;
+                        var rankBadge = (status === 'ended' && rank <= 3)
+                            ? '<span class="absolute top-2 left-2 rounded-full px-2 py-0.5 text-[11px] font-black shadow-lg ' + (rank === 1 ? 'bg-yellow-400 text-black' : rank === 2 ? 'bg-gray-300 text-black' : 'bg-amber-700 text-white') + '">#' + rank + '</span>'
                             : '';
+                        var aiBadge = '<span class="rounded-full px-2.5 py-1 text-[11px] font-bold ' + aiColor + '">AI ' + (aiSkor == null ? '-' : aiSkor + '/100') + '</span>';
+                        var aiYorumHtml = aiYorum ? '<div class="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/40 pl-3"><span class="font-semibold text-primary not-italic">AI Jüri:</span> ' + escapeHtml(aiYorum) + '</div>' : '';
                         return '<div class="rounded-2xl border border-border bg-secondary/30 overflow-hidden">' +
-                            '<div class="aspect-video bg-black"><img src="' + (e.GorselUrl || e.gorselUrl) + '" class="h-full w-full object-cover" /></div>' +
-                            '<div class="p-4 space-y-3"><div class="flex items-center justify-between gap-3">' +
-                            '<div><p class="font-bold">' + escapeHtml(e.Baslik || e.baslik || 'Tasarım') + '</p><p class="text-xs text-muted-foreground">' + escapeHtml(e.KullaniciAdi || e.kullaniciAdi || '') + '</p></div>' +
-                            '<div class="flex flex-col items-end gap-1.5">' +
-                            '<span class="rounded-full bg-primary/15 px-3 py-1 text-xs font-bold text-primary" id="entry-votes-' + entryId + '">' + (e.OySayisi || e.oySayisi || 0) + ' oy</span>' +
-                            aiBadge + '</div></div>' +
-                            aiYorumHtml +
-                            (canVote ? '<button onclick="voteCompetition(' + id + ',' + entryId + ')" class="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground">Oy Ver</button>' : '<div class="text-xs text-muted-foreground">Siralama #' + (index + 1) + '</div>') +
+                            '<div class="aspect-video bg-black relative">' + rankBadge + '<img src="' + (e.GorselUrl || e.gorselUrl || '/img/default-design.svg') + '" class="h-full w-full object-cover" onerror="this.src=\'/img/default-design.svg\'" /></div>' +
+                            '<div class="p-4 space-y-2">' +
+                            '<div class="flex items-start justify-between gap-2">' +
+                            '<div class="min-w-0"><p class="font-bold truncate">' + escapeHtml(e.Baslik || e.baslik || 'Tasarım') + '</p><p class="text-xs text-muted-foreground truncate">' + escapeHtml(e.KullaniciAdi || e.kullaniciAdi || '') + '</p></div>' +
+                            '<div class="flex flex-col items-end gap-1.5 shrink-0"><span class="rounded-full bg-pink-500/15 px-2.5 py-1 text-[11px] font-bold text-pink-400" id="entry-votes-' + entryId + '">' + (e.OySayisi || e.oySayisi || 0) + ' oy</span>' + aiBadge + '</div>' +
+                            '</div>' + aiYorumHtml +
+                            (canVote ? '<button onclick="voteCompetition(' + id + ',' + entryId + ')" class="w-full mt-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-accent-foreground hover:opacity-90 transition-all">Oy Ver</button>' : '') +
                             '</div></div>';
                     }).join('');
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                });
+                    if (window.lucide) lucide.createIcons();
+                })
+                .catch(function () { wrap.innerHTML = '<div class="col-span-full py-8 text-center text-muted-foreground">Yüklenemedi.</div>'; });
         }
 
         function voteCompetition(yarismaId, katilimId) {
             var body = new URLSearchParams();
             body.append('yarismaId', yarismaId);
             body.append('katilimId', katilimId);
-            fetch('/Social/YarismaOyVer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'RequestVerificationToken': csrfToken() },
-                body: body.toString()
-            }).then(function(r) { return r.json(); }).then(function(data) {
-                showCompToast(data.message || 'Oyun kaydedildi.', !data.success);
-                if (data.success) {
-                    var el = document.getElementById('entry-votes-' + katilimId);
-                    if (el) el.textContent = data.votes + ' oy';
-                }
-            }).catch(function() { showCompToast('Oy verilemedi.', true); });
+            fetch('/Social/YarismaOyVer', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'RequestVerificationToken': csrfToken() }, body: body.toString() })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    showCompToast(data.message || 'Oyun kaydedildi.', !data.success);
+                    if (data.success) {
+                        var el = document.getElementById('entry-votes-' + katilimId);
+                        if (el) el.textContent = data.votes + ' oy';
+                    }
+                })
+                .catch(function () { showCompToast('Oy verilemedi.', true); });
         }
 
         function closeResultsModal() {
-            var modal = document.getElementById('resultsModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            var m = document.getElementById('resultsModal');
+            m.classList.add('hidden'); m.classList.remove('flex');
             document.body.style.overflow = '';
         }
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var comp = document.getElementById('compJoinModal');
-                if (comp && !comp.classList.contains('hidden')) closeCompModal();
-                var res = document.getElementById('resultsModal');
-                if (res && !res.classList.contains('hidden')) closeResultsModal();
-            }
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            [['compJoinModal', closeCompModal], ['resultsModal', closeResultsModal], ['howModal', closeHowModal]].forEach(function (pair) {
+                var el = document.getElementById(pair[0]);
+                if (el && !el.classList.contains('hidden')) pair[1]();
+            });
         });
+
+        if (window.lucide) lucide.createIcons();
     </script>
-    <!-- Add Confetti JS for WOW effect -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- SweetAlert2 for AI Jury verdict modal -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 }
-
-    <!-- View Results Modal -->
-    <div id="resultsModal" class="fixed inset-0 z-[60] hidden items-center justify-center">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-md" onclick="closeResultsModal()"></div>
-        <div class="relative z-10 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-8 shadow-2xl">
-                <div class="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-yellow-500/20 blur-3xl"></div>
-                <div class="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl"></div>
-                
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-8">
-                        <div>
-                            <span class="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md mb-2 inline-block">Yarışma Sonuçları</span>
-                            <h2 class="text-3xl font-black" id="resultsTitle">Podyum Tamamlandı!</h2>
-                        </div>
-                        <button onclick="closeResultsModal()" class="flex h-10 w-10 items-center justify-center rounded-full bg-secondary hover:bg-destructive hover:text-destructive-foreground transition-colors">
-                            <i data-lucide="x" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-
-                    <div id="resultsEntries" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"></div>
-
-                    <button onclick="closeResultsModal()" class="w-full rounded-xl bg-secondary py-3.5 text-sm font-bold text-foreground transition-all flex items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground mt-4">
-                        <i data-lucide="x" class="h-4 w-4"></i> Kapat
-                    </button>
-                </div>
-        </div>
-    </div>

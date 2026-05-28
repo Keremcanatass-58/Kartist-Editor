@@ -635,6 +635,10 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
                     JOIN Kullanicilar k ON cy.YayinciId = k.Id
                     WHERE cy.Aktif = 1
                     ORDER BY cy.BaslangicTarihi DESC").ToList();
+
+                // Hayalet yayin filtresi: hub'da canli yayinci olmayanlari gizle
+                var canliIdler = Kartist.Hubs.NotificationHub.StreamBroadcasters.Keys;
+                liveRooms = liveRooms.Where(r => canliIdler.Contains(Convert.ToString((object)r.Id))).ToList();
             }
             catch { liveRooms = new List<dynamic>(); }
 
@@ -659,8 +663,18 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
                 int userId = GetUserId(db, email);
                 if (userId == 0) return Json(new { success = false, message = "Kullanici bulunamadi." });
 
-                var aktifYayin = db.ExecuteScalar<int>("SELECT COUNT(*) FROM CanliYayinlar WHERE YayinciId = @uid AND Aktif = 1", new { uid = userId });
-                if (aktifYayin > 0) return Json(new { success = false, message = "Zaten aktif bir yayininiz var." });
+                // Kullanicinin DB'de aktif gorunen yayinlarini kontrol et: hub'da gercekten canli
+                // olmayanlar (sekme kapatilmis hayalet) otomatik kapatilsin ki yeni yayin acabilsin.
+                var oncekiAktif = db.Query<int>("SELECT Id FROM CanliYayinlar WHERE YayinciId = @uid AND Aktif = 1", new { uid = userId }).ToList();
+                bool gercektenCanli = false;
+                foreach (var sid in oncekiAktif)
+                {
+                    if (Kartist.Hubs.NotificationHub.StreamBroadcasters.ContainsKey(sid.ToString()))
+                        gercektenCanli = true;
+                    else
+                        db.Execute("UPDATE CanliYayinlar SET Aktif = 0, BitisTarihi = GETUTCDATE() WHERE Id = @id", new { id = sid });
+                }
+                if (gercektenCanli) return Json(new { success = false, message = "Zaten aktif bir yayininiz var." });
 
                 var streamId = db.ExecuteScalar<int>(@"
                     INSERT INTO CanliYayinlar (YayinciId, Baslik, Etiketler)
@@ -733,6 +747,12 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
                     JOIN Kullanicilar k ON cy.YayinciId = k.Id
                     WHERE cy.Aktif = 1
                     ORDER BY cy.BaslangicTarihi DESC").ToList();
+
+                // Hayalet yayin filtresi: DB'de Aktif=1 olsa bile hub'da canli yayinci yoksa gosterme
+                // (yayinci sekmeyi kapatmis olabilir; DB temizligi gecikmis olabilir).
+                var canliIdler = Kartist.Hubs.NotificationHub.StreamBroadcasters.Keys;
+                rooms = rooms.Where(r => canliIdler.Contains(Convert.ToString((object)r.Id))).ToList();
+
                 return Json(new { success = true, rooms });
             }
             catch { return Json(new { success = true, rooms = new List<dynamic>() }); }
@@ -766,6 +786,7 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_Duellolar_Rakip' AND o
             ViewBag.ActiveCompetitions = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Yarismalar WHERE Durum IN ('active','voting')");
             ViewBag.TotalParticipants = db.ExecuteScalar<int>("SELECT COUNT(*) FROM YarismaKatilimlari");
             ViewBag.MonthlyWinners = db.ExecuteScalar<int>("SELECT COUNT(*) FROM Yarismalar WHERE Durum = 'ended' AND OylamaBitisTarihi >= DATEADD(day, -30, GETUTCDATE())");
+            ViewBag.TotalVotes = db.ExecuteScalar<int>("SELECT COUNT(*) FROM YarismaOylari");
 
             ViewBag.Competitions = db.Query(@"
                 SELECT y.Id, y.Baslik as Title, y.Aciklama as Description, y.KapakUrl as CoverImage,

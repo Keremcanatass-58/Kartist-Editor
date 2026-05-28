@@ -1,10 +1,33 @@
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
+using Microsoft.Data.SqlClient;
+using Dapper;
 
 namespace Kartist.Hubs
 {
     public class NotificationHub : Hub
     {
+        private readonly string _conn;
+        public NotificationHub(IConfiguration config)
+        {
+            _conn = config.GetConnectionString("DefaultConnection");
+        }
+
+        // Yayin DB satirini kapat (hayalet yayin onleme). Yayinci sekmeyi kapatip/baglanti
+        // koptugunda CanliYayinlar.Aktif=1 kaliyordu -> listede hayalet yayin. Hata olursa sessizce gec.
+        private void MarkStreamEndedInDb(string streamId)
+        {
+            try
+            {
+                if (int.TryParse(streamId, out var id) && !string.IsNullOrEmpty(_conn))
+                {
+                    using var db = new SqlConnection(_conn);
+                    db.Execute("UPDATE CanliYayinlar SET Aktif = 0, BitisTarihi = GETUTCDATE() WHERE Id = @id AND Aktif = 1", new { id });
+                }
+            }
+            catch { }
+        }
+
         public static ConcurrentDictionary<string, string> UserConnections = new();
 
         // streamId → broadcaster connectionId
@@ -38,6 +61,7 @@ namespace Kartist.Hubs
                 if (kvp.Value == connId)
                 {
                     StreamBroadcasters.TryRemove(kvp.Key, out _);
+                    MarkStreamEndedInDb(kvp.Key);
                     await Clients.Group("LiveRoom_" + kvp.Key).SendAsync("StreamEnded");
                     if (StreamViewers.TryRemove(kvp.Key, out _)) { }
                     break;
@@ -122,6 +146,7 @@ namespace Kartist.Hubs
         {
             StreamBroadcasters.TryRemove(streamId, out _);
             StreamViewers.TryRemove(streamId, out _);
+            MarkStreamEndedInDb(streamId);
             await Clients.Group("LiveRoom_" + streamId).SendAsync("StreamEnded");
         }
     }

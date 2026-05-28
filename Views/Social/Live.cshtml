@@ -243,11 +243,15 @@
                     <button onclick="toggleViewerMute()" id="viewerMuteBtn" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-all">
                         <i data-lucide="volume-2" class="h-4 w-4"></i>
                     </button>
-                    <input type="range" id="volumeSlider" min="0" max="100" value="100" class="w-24" oninput="setViewerVolume(this.value)" />
+                    <input type="range" id="volumeSlider" min="0" max="100" value="100" class="w-20 sm:w-24" oninput="setViewerVolume(this.value)" />
                     <div class="flex-1"></div>
-                    <button onclick="sendHeart()" class="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white transition-all">
-                        <i data-lucide="heart" class="h-4 w-4"></i>
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <button onclick="sendReaction('❤️')" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg leading-none hover:bg-white/25 hover:scale-110 transition-all">❤️</button>
+                        <button onclick="sendReaction('🔥')" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg leading-none hover:bg-white/25 hover:scale-110 transition-all">🔥</button>
+                        <button onclick="sendReaction('👏')" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg leading-none hover:bg-white/25 hover:scale-110 transition-all">👏</button>
+                        <button onclick="sendReaction('😂')" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg leading-none hover:bg-white/25 hover:scale-110 transition-all">😂</button>
+                        <button onclick="sendReaction('🎉')" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg leading-none hover:bg-white/25 hover:scale-110 transition-all">🎉</button>
+                    </div>
                     <button onclick="toggleFullscreen()" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25 transition-all" title="Tam Ekran">
                         <i data-lucide="maximize" class="h-4 w-4"></i>
                     </button>
@@ -259,6 +263,7 @@
         <div class="w-full lg:w-80 xl:w-96 border-t lg:border-t-0 lg:border-l border-white/10 bg-zinc-900 flex flex-col h-[35vh] lg:h-full">
             <div class="p-3 border-b border-white/10 flex items-center justify-between shrink-0">
                 <h3 class="font-bold text-sm text-white flex items-center gap-2"><i data-lucide="message-square" class="h-3.5 w-3.5"></i> Canli Sohbet</h3>
+                <span class="flex items-center gap-1 text-xs text-white/50 bg-white/5 rounded-full px-2 py-0.5"><i data-lucide="users" class="h-3 w-3"></i> <span id="chatViewerCount">0</span> izliyor</span>
             </div>
             <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0">
                 <div class="text-center text-xs text-white/40 my-4">Sohbete katildiniz!</div>
@@ -354,8 +359,8 @@
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-white/40 uppercase tracking-wider">Kalite</label>
                             <select id="streamQualitySelect" class="w-full rounded-xl border border-white/10 bg-zinc-950 px-3 py-3 text-sm text-white focus:border-red-500 focus:outline-none" onchange="updateQualityHint()">
-                                <option value="720">720p / Stabil</option>
-                                <option value="1080" selected>1080p / Net</option>
+                                <option value="720" selected>720p / Stabil</option>
+                                <option value="1080">1080p / Net</option>
                                 <option value="1440">1440p / Sunum</option>
                             </select>
                         </div>
@@ -412,6 +417,7 @@ var peerConnections = {};     // broadcaster: viewerConnId → RTCPeerConnection
 var viewerPC = null;          // viewer: single RTCPeerConnection to broadcaster
 var durationTimer = null;
 var streamStartTime = null;
+var _lastViewerCount = 0;     // sistem mesaji (katildi/ayrildi) icin onceki izleyici sayisi
 
 // Media source tracking
 var _micStream = null;        // separate mic capture for mute toggle
@@ -422,14 +428,18 @@ var _compositeRAF = null;     // requestAnimationFrame handle for PIP
 var _selectedSource = null;   // 'camera' | 'screen' | 'pip'
 var _micEnabled = true;
 var _sceneMode = 'fit';       // 'fit' | 'fill' | 'focus'
+// Yanki/feedback onleme: mikrofonda echo cancellation + gurultu bastirma + oto kazanc sart.
+// audio:true defaults bazi tarayicilarda (ozellikle ekran sesi ile birlikte) AEC'yi kapatip yankiya yol aciyor.
+var MIC_CONSTRAINTS = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
 
 var rtcConfig = {
+    // Sadece STUN. Ucretsiz public TURN (openrelay) kaldirildi: ayni wifi'deki cihazlar
+    // arasinda baglanti gereksiz yere uzak/yavas relay'den gecip "don-zipla" yapiyordu.
+    // STUN ile yerel agda host adaylari uzerinden DIREKT P2P kurulur.
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' }
+        { urls: 'stun:stun2.l.google.com:19302' }
     ]
 };
 
@@ -486,6 +496,15 @@ function ensureConnection() {
     liveConnection.on("ViewerCountUpdate", function(count) {
         var el = document.getElementById('viewerCount');
         if (el) el.innerText = count;
+        var cc = document.getElementById('chatViewerCount');
+        if (cc) cc.innerText = count;
+        // izleyici sayisi degisimine gore sistem mesaji (ilk degerde sessiz kal)
+        if (_lastViewerCount !== 0 && count > _lastViewerCount) {
+            appendSystemMessage('👋 Biri yayina katildi');
+        } else if (count < _lastViewerCount) {
+            appendSystemMessage('Bir izleyici ayrildi');
+        }
+        _lastViewerCount = count;
     });
 
     liveConnection.on("ReceiveLiveMessage", function(handle, avatar, msg) {
@@ -498,6 +517,13 @@ function ensureConnection() {
 }
 
 // ===================== WEBRTC - BROADCASTER =====================
+function getMaxBitrate() {
+    var sel = document.getElementById('streamQualitySelect');
+    var q = parseInt((sel && sel.value) || '720', 10);
+    // Bant genisligi dostu tavanlar — kisitli upload/download'da kasmayi azaltir.
+    return ({ 720: 1200000, 1080: 2500000, 1440: 4000000 })[q] || 1200000;
+}
+
 function createPeerForViewer(viewerConnId) {
     var pc = new RTCPeerConnection(rtcConfig);
     peerConnections[viewerConnId] = pc;
@@ -505,6 +531,20 @@ function createPeerForViewer(viewerConnId) {
     localStream.getTracks().forEach(function(track) {
         pc.addTrack(track, localStream);
     });
+
+    // Encoder'i sinirlandir: maxBitrate + maintain-framerate. Aksi halde yuksek cozunurlukte
+    // encoder asiri bitrate'e cikip CPU/bant tikar -> kasma. Cozunurluk dussun, fps korunsun.
+    try {
+        var vSender = pc.getSenders().find(function(s){ return s.track && s.track.kind === 'video'; });
+        if (vSender) {
+            var params = vSender.getParameters();
+            if (params.encodings && params.encodings.length > 0) {
+                params.encodings[0].maxBitrate = getMaxBitrate();
+            }
+            params.degradationPreference = 'maintain-framerate';
+            vSender.setParameters(params).catch(function(){});
+        }
+    } catch (e) { /* tarayici desteklemiyorsa varsayilanla devam */ }
 
     pc.onicecandidate = function(e) {
         if (e.candidate) {
@@ -520,6 +560,33 @@ function createPeerForViewer(viewerConnId) {
 }
 
 // ===================== WEBRTC - VIEWER =====================
+function _isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
+
+// Video m-section'a b=AS:<kbps> ekle. Mobil izleyicinin cevap SDP'sine konunca yayinci
+// SADECE o izleyiciye dusuk bitrate gonderir; encoder cozunurlugu dusurup fps'i korur.
+// Masaustu izleyiciler etkilenmez (her izleyici ayri peer connection).
+function limitIncomingBitrate(sdp, kbps) {
+    var lines = sdp.split('\r\n');
+    var out = [];
+    var inVideo = false;
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line.indexOf('m=') === 0) {
+            inVideo = line.indexOf('m=video') === 0;
+            out.push(line);
+            continue;
+        }
+        if (inVideo && line.indexOf('b=') === 0) continue; // eski b= satirini at
+        out.push(line);
+        if (inVideo && line.indexOf('c=') === 0) {
+            out.push('b=AS:' + kbps);
+        }
+    }
+    return out.join('\r\n');
+}
+
 function handleOffer(broadcasterConnId, sdpOffer) {
     if (viewerPC) { viewerPC.close(); viewerPC = null; }
     viewerPC = new RTCPeerConnection(rtcConfig);
@@ -569,7 +636,13 @@ function handleOffer(broadcasterConnId, sdpOffer) {
 
     viewerPC.setRemoteDescription(new RTCSessionDescription(JSON.parse(sdpOffer)))
         .then(function() { return viewerPC.createAnswer(); })
-        .then(function(answer) { return viewerPC.setLocalDescription(answer); })
+        .then(function(answer) {
+            // Mobil izleyicide gelen video bitrate'ini sinirla -> takilmayi azaltir.
+            if (_isMobile()) {
+                try { answer = { type: answer.type, sdp: limitIncomingBitrate(answer.sdp, 800) }; } catch (e) {}
+            }
+            return viewerPC.setLocalDescription(answer);
+        })
         .then(function() {
             liveConnection.invoke("SendWebRTCAnswer", broadcasterConnId, JSON.stringify(viewerPC.localDescription));
         });
@@ -733,7 +806,7 @@ function updateSourceMeta(stream, label) {
 
 // ===================== CAPTURE MIC (reusable) =====================
 function captureMic() {
-    return navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    return navigator.mediaDevices.getUserMedia({ audio: MIC_CONSTRAINTS, video: false })
         .then(function(stream) { _micStream = stream; return stream; })
         .catch(function(err) { console.warn("Mikrofon alinamadi:", err); _micStream = null; return null; });
 }
@@ -750,7 +823,7 @@ function startCameraPreview() {
 
     navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
-        audio: true
+        audio: MIC_CONSTRAINTS
     })
     .then(function(stream) {
         _camStream = stream;
@@ -829,7 +902,7 @@ function startScreenAndCamera() {
         // Camera WITH audio (microphone)
         return navigator.mediaDevices.getUserMedia({
             video: { width: { ideal: 320 }, height: { ideal: 240 } },
-            audio: true
+            audio: MIC_CONSTRAINTS
         }).catch(function() { return null; }).then(function(camStream) {
             _camStream = camStream;
             if (camStream) _micStream = camStream; // mic comes from this stream
@@ -846,8 +919,14 @@ function startScreenAndCamera() {
 function buildComposite(screenStream, camStream) {
     var screenTrack = screenStream.getVideoTracks()[0];
     var settings = screenTrack.getSettings();
-    var cw = settings.width || 1920;
-    var ch = settings.height || 1080;
+    var sw = settings.width || 1920;
+    var sh = settings.height || 1080;
+    // Native ekran 4K'ya kadar gelebilir; devasa canvas'i her kare cizip encode etmek
+    // ana kasma sebebi. Secilen kaliteye (en fazla) olceklendir, en-boy oranini koru.
+    var q = getSelectedQuality();
+    var scale = Math.min(1, q.width / sw, q.height / sh);
+    var cw = Math.round(sw * scale);
+    var ch = Math.round(sh * scale);
 
     var canvas = document.getElementById('compositeCanvas');
     var ctx = canvas.getContext('2d');
@@ -1031,38 +1110,15 @@ function submitStreamRequest(event) {
         document.getElementById('broadcasterControls').classList.remove('hidden');
         document.getElementById('viewerControls').classList.add('hidden');
 
-        // Show broadcaster's own video feed
-        if (_selectedSource === 'pip') {
-            // PIP: show the compositeCanvas directly (no second RAF loop!)
-            var bCanvas = document.getElementById('broadcasterCanvas');
-            var srcCanvas = document.getElementById('compositeCanvas');
-            bCanvas.width = srcCanvas.width;
-            bCanvas.height = srcCanvas.height;
-            bCanvas.classList.remove('hidden');
-            // Single-pass: buildComposite's RAF writes to compositeCanvas,
-            // we just draw that onto broadcasterCanvas each frame
-            var bCtx = bCanvas.getContext('2d');
-            var _mirrorTs = 0;
-            (function pipMirror(ts) {
-                if (!isBroadcaster || !_compositeRAF) return;
-                requestAnimationFrame(pipMirror);
-                // 25fps throttle — onizleme icin yeterli, ana composite + captureStream
-                // zaten CPU kullaniyor; bunu da 60fps yapmak bos yere kasma
-                if (ts && (ts - _mirrorTs) < 40) return;
-                _mirrorTs = ts || 0;
-                try {
-                    if (srcCanvas.width > 0) bCtx.drawImage(srcCanvas, 0, 0);
-                } catch (e) { /* gec */ }
-            })();
-            document.getElementById('remoteVideo').classList.add('hidden');
-            document.getElementById('localVideoPreview').classList.add('hidden');
-        } else {
-            var localVid = document.getElementById('localVideoPreview');
-            localVid.srcObject = localStream;
-            localVid.classList.remove('hidden');
-            document.getElementById('remoteVideo').classList.add('hidden');
-            document.getElementById('broadcasterCanvas').classList.add('hidden');
-        }
+        // Yayincinin kendi onizlemesi — localStream zaten dogru kaynagi tasiyor
+        // (PIP'te composite captureStream, digerlerinde kamera/ekran). Tek video elementi yeterli.
+        // Eski PIP kolu ayrica broadcasterCanvas'a her kare ikinci bir tam-cozunurluk drawImage
+        // yapiyordu (pipMirror RAF) -> gereksiz CPU = kasma. Kaldirildi.
+        var localVid = document.getElementById('localVideoPreview');
+        localVid.srcObject = localStream;
+        localVid.classList.remove('hidden');
+        document.getElementById('remoteVideo').classList.add('hidden');
+        document.getElementById('broadcasterCanvas').classList.add('hidden');
 
         // Update mic button state
         _micEnabled = true;
@@ -1104,6 +1160,7 @@ function watchStream(streamId, title) {
     document.getElementById('localVideoPreview').classList.add('hidden');
     document.getElementById('broadcasterCanvas').classList.add('hidden');
     document.getElementById('chatMessages').innerHTML = '<div class="text-center text-xs text-white/40 my-4">Sohbete katildiniz!</div>';
+    _lastViewerCount = 0;
 
     // Show viewer controls, hide broadcaster controls
     document.getElementById('viewerControls').classList.remove('hidden');
@@ -1246,6 +1303,7 @@ function leaveRoom() {
     currentStreamId = null;
     isBroadcaster = false;
     _selectedSource = null;
+    _lastViewerCount = 0;
 
     if (durationTimer) { clearInterval(durationTimer); durationTimer = null; }
 
@@ -1278,22 +1336,42 @@ function sendChatMessage() {
     var message = (input.value || '').trim();
     if (!message || !currentStreamId || !liveConnection) return;
 
-    var email = '@(User.Identity?.Name ?? "")';
-    var handle = email ? email.split('@@')[0] : 'kartist_user';
+    var handle = window._myHandle || 'kartist_user';
     var avatar = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(handle) + '&background=random';
 
     liveConnection.invoke("SendLiveMessage", currentStreamId, handle, avatar, message).catch(function(err) { console.error(err); });
     input.value = '';
 }
 
-function appendChatMessage(handle, avatar, message) {
+// handle'dan deterministik renk (Twitch tarzi: her kullanici farkli renk)
+function handleColor(handle) {
+    var h = 0;
+    for (var i = 0; i < handle.length; i++) { h = handle.charCodeAt(i) + ((h << 5) - h); }
+    return 'hsl(' + (Math.abs(h) % 360) + ', 70%, 66%)';
+}
+
+function appendSystemMessage(text) {
     var chatDiv = document.getElementById('chatMessages');
     if (!chatDiv) return;
     var el = document.createElement('div');
-    el.className = 'flex items-start gap-2';
+    el.className = 'text-center text-[11px] text-white/35 my-1';
+    el.textContent = text;
+    chatDiv.appendChild(el);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
+}
+
+function appendChatMessage(handle, avatar, message) {
+    var chatDiv = document.getElementById('chatMessages');
+    if (!chatDiv) return;
+    var isMine = window._myHandle && handle === window._myHandle;
+    var now = new Date();
+    var ts = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    var el = document.createElement('div');
+    el.className = 'flex items-start gap-2 rounded-lg px-1.5 py-1' + (isMine ? ' bg-red-500/10' : '');
     el.innerHTML = '<img src="' + avatar + '" class="h-6 w-6 rounded-full mt-0.5 shrink-0" />' +
-        '<div><span class="text-[11px] font-bold text-red-400">@@' + escapeHtml(handle) + '</span> ' +
-        '<span class="text-sm text-white/90">' + escapeHtml(message) + '</span></div>';
+        '<div class="min-w-0"><span class="text-[11px] font-bold" style="color:' + handleColor(handle) + '">@@' + escapeHtml(handle) + '</span>' +
+        '<span class="text-[10px] text-white/25 ml-1">' + ts + '</span> ' +
+        '<span class="text-sm text-white/90 break-words">' + escapeHtml(message) + '</span></div>';
     chatDiv.appendChild(el);
     chatDiv.scrollTop = chatDiv.scrollHeight;
 }
@@ -1304,16 +1382,18 @@ function escapeHtml(text) {
     return d.innerHTML;
 }
 
-function sendHeart() {
+function sendReaction(emoji) {
     var container = document.getElementById('heartsContainer');
     if (!container) return;
-    var heart = document.createElement('div');
-    heart.className = 'heart-animation text-2xl';
-    heart.innerHTML = '❤️';
-    heart.style.right = Math.random() * 40 + 'px';
-    container.appendChild(heart);
-    setTimeout(function() { heart.remove(); }, 3000);
+    var el = document.createElement('div');
+    el.className = 'heart-animation text-3xl';
+    el.textContent = emoji || '❤️';
+    el.style.right = Math.random() * 60 + 'px';
+    container.appendChild(el);
+    setTimeout(function() { el.remove(); }, 3000);
 }
+// geriye uyumluluk: eski cagrilar icin alias
+function sendHeart() { sendReaction('❤️'); }
 
 // ===================== UTILITIES =====================
 function startDurationTimer() {
@@ -1383,6 +1463,8 @@ document.addEventListener('keydown', function(e) {
         if (streamModal && !streamModal.classList.contains('hidden')) closeCreateStreamModal();
     }
 });
+
+(function(){ var email = '@(User.Identity?.Name ?? "")'; window._myHandle = email ? email.split('@@')[0] : ''; })();
 
 refreshRoomsList();
 updateQualityHint();
