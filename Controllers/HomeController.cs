@@ -930,6 +930,42 @@ namespace Kartist.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> AiTasarimVaryasyonlari(string prompt, string style = null, int count = 3)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(prompt))
+                {
+                    return Json(new { success = false, data = "Prompt bos olamaz." });
+                }
+
+                prompt = Helpers.InputValidator.SanitizeHtml(prompt);
+                if (!Helpers.InputValidator.IsValidPrompt(prompt))
+                {
+                    return Json(new { success = false, data = "Gecersiz karakterler tespit edildi." });
+                }
+
+                if (prompt.Length > 1000)
+                {
+                    return Json(new { success = false, data = "Prompt cok uzun (max 1000 karakter)." });
+                }
+
+                var aiResponse = await _aiPromptService.GenerateDesignVariationsJsonAsync(prompt, style, count, HttpContext.RequestAborted);
+                if (string.IsNullOrWhiteSpace(aiResponse))
+                {
+                    return Json(new { success = false, data = "Varyasyonlar uretilemedi. AI saglayicisi yanit vermedi." });
+                }
+
+                // Frontend ham JSON dizisini parse edip render eder.
+                return Json(new { success = true, data = aiResponse });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, data = "Sistem Hatasi: " + ex.Message });
+            }
+        }
+
         public IActionResult Koleksiyon()
         {
             string email = GetUserEmail();

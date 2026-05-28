@@ -84,6 +84,45 @@ RULES:
             return await SendChatRequestAsync(systemPrompt, $"Kullanıcı isteği: {prompt}", 500, 0.8, history, cancellationToken);
         }
 
+        public async Task<string> GenerateDesignVariationsJsonAsync(string prompt, string style, int count = 3, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(prompt) || !HasConfiguredProvider())
+            {
+                return null;
+            }
+
+            if (count < 2) count = 2;
+            if (count > 4) count = 4;
+
+            var systemPrompt = $@"Sen üst düzey bir kart tasarım AI motorusun. Kullanıcının isteğini analiz et ve BİRBİRİNDEN BELİRGİN ŞEKİLDE FARKLI {count} ADET tasarım varyasyonu üret.
+
+## MUTLAK KURALLAR
+1. ÇIKTI: SADECE geçerli bir JSON DİZİSİ (array) döndür. Başında/sonunda hiçbir açıklama, markdown, ```json bloğu OLMASIN.
+2. Dizide tam olarak {count} eleman olacak.
+3. Varyasyonlar belirgin farklı olmalı: farklı renk paleti (biri sıcak, biri soğuk, biri canlı), farklı layoutStyle, farklı yaziFontu, farklı atmosfer.
+4. Kullanıcının yazdığı spesifik detayları (mekan, kişi, olay) HER varyasyonda koru — sadece stili değiştir.
+
+## HER ELEMANIN ALANLARI
+- ""tema"": Kısa güçlü başlık (max 4 kelime).
+- ""anaMetin"": Kullanıcının tüm detaylarını harmanlayan etkileyici, duygu yüklü metin (2-3 cümle).
+- ""yaziFontu"": ""Poppins"" | ""Montserrat"" | ""Inter"" | ""Playfair Display"" | ""Roboto"" | ""Lora"" | ""Oswald""
+- ""renkPaleti"": Atmosfere uygun 3 HEX renk [""#koyu_arkaplan"", ""#parlak_vurgu"", ""#yumusak_ton""]
+- ""layoutStyle"": ""modern"" | ""minimal"" | ""bold"" | ""elegant"" (her varyasyonda farklı tercih et)
+- ""emojiler"": Metinle %100 uyumlu max 3 emoji.
+- ""revisedImagePrompt"": Pexels/AI için İNGİLİZCE foto arama kelimeleri. SADECE mimari/doğa/manzara/obje. ASLA 'letter','card','paper','person','reading' yazma. (Örn: kullanıcı İstanbul dediyse ""istanbul bosphorus sunset golden hour"".)
+
+## ÇIKTI FORMATI (tam olarak böyle, {count} eleman):
+[
+  {{ ""tema"": ""..."", ""anaMetin"": ""..."", ""yaziFontu"": ""Playfair Display"", ""renkPaleti"": [""#..."", ""#..."", ""#...""], ""layoutStyle"": ""elegant"", ""emojiler"": [""🌹""], ""revisedImagePrompt"": ""..."" }},
+  {{ ... }},
+  {{ ... }}
+]
+
+Stil ipucu: {style}.";
+
+            return await SendChatRequestAsync(systemPrompt, $"Kullanıcı isteği: {prompt}", 1100, 0.9, null, cancellationToken);
+        }
+
         public async Task<string> GenerateTextAsync(string category, string prompt, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(prompt) || !HasConfiguredProvider())
