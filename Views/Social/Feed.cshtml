@@ -541,9 +541,11 @@
         }
 
         // ===== CREATE MODAL =====
-        function openCreateModal() {
-            window.location.href = '/Social/Design';
-        }
+        // openCreateModal _SocialLayoutModern.cshtml'de global olarak tanimli
+        // (createModal popup'ini acar). Burada TEKRAR tanimlamiyoruz; eski
+        // "window.location.href = '/Social/Design'" kopyasi layout'un modal
+        // versiyonuyla cakisip tutarsiz davraniyordu (1. tik navigate,
+        // 2. tik popup). Layout versiyonu tek dogru kaynak.
 
         // ===== DROPDOWN TOGGLE =====
         function toggleDropdown(id) {
