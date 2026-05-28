@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KARTIST — Kullanım Rehberi (Değerlendirme)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--neon:#c6ff00;--dark:#07070c;--card-bg:rgba(22,22,28,.85);--text-main:#d1d5db;--text-muted:#9ca3af;--accent2:#00c8ff;--accent3:#c044ff;--accent4:#f59e0b;--red:#ff5555}
+        *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;color-adjust:exact!important;print-color-adjust:exact!important;margin:0;padding:0}
+        body{background:#1a1a1f;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px 0}
+        @page{size:A4;margin:0}
+        .page{width:210mm;min-height:297mm;background:var(--dark);color:var(--text-main);position:relative;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.6);page-break-after:always;page-break-inside:avoid}
+        @media print{body{background:none;padding:0;display:block;gap:0}.page{box-shadow:none;margin:0;border:none}}
+        .content{padding:14mm 15mm 22mm 15mm;position:relative;z-index:10;height:100%;display:flex;flex-direction:column}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;color:#fff}
+        .page-header{border-bottom:2px solid rgba(198,255,0,.3);padding-bottom:8px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:flex-end}
+        .page-header h2{font-size:21px;font-weight:700}.page-header span{font-size:11px;color:var(--neon);text-transform:uppercase;letter-spacing:1.5px;font-weight:bold}
+        .footer{position:absolute;bottom:10mm;left:15mm;right:15mm;display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);padding-top:8px;font-size:9px;color:#555;font-family:'Space Grotesk',sans-serif;letter-spacing:1.5px;text-transform:uppercase}
+        .summary-box{background:rgba(198,255,0,.04);border-left:4px solid var(--neon);padding:14px 16px;border-radius:0 8px 8px 0;font-size:12.5px;line-height:1.65;margin-bottom:18px}
+        .cover-badge{display:inline-block;padding:6px 16px;border:1px solid var(--neon);color:var(--neon);border-radius:50px;font-weight:600;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;background:rgba(198,255,0,.04)}
+        .cover-title{font-size:48px;font-weight:900;line-height:1.05;margin-bottom:12px;letter-spacing:-1px}.cover-title span{color:var(--neon)}
+        .cover-sub{font-size:15px;color:var(--text-muted);font-weight:300;line-height:1.55;margin-bottom:26px}
+        .cred-box{background:linear-gradient(145deg,rgba(198,255,0,.07),rgba(0,200,255,.04));border:2px solid var(--neon);border-radius:14px;padding:22px 24px;margin-bottom:22px}
+        .cred-box h3{font-size:16px;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+        .cred-box h3 i{color:var(--neon)}
+        .cred-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:14px}
+        .cred-row .k{width:130px;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+        .cred-row .v{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--neon);font-weight:600;background:rgba(0,0,0,.4);padding:5px 12px;border-radius:6px;border:1px solid rgba(198,255,0,.2)}
+        .cred-note{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+        .step{background:var(--card-bg);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 18px;margin-bottom:14px;display:flex;gap:14px;align-items:flex-start}
+        .step .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--neon);color:#0a0a0a;font-family:'Space Grotesk',sans-serif;font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center}
+        .step .b{flex:1}
+        .step h3{font-size:14px;color:#fff;margin-bottom:5px}
+        .step p{font-size:12px;color:var(--text-main);line-height:1.6}
+        .step code{font-family:'JetBrains Mono',monospace;color:var(--accent2);background:rgba(0,200,255,.08);padding:1px 6px;border-radius:4px;font-size:11px}
+        .screenshot{width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.08);margin:10px 0;object-fit:cover}
+        .screenshot-half{width:48%;border-radius:8px;border:1px solid rgba(255,255,255,.08);object-fit:cover}
+        .ss-row{display:flex;gap:4%;margin:10px 0}
+        .caption{font-size:10px;color:var(--text-muted);text-align:center;margin-top:-6px;margin-bottom:10px;font-style:italic}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;background:var(--card-bg);padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,.05)}
+        .info-item h4{color:var(--neon);font-size:10px;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px}.info-item p{font-size:14px;font-weight:600;color:#fff}
+        .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .feat-card{background:var(--card-bg);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:14px}
+        .feat-card h3{font-size:13px;color:#fff;margin-bottom:6px;display:flex;align-items:center;gap:7px}.feat-card h3 i{color:var(--neon)}
+        .feat-card p{font-size:11px;color:var(--text-muted);line-height:1.5}
+        .tip{background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.2);border-radius:8px;padding:10px 14px;font-size:11.5px;line-height:1.55;color:var(--text-main);margin-top:10px}
+        .tip i{color:var(--accent2)}
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════ SAYFA 1: KAPAK + GİRİŞ BİLGİLERİ ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="cover-badge"><i class="fa-solid fa-book-open"></i> &nbsp;Değerlendirme Kullanım Rehberi</div>
+        <h1 class="cover-title">KART<span>IST</span></h1>
+        <p class="cover-sub">
+            Hocam, projeyi adım adım test edebilmeniz için hazırlanmış kılavuzdur.<br>
+            Tüm özellikler <strong>kartistt.com.tr</strong> üzerinde canlı çalışmaktadır.
+        </p>
+
+        <div class="cred-box">
+            <h3><i class="fa-solid fa-key"></i> Test Giriş Bilgileri</h3>
+            <div class="cred-row"><span class="k">Adres</span><span class="v">kartistt.com.tr</span></div>
+            <div class="cred-row"><span class="k">Kullanıcı (E-posta)</span><span class="v">hoca@kartist.com</span></div>
+            <div class="cred-row"><span class="k">Şifre</span><span class="v">Hocam2026!</span></div>
+            <p class="cred-note"><i class="fa-solid fa-circle-info" style="color:var(--accent2)"></i> Bu hesap, tüm sosyal özellikleri (tasarım, paylaşım, mesaj, yarışma, canlı yayın) test edebilmeniz için hazır oluşturulmuştur. <strong>Admin paneli giriş bilgileri ayrıca tarafımca iletilecektir.</strong></p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item"><h4><i class="fa-solid fa-user-graduate"></i> Öğrenci</h4><p>Keremcan ATAŞ (247017033)</p></div>
+            <div class="info-item"><h4><i class="fa-solid fa-chalkboard-teacher"></i> Danışman</h4><p>Öğr. Gör. Ekrem SAYDAM</p></div>
+            <div class="info-item"><h4><i class="fa-solid fa-globe"></i> Canlı Demo</h4><p style="color:var(--neon)">kartistt.com.tr</p></div>
+            <div class="info-item"><h4><i class="fa-brands fa-github"></i> Kaynak Kod</h4><p style="font-size:11px">Keremcanatass-58/Kartist-Editor</p></div>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 01 / 06</span></div>
+</div>
+
+<!-- ═══════════════ SAYFA 2: GİRİŞ + EDİTÖR ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-right-to-bracket"></i> 1. Giriş Yapma &amp; AI Editör</h2><span>Adım 1–2</span></div>
+
+        <div class="step">
+            <div class="n">1</div>
+            <div class="b">
+                <h3>Giriş Yapın</h3>
+                <p><code>kartistt.com.tr/Account/Giris</code> adresine gidin. Yukarıdaki test e-postası ve şifresini girip <strong>"Giriş Yap"</strong> butonuna basın. Dilerseniz <strong>Google ile</strong> de giriş yapabilirsiniz.</p>
+            </div>
+        </div>
+        <img src="screenshots/02-giris.png" class="screenshot" style="height:150px" alt="Giriş">
+        <p class="caption">Şekil 1 — Giriş ekranı</p>
+
+        <div class="step">
+            <div class="n">2</div>
+            <div class="b">
+                <h3>AI ile Tasarım Yapın</h3>
+                <p>Üst menüden <strong>"Tasarım"</strong> sayfasına geçin. Sağdaki <strong>AI Studio</strong> kutusuna ne tasarlamak istediğinizi Türkçe yazın (örn. <em>"mavi tonlarda modern bir kafe kartviziti"</em>). Yapay zekâ saniyeler içinde içerik ve görsel önerir; tuval üzerinde sürükle-bırak ile düzenleyebilirsiniz.</p>
+            </div>
+        </div>
+        <div class="ss-row">
+            <img src="screenshots/06-editor-ai-akisi.png" class="screenshot-half" alt="AI akışı">
+            <img src="screenshots/07-editor-ai-yaniti.png" class="screenshot-half" alt="AI yanıtı">
+        </div>
+        <p class="caption">Şekil 2 — AI Studio: komut → tasarım üretimi</p>
+
+        <div class="tip"><i class="fa-solid fa-lightbulb"></i> <strong>İpucu:</strong> Tasarımınızı <code>İndir</code> butonuyla PNG olarak kaydedebilir veya <code>Paylaş</code> ile doğrudan sosyal akışa gönderebilirsiniz.</div>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 02 / 06</span></div>
+</div>
+
+<!-- ═══════════════ SAYFA 3: SOSYAL AKIŞ ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-users"></i> 2. Sosyal Akış &amp; Etkileşim</h2><span>Adım 3–4</span></div>
+
+        <div class="step">
+            <div class="n">3</div>
+            <div class="b">
+                <h3>Akışı Keşfedin</h3>
+                <p>Sol menüden <strong>"Keşfet"</strong> veya ana sosyal akışa girin. Tasarımları <strong>beğenebilir</strong>, <strong>yorum yapabilir</strong> (yanıtlar iç içe görünür) ve tasarımcıları <strong>takip edebilirsiniz</strong>. Tüm metinler yapay zekâ ile moderasyondan geçer.</p>
+            </div>
+        </div>
+        <img src="screenshots/09-feed.png" class="screenshot" style="height:150px" alt="Feed">
+        <p class="caption">Şekil 3 — Sosyal Akış (Feed)</p>
+
+        <div class="step">
+            <div class="n">4</div>
+            <div class="b">
+                <h3>Profil &amp; Oyunlaştırma</h3>
+                <p>Sol menüden <strong>"Profil"</strong>e gidin. Burada XP, seviye ve kazandığınız <strong>rozetleri</strong> görürsünüz. <strong>"Liderlik"</strong> sekmesi en çok XP toplayan tasarımcıları sıralar; <strong>"Pano"</strong> günlük görevleri gösterir.</p>
+            </div>
+        </div>
+        <div class="ss-row">
+            <img src="screenshots/10-profil.png" class="screenshot-half" alt="Profil">
+            <img src="screenshots/12-liderlik.png" class="screenshot-half" alt="Liderlik">
+        </div>
+        <p class="caption">Şekil 4 — Profil ve Liderlik tablosu</p>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 03 / 06</span></div>
+</div>
+
+<!-- ═══════════════ SAYFA 4: YARIŞMA ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-trophy"></i> 3. Tasarım Yarışmaları</h2><span>Adım 5</span></div>
+
+        <div class="step">
+            <div class="n">5</div>
+            <div class="b">
+                <h3>Yarışmaya Katılın ve Oylayın</h3>
+                <p>Sol menüden <strong>"Yarışma"</strong>ya gidin. Aktif bir yarışmada <strong>"Stüdyoda Tasarla"</strong> ile editörden tasarım gönderebilir ya da hazır görselinizi yükleyebilirsiniz. Gönderdiğiniz tasarım <strong>AI Jüri</strong> tarafından otomatik puanlanır. Oylama aşamasındaki yarışmalarda <strong>"Tasarımları Oyla"</strong>, biten yarışmalarda <strong>"Sonuçları Gör"</strong> aktiftir.</p>
+            </div>
+        </div>
+        <img src="screenshots/16-yarismalar.png" class="screenshot" style="height:165px" alt="Yarışmalar">
+        <p class="caption">Şekil 5 — Yarışmalar sayfası: gerçek istatistikler, durum bazlı eylemler</p>
+
+        <div class="feat-grid">
+            <div class="feat-card"><h3><i class="fa-solid fa-list-check"></i> Statüler</h3><p>Aktif → Oylama → Tamamlandı. Her statüde tek, net bir eylem butonu vardır.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-robot"></i> AI Jüri</h3><p>Gönderilen her tasarım yapay zekâ ile kriterlere göre puanlanır.</p></div>
+        </div>
+
+        <div class="tip"><i class="fa-solid fa-circle-info"></i> <strong>Not:</strong> Yarışma kazananları ve durum geçişleri arka planda çalışan <code>YarismaLifecycleService</code> tarafından otomatik yönetilir.</div>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 04 / 06</span></div>
+</div>
+
+<!-- ═══════════════ SAYFA 5: CANLI YAYIN + MESAJ ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-tower-broadcast"></i> 4. Canlı Yayın &amp; Mesajlaşma</h2><span>Adım 6–7</span></div>
+
+        <div class="step">
+            <div class="n">6</div>
+            <div class="b">
+                <h3>Canlı Yayın Açın / İzleyin</h3>
+                <p>Sol menüden <strong>"Canlı"</strong> sayfasına girin. <strong>"Yayın Başlat"</strong> ile kameranızı/ekranınızı paylaşabilir; aktif bir yayın varsa tıklayıp <strong>izleyebilir</strong> ve canlı sohbete katılabilirsiniz. Yayın, sunucu üzerinden değil <strong>doğrudan tarayıcılar arası (WebRTC P2P)</strong> akar.</p>
+            </div>
+        </div>
+        <img src="screenshots/17-canli-yayin.png" class="screenshot" style="height:130px" alt="Canlı Yayın">
+        <p class="caption">Şekil 6 — Canlı Yayın sayfası (izleyici sayacı + canlı sohbet)</p>
+
+        <div class="step">
+            <div class="n">7</div>
+            <div class="b">
+                <h3>Mesajlaşın &amp; Düello İzleyin</h3>
+                <p><strong>"Mesajlar"</strong> bölümünden diğer kullanıcılarla birebir sohbet edebilirsiniz. <strong>"Düellolar"</strong> sayfasında ise iki tasarımın karşı karşıya geldiği oylamalı yarışmaları görebilirsiniz.</p>
+            </div>
+        </div>
+        <div class="ss-row">
+            <img src="screenshots/13-mesajlar.png" class="screenshot-half" alt="Mesajlar">
+            <img src="screenshots/18-duello.png" class="screenshot-half" alt="Düello">
+        </div>
+        <p class="caption">Şekil 7 — Mesajlaşma ve Tasarım Düelloları</p>
+
+        <div class="tip"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Canlı yayın için:</strong> Tarayıcı kamera/mikrofon iznini sorduğunda "İzin Ver" deyin. En iyi sonuç için Chrome/Edge önerilir.</div>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 05 / 06</span></div>
+</div>
+
+<!-- ═══════════════ SAYFA 6: ÖZELLİK HARİTASI ═══════════════ -->
+<div class="page">
+    <div class="content">
+        <div class="page-header"><h2><i class="fa-solid fa-map"></i> 5. Hızlı Özellik Haritası</h2><span>Özet</span></div>
+
+        <div class="summary-box">
+            Tüm özelliklere sol menüden tek tıkla ulaşabilirsiniz. Aşağıda her bölümün ne işe yaradığı kısaca özetlenmiştir.
+        </div>
+
+        <div class="feat-grid">
+            <div class="feat-card"><h3><i class="fa-solid fa-pen-ruler"></i> Tasarım (Editör)</h3><p>AI Studio + Fabric.js tuval ile kartvizit, davetiye, sosyal medya görseli üretimi.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-compass"></i> Keşfet</h3><p>Topluluğun paylaştığı tasarımlar, beğeni, yorum ve takip.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-trophy"></i> Yarışma</h3><p>AI jürili tasarım yarışmaları; katıl, oyla, sonuçları gör.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-tower-broadcast"></i> Canlı</h3><p>WebRTC P2P canlı yayın + canlı sohbet.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-khanda"></i> Düellolar</h3><p>İki tasarımın oylamayla karşılaştığı kapışmalar.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-comments"></i> Mesajlar</h3><p>Kullanıcılar arası birebir direkt mesajlaşma.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-crown"></i> Liderlik</h3><p>XP'ye göre sıralanan tasarımcı liderlik tablosu.</p></div>
+            <div class="feat-card"><h3><i class="fa-solid fa-clipboard-list"></i> Pano</h3><p>Günlük görevler, rozetler ve ilerleme takibi.</p></div>
+        </div>
+
+        <div class="summary-box" style="margin-top:18px;border-color:#fff;background:rgba(0,0,0,.35);color:#fff;padding:18px">
+            <strong><i class="fa-solid fa-circle-check" style="color:var(--neon)"></i> Teşekkürler Hocam.</strong><br><br>
+            Projenin tüm teknik ayrıntıları için ekteki <strong>"KARTIST v3.0 — Final Proje Raporu"</strong> dokümanına bakabilirsiniz. Herhangi bir soruda veya admin paneli erişimi için benimle iletişime geçebilirsiniz.<br><br>
+            <span style="color:var(--neon)">— Keremcan ATAŞ (247017033)</span>
+        </div>
+    </div>
+    <div class="footer"><span>KARTIST KULLANIM REHBERİ © 2026</span><span>SAYFA 06 / 06</span></div>
+</div>
+
+</body>
+</html>
