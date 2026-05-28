@@ -873,26 +873,43 @@ function buildComposite(screenStream, camStream) {
     var pipH = Math.round(pipW * 0.75);
     var pipMargin = Math.round(cw * 0.012);
 
-    function draw() {
-        ctx.drawImage(screenVid, 0, 0, cw, ch);
-        if (camVid && camVid.readyState >= 2) {
-            var px = cw - pipW - pipMargin;
-            var py = ch - pipH - pipMargin;
-            ctx.save();
-            ctx.beginPath();
-            ctx.roundRect(px, py, pipW, pipH, 12);
-            ctx.clip();
-            ctx.drawImage(camVid, px, py, pipW, pipH);
-            ctx.restore();
-            ctx.strokeStyle = '#c6ff00';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.roundRect(px, py, pipW, pipH, 12);
-            ctx.stroke();
-        }
+    var _lastDrawTs = 0;
+    var _frameMs = 1000 / 30; // 30fps — captureStream(30) ile uyumlu, 60fps tam-canvas cizim kasma yapiyordu
+    function draw(ts) {
+        // RAF'i ONCE yeniden planla: cizimde gecici hata olsa bile dongu ASLA olmesin
+        // (eski kod hata atinca duruyordu -> captureStream doniyor = kasma)
         _compositeRAF = requestAnimationFrame(draw);
+
+        // 30fps throttle
+        if (ts && (ts - _lastDrawTs) < _frameMs) return;
+        _lastDrawTs = ts || 0;
+
+        try {
+            // screenVid hazir degilken drawImage InvalidStateError firlatir
+            // (her frame "kopyalama hatasi"). readyState guard sart.
+            if (screenVid.readyState >= 2) {
+                ctx.drawImage(screenVid, 0, 0, cw, ch);
+            }
+            if (camVid && camVid.readyState >= 2) {
+                var px = cw - pipW - pipMargin;
+                var py = ch - pipH - pipMargin;
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(px, py, pipW, pipH, 12);
+                ctx.clip();
+                ctx.drawImage(camVid, px, py, pipW, pipH);
+                ctx.restore();
+                ctx.strokeStyle = '#c6ff00';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.roundRect(px, py, pipW, pipH, 12);
+                ctx.stroke();
+            }
+        } catch (e) {
+            // video gecici olarak hazir degil — sessizce gec, sonraki frame'de tekrar dene
+        }
     }
-    draw();
+    _compositeRAF = requestAnimationFrame(draw);
 
     // Build combined stream: canvas video + mic audio
     var compositeStream = canvas.captureStream(30);
@@ -1025,10 +1042,17 @@ function submitStreamRequest(event) {
             // Single-pass: buildComposite's RAF writes to compositeCanvas,
             // we just draw that onto broadcasterCanvas each frame
             var bCtx = bCanvas.getContext('2d');
-            (function pipMirror() {
+            var _mirrorTs = 0;
+            (function pipMirror(ts) {
                 if (!isBroadcaster || !_compositeRAF) return;
-                bCtx.drawImage(srcCanvas, 0, 0);
                 requestAnimationFrame(pipMirror);
+                // 25fps throttle — onizleme icin yeterli, ana composite + captureStream
+                // zaten CPU kullaniyor; bunu da 60fps yapmak bos yere kasma
+                if (ts && (ts - _mirrorTs) < 40) return;
+                _mirrorTs = ts || 0;
+                try {
+                    if (srcCanvas.width > 0) bCtx.drawImage(srcCanvas, 0, 0);
+                } catch (e) { /* gec */ }
             })();
             document.getElementById('remoteVideo').classList.add('hidden');
             document.getElementById('localVideoPreview').classList.add('hidden');
