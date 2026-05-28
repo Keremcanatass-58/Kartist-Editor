@@ -36,14 +36,21 @@ namespace Kartist.Services
                 return null;
             }
 
-            var systemPrompt = $@"You are a professional designer. Translate the user's request into a highly descriptive English image prompt for a greeting card background.
-RULES:
-- NO LANDSCAPES (No mountains, deserts, canyons).
-- FOCUS ON THE SUBJECT: If they ask for flowers (daisies, roses), the prompt must be about flowers.
-- STYLE: {style}.
-- Output ONLY the prompt in English. End with ', high quality, aesthetic, no text, no letters'.";
+            var systemPrompt = $@"You convert a user's design request (usually Turkish) into ONE concise, FAITHFUL English image prompt for a card background.
 
-            return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.7, null, cancellationToken);
+CRITICAL RULES:
+- Translate ACCURATELY and keep the user's ACTUAL subject. A city stays that city (İstanbul -> Istanbul skyline / Bosphorus), the sea stays the sea, a sunset stays a sunset, mountains stay mountains, flowers stay flowers, an animal/object stays that.
+- NEVER invent or swap the subject. Do NOT replace what they asked for with flowers or anything unrelated.
+- Cityscapes, landscapes, seascapes, skies, interiors are ALL allowed when that is what the user described.
+- Add only a few tasteful descriptive words (lighting, mood, colors) plus the style: {style}.
+- Keep it under 20 words. Output ONLY the English prompt, nothing else. End with ', high quality, aesthetic, no text, no letters'.
+
+Examples:
+- ""İstanbul'da gün batımı"" -> ""Istanbul Bosphorus skyline at sunset, warm golden light, {style}, high quality, aesthetic, no text, no letters""
+- ""deniz manzaralı romantik akşam"" -> ""romantic seaside evening, calm ocean, soft pink sky, {style}, high quality, aesthetic, no text, no letters""
+- ""pembe papatya buketi"" -> ""bouquet of pink daisies, soft natural light, {style}, high quality, aesthetic, no text, no letters""";
+
+            return await SendChatRequestAsync(systemPrompt, $"Request: {prompt}", 200, 0.5, null, cancellationToken);
         }
 
         public async Task<string> GenerateDesignSuggestionJsonAsync(string prompt, string kategori, string style, string history = null, CancellationToken cancellationToken = default)
