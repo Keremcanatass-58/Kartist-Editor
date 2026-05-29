@@ -79,7 +79,7 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
 | 📖 **Adım Adım Test Kılavuzu** | [Kullanım Rehberi (PDF)](docs/Kartist_Kullanim_Rehberi.pdf) · [HTML](docs/Kartist_Kullanim_Rehberi.html) |
 | 🏆 **Final Proje Raporu** | [PDF](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.pdf) · [HTML](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.html) |
 
-<sub>📌 Ders: **İnternet ve Ağ Teknolojileri** · Danışman: **Öğr. Gör. Ekrem SAYDAM** · Öğrenci: **Keremcan ATAŞ (247017033)**</sub>
+<sub>📌 Ders: **Sistem Analizi ve Tasarım** · Danışman: **Öğr. Gör. Ekrem SAYDAM** · Öğrenci: **Keremcan ATAŞ (247017033)**</sub>
 
 ---
 
@@ -125,9 +125,9 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
 | 🩺 **Sağlık Kontrolü (Health Check)** | `GET /api/health/ai` — AI sağlayıcı yapılandırmasını ve sistem durumunu döner; CI/CD deploy adımından sonra otomatik çağrılır. |
 | 🌍 **Tam Duyarlı (Fully Responsive)** | Mobil-tablet-masaüstü; modern CSS (Glassmorphism efekti, Space Grotesk tipografi). |
 
-### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Ağ Teknolojileri)*
+### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Gerçek Zamanlı Alt Sistem)*
 
-> Bu bölüm dersin **ağ teknolojileri** odağını doğrudan karşılar: tarayıcılar arası **gerçek zamanlı, eşler-arası (peer-to-peer) medya iletimi**, sunucu üzerinden sadece sinyalleşme yapılarak kurulur.
+> Projenin en karmaşık **gerçek zamanlı alt sistemi**: bileşenleri (yayıncı, sinyalleşme sunucusu, izleyici) ve aralarındaki etkileşim önce sequence diyagramıyla **modellenmiş**, ardından tarayıcılar arası eşler-arası (peer-to-peer) medya iletimi olarak hayata geçirilmiştir — yayın verisi sunucudan geçmez, yalnızca bağlantı kurulumu (signaling) sunucu üzerinden yapılır.
 
 | Özellik | Açıklama |
 |--------|----------|
@@ -240,7 +240,7 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
   </tr>
 </table>
 
-### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Ağ Teknolojileri)*
+### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Gerçek Zamanlı Alt Sistem)*
 
 <table>
   <tr>
@@ -601,11 +601,11 @@ gitGraph
 
 ---
 
-### 🏁 Final — Canlı Yayın, Yarışma & Düello *(Ağ Teknolojileri)*
+### 🏁 Final — Canlı Yayın, Yarışma & Düello *(Gerçek Zamanlı Alt Sistem Tasarımı)*
 
-> Final teslimi, projeyi dersin merkezindeki **ağ teknolojileri** ile taçlandırır: tarayıcılar arası **gerçek zamanlı, eşler-arası (peer-to-peer) medya iletimi**. Yayın verisi sunucudan geçmez; yalnızca bağlantı kurulumu (signaling) sunucu üzerinden yapılır, böylece düşük gecikme ve ölçeklenebilir bant genişliği elde edilir.
+> Final teslimi, projeyi **sistem analizi ve tasarımının** en güçlü vakasıyla taçlandırır: gerçek zamanlı canlı yayın alt sistemi. Bileşenler ve etkileşimleri önce **sequence diyagramıyla modellenmiş**, ardından tarayıcılar arası eşler-arası (peer-to-peer) medya iletimi olarak uygulanmıştır. Yayın verisi sunucudan geçmez; yalnızca bağlantı kurulumu (signaling) sunucu üzerinden yapılır, böylece düşük gecikme ve ölçeklenebilir bant genişliği elde edilir.
 
-**Kullanılan ağ teknolojileri ve rolleri:**
+**Canlı yayın alt sisteminin bileşenleri ve teknolojileri:**
 
 | Teknoloji | Katman / Rol | Projede Kullanımı |
 |-----------|--------------|-------------------|
