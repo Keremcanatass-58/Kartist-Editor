@@ -66,6 +66,23 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
 
 ---
 
+## 🎓 Değerlendirme & Hızlı Test
+
+> Projeyi indirip kurmaya gerek yok — **canlı sürüm 7/24 yayında.** Aşağıdaki hazır hesapla tüm sosyal özellikler (tasarım, paylaşım, beğeni/yorum, mesaj, canlı yayın, yarışma) anında test edilebilir.
+
+| | Bağlantı / Bilgi |
+|---|---|
+| 🌐 **Canlı Demo** | **[kartistt.com.tr](https://kartistt.com.tr)** |
+| 👤 **Test Hesabı (E-posta)** | `hoca@kartist.com` |
+| 🔑 **Test Şifresi** | `Hocam2026!` |
+| 🛡️ **Admin Paneli** | Giriş bilgileri değerlendirici ile **ayrıca / özel olarak** paylaşılır. |
+| 📖 **Adım Adım Test Kılavuzu** | [Kullanım Rehberi (PDF)](docs/Kartist_Kullanim_Rehberi.pdf) · [HTML](docs/Kartist_Kullanim_Rehberi.html) |
+| 🏆 **Final Proje Raporu** | [PDF](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.pdf) · [HTML](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.html) |
+
+<sub>📌 Ders: **İnternet ve Ağ Teknolojileri** · Danışman: **Öğr. Gör. Ekrem SAYDAM** · Öğrenci: **Keremcan ATAŞ (247017033)**</sub>
+
+---
+
 ## ✨ Öne Çıkan Özellikler
 
 ### 🎨 Tasarım Stüdyosu (Design Studio)
@@ -107,6 +124,19 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
 | 🛰️ **SignalR Hubları** | `/adminHub`, `/notificationHub` (alias `/notifHub`). Yöneticilere canlı kullanıcı aktivitesi panosu sağlar. |
 | 🩺 **Sağlık Kontrolü (Health Check)** | `GET /api/health/ai` — AI sağlayıcı yapılandırmasını ve sistem durumunu döner; CI/CD deploy adımından sonra otomatik çağrılır. |
 | 🌍 **Tam Duyarlı (Fully Responsive)** | Mobil-tablet-masaüstü; modern CSS (Glassmorphism efekti, Space Grotesk tipografi). |
+
+### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Ağ Teknolojileri)*
+
+> Bu bölüm dersin **ağ teknolojileri** odağını doğrudan karşılar: tarayıcılar arası **gerçek zamanlı, eşler-arası (peer-to-peer) medya iletimi**, sunucu üzerinden sadece sinyalleşme yapılarak kurulur.
+
+| Özellik | Açıklama |
+|--------|----------|
+| 📡 **WebRTC P2P Canlı Yayın** | Yayıncının kamera/mikrofon akışı, **WebRTC** ile izleyiciye doğrudan (peer-to-peer) iletilir; video verisi sunucudan geçmez, gecikme minimize edilir. `getUserMedia` → `RTCPeerConnection` → `MediaStream` zinciri. |
+| 🛰️ **SignalR Sinyalleşme (Signaling)** | WebRTC oturumunu kurmak için gereken SDP teklif/yanıt (offer/answer) ve aday (ICE candidate) değişimi **SignalR** (`NotificationHub`) üzerinden yapılır: `StartBroadcast`, `JoinStream`, `SendWebRTCOffer`, `SendWebRTCAnswer`, `SendICECandidate`, `EndBroadcast`. |
+| 🌐 **STUN / ICE & NAT Traversal** | İstemciler genel IP'lerini **STUN** sunucusu üzerinden keşfeder; **ICE** framework'ü en uygun bağlantı yolunu seçerek NAT/firewall arkasındaki eşleri buluşturur. Bağlantı durumu (`connectionState`) izlenir. |
+| 💬 **Canlı Yayın Sohbeti** | Yayın odasındaki gerçek zamanlı mesajlaşma `JoinLiveRoom` / `SendLiveMessage` ile SignalR grupları üzerinden dağıtılır; aktif yayınlar sunucuda canlı izlenir (`GetAktifYayinlar`). |
+| 🏆 **AI Jürili Tasarım Yarışmaları** | Temalı tasarım yarışmaları; oylama (`TotalVotes`) ve yaşam döngüsü yönetimi ile topluluk etkileşimi. |
+| ⚔️ **Tasarım Düelloları** | Tasarımcıların 1'e 1 kıyasıya yarıştığı düello akışı (`DuelloOlustur` / `DuelloKabulEt` / `DuelloTasarimYukle`). |
 
 ---
 
@@ -206,6 +236,27 @@ Kartist; **"erişilebilir tasarım + güvenli sosyal etkileşim + güçlü AI"**
     <td width="100%" valign="top">
       <a href="docs/screenshots/15-istatistikler.png"><img src="docs/screenshots/15-istatistikler.png" alt="İstatistikler"/></a>
       <p align="center"><sub><b>Kullanıcı istatistikleri — XP, streak, rozet kazanımları</b></sub></p>
+    </td>
+  </tr>
+</table>
+
+### 🔴 Canlı Yayın, Yarışma & Düello *(Final — Ağ Teknolojileri)*
+
+<table>
+  <tr>
+    <td width="100%" valign="top">
+      <a href="docs/screenshots/17-canli-yayin.png"><img src="docs/screenshots/17-canli-yayin.png" alt="Canlı Yayın"/></a>
+      <p align="center"><sub><b>WebRTC P2P canlı yayın — SignalR sinyalleşme + STUN/ICE</b></sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/screenshots/16-yarismalar.png"><img src="docs/screenshots/16-yarismalar.png" alt="Yarışmalar"/></a>
+      <p align="center"><sub><b>Yarışmalar — AI jürili tasarım yarışları</b></sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/screenshots/18-duello.png"><img src="docs/screenshots/18-duello.png" alt="Düello"/></a>
+      <p align="center"><sub><b>Düellolar — 1'e 1 tasarım yarışması</b></sub></p>
     </td>
   </tr>
 </table>
@@ -454,7 +505,7 @@ options.Cookie.SameSite = SameSiteMode.Lax;               // CSRF altdokuma savu
 
 ## 📋 Sprint Geçmişi
 
-Proje toplam **beş sprint** ve **haftalık iterasyonlar** halinde geliştirilmiştir. Her sprint sonunda demo + raporlama yapılmıştır.
+Proje **beş sprint + final teslimi** ve **haftalık iterasyonlar** halinde geliştirilmiştir. Her sprint sonunda demo + raporlama yapılmıştır.
 
 ### Sprint 1 — Güvenlik Altyapısı
 - ✅ `SecurityHeadersMiddleware` aktivasyonu (CSP, HSTS, X-Frame-Options)
@@ -547,6 +598,67 @@ gitGraph
 - 🎨 **4 editör UX bug'ı** düzeltildi (Backspace, font dedup, AI confirm, `??` literal)
 - 📸 **15 ekran görüntülü README galerisi**
 - 🧹 **35 gereksiz dosya temizliği** ve `.gitignore` modernizasyonu
+
+---
+
+### 🏁 Final — Canlı Yayın, Yarışma & Düello *(Ağ Teknolojileri)*
+
+> Final teslimi, projeyi dersin merkezindeki **ağ teknolojileri** ile taçlandırır: tarayıcılar arası **gerçek zamanlı, eşler-arası (peer-to-peer) medya iletimi**. Yayın verisi sunucudan geçmez; yalnızca bağlantı kurulumu (signaling) sunucu üzerinden yapılır, böylece düşük gecikme ve ölçeklenebilir bant genişliği elde edilir.
+
+**Kullanılan ağ teknolojileri ve rolleri:**
+
+| Teknoloji | Katman / Rol | Projede Kullanımı |
+|-----------|--------------|-------------------|
+| **WebRTC** | Eşler-arası medya (P2P) | `RTCPeerConnection` ile yayıncı → izleyici doğrudan video/ses akışı |
+| **SignalR (WebSocket)** | Sinyalleşme (signaling) | SDP offer/answer + ICE candidate değişimi (`NotificationHub`) |
+| **SDP** | Oturum tanımı | Codec / çözünürlük / aktarım parametrelerinin müzakeresi |
+| **STUN** | NAT keşfi | İstemcinin genel `IP:port` adresini öğrenmesi |
+| **ICE** | Bağlantı kurma | Aday yolların toplanıp en uygun rotanın seçilmesi (NAT traversal) |
+
+**WebRTC + SignalR el sıkışma (handshake) akışı:**
+
+```mermaid
+sequenceDiagram
+    participant Y as 🎥 Yayıncı
+    participant H as 🛰️ SignalR Hub<br/>(NotificationHub)
+    participant S as 🌐 STUN Sunucusu
+    participant I as 👁️ İzleyici
+
+    Y->>Y: getUserMedia() — kamera/mikrofon akışı
+    Y->>H: StartBroadcast(streamId)
+    I->>H: JoinStream(streamId)
+    H-->>Y: yeni izleyici bağlandı (connectionId)
+
+    Note over Y,I: SDP teklif / yanıt değişimi (sinyalleşme)
+    Y->>Y: createOffer()
+    Y->>H: SendWebRTCOffer(izleyiciId, sdpOffer)
+    H-->>I: teklif iletildi
+    I->>I: setRemoteDescription + createAnswer()
+    I->>H: SendWebRTCAnswer(yayinciId, sdpAnswer)
+    H-->>Y: yanıt iletildi
+
+    Note over Y,S: ICE aday keşfi & NAT traversal
+    Y->>S: STUN binding request
+    I->>S: STUN binding request
+    Y->>H: SendICECandidate(izleyiciId, candidate)
+    H-->>I: aday iletildi
+    I->>H: SendICECandidate(yayinciId, candidate)
+    H-->>Y: aday iletildi
+
+    rect rgb(18,40,22)
+    Note over Y,I: 🔗 P2P bağlantı kuruldu — video doğrudan akar (sunucu bypass)
+    Y-->>I: MediaStream (peer-to-peer)
+    end
+    I->>H: SendLiveMessage(roomId, mesaj)
+    Y->>H: EndBroadcast(streamId)
+```
+
+**Final çıktıları:**
+- 📡 **WebRTC P2P canlı yayın** + SignalR sinyalleşme altyapısı (`StartBroadcast`/`JoinStream`/`SendWebRTCOffer`/`SendWebRTCAnswer`/`SendICECandidate`/`EndBroadcast`)
+- 🏆 **AI jürili tasarım yarışmaları** — oylama (`TotalVotes`) + yaşam döngüsü
+- ⚔️ **Tasarım düelloları** akışı (`DuelloOlustur` / `DuelloKabulEt` / `DuelloTasarimYukle`)
+- 🎨 **Yarışmalar sayfası yeniden tasarımı** + feed / canlı yayın UX cilası
+- 📑 **14 sayfalık akademik Final raporu** + **6 sayfalık kullanım rehberi** ([docs/](docs/))
 
 ---
 
@@ -894,10 +1006,12 @@ Fabric.js editörü ve bazı 3rd-party kütüphaneler (Tailwind CDN) inline styl
 
 ## 📚 Akademik Belgeler
 
-| Belge | Açıklama |
-|-------|----------|
-| 📄 [KARTIST v2.0 - Vize Proje Raporu.pdf](KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf) | Vize sınavı için hazırlanmış kapsamlı proje raporu (Türkçe akademik format). |
-| 📁 `docs/` | Sprint raporları ve sunum dosyaları. |
+| Belge | Format | Açıklama |
+|-------|--------|----------|
+| 🏆 **Final Proje Raporu** | [PDF](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.pdf) · [HTML](docs/SAT_FinalRaporu_Keremcan_Atas_247017033.html) | Hafta 1–12 / Sprint 1–5 + Final; 14 sayfa, ekran görüntülü, kod örnekli, WebRTC/SignalR ağ teknolojisi bölümü (Türkçe akademik format). |
+| 📖 **Kullanım Rehberi** | [PDF](docs/Kartist_Kullanim_Rehberi.pdf) · [HTML](docs/Kartist_Kullanim_Rehberi.html) | Değerlendirici için adım adım test kılavuzu + giriş bilgileri (6 sayfa). |
+| 📄 **Vize Proje Raporu** | [PDF](KARTIST%20v2.0%20-%20Vize%20Proje%20Raporu.pdf) · [HTML](docs/SAT_VizeRaporu_Keremcan_Atas_247017033.html) | Sprint 1–3 kapsamlı proje raporu (10 sayfa). |
+| 📁 **docs/** | [Klasör](docs/) | Tüm raporlar, ekran görüntüleri ve sunum dosyaları. |
 
 ---
 

@@ -4,12 +4,12 @@ Haftalık geliştirme raporları, kullanım rehberi ve teknik detaylara aşağı
 
 ## 🏁 Final Raporu (Güncel)
 
-| Doküman | Açıklama |
-|---------|----------|
-| [🏆 Final Proje Raporu (HTML)](SAT_FinalRaporu_Keremcan_Atas_247017033.html) | Hafta 1–12 / Sprint 1–5 detaylı rapor (14 sayfa, ekran görüntülü, kod örnekli, WebRTC/SignalR ağ teknolojisi bölümü) |
-| [📖 Kullanım Rehberi (HTML)](Kartist_Kullanim_Rehberi.html) | Adım adım test kılavuzu + değerlendirme giriş bilgileri (6 sayfa) |
+| Doküman | PDF | HTML | Açıklama |
+|---------|-----|------|----------|
+| 🏆 **Final Proje Raporu** | [PDF](SAT_FinalRaporu_Keremcan_Atas_247017033.pdf) | [HTML](SAT_FinalRaporu_Keremcan_Atas_247017033.html) | Hafta 1–12 / Sprint 1–5 + Final detaylı rapor (14 sayfa, ekran görüntülü, kod örnekli, WebRTC/SignalR ağ teknolojisi bölümü) |
+| 📖 **Kullanım Rehberi** | [PDF](Kartist_Kullanim_Rehberi.pdf) | [HTML](Kartist_Kullanim_Rehberi.html) | Adım adım test kılavuzu + değerlendirme giriş bilgileri (6 sayfa) |
 
-> 💡 HTML raporları tarayıcıda açıp **Yazdır → PDF olarak kaydet** ile PDF'e çevirebilirsiniz (A4, renkli arka plan açık).
+> 💡 Hem hazır **PDF** hem de A4 baskıya uygun **HTML** sürümleri mevcuttur (HTML'i tarayıcıda Yazdır → PDF ile de kaydedebilirsiniz).
 
 ## 📄 Vize Raporu
 
